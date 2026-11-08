@@ -6,3 +6,4 @@ dist/
 # Superpowers design specs and plans (local only)
 docs/superpowers/
 .superpowers/
+*.tsbuildinfo
