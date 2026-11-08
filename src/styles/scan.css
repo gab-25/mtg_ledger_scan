@@ -20,3 +20,7 @@
 .scan-auto[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); font-weight: 600; }
 .scan-debug { position: absolute; top: 8px; left: 8px; margin: 0; padding: 8px; border-radius: 8px;
   background: rgba(0, 0, 0, .65); color: #fff; font: 12px/1.4 var(--mono); }
+
+/* Review */
+.scan-warn-button { width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer; }
+.scan-edit-fields { margin: 0; padding: 0; border: 0; }
