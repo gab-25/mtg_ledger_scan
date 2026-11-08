@@ -1,2 +1,2 @@
-# mtg_ledger_scanner
-MTG Ledger Scanner
+# mtg_ledger_scan
+MTG Ledger Scan
