@@ -22,10 +22,14 @@ export function useAction<A = void, R = unknown>(fn: (args: A) => Promise<R>, op
       const messages = (result as { messages?: Msg[] } | undefined)?.messages ?? [];
       notify(messages, { afterNavigation: Boolean(to) });
       if (to) navigate(to);
+      else window.scrollTo(0, 0); // like the redirect to the same page: the messages are at the top
       await queryClient.invalidateQueries();
     },
     onError: (err) => {
-      if (!(err instanceof ApiError && err.fields)) notify([{ level: "error", text: err.message }]);
+      if (!(err instanceof ApiError && err.fields)) {
+        notify([{ level: "error", text: err.message }]);
+        window.scrollTo(0, 0);
+      }
     },
   });
 }

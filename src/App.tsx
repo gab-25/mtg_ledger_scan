@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import Layout from "./layout/Layout";
+import ScrollToTop from "./ScrollToTop";
 import CardsPage from "./pages/CardsPage";
 import CollectionPage from "./pages/CollectionPage";
 import ImportPage from "./pages/ImportPage";
@@ -20,7 +21,9 @@ import StartScreen from "./screens/StartScreen";
 // former Django pages. Scan: /scan/ start, /scan/<uuid>/ camera, /scan/<uuid>/review/ review (no sidebar).
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/scan" element={<StartScreen />} />
       <Route path="/scan/:uuid" element={<CameraScreen />} />
@@ -39,6 +42,7 @@ export default function App() {
         <Route path="/account" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }

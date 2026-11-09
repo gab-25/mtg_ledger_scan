@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as account from "../api/account";
+import { ApiError } from "../api/client";
 import { me, mockMe, renderPage } from "../test/renderPage";
 
 vi.mock("../api/account");
@@ -49,6 +50,12 @@ describe("Layout", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Log out" }));
     expect(account.logout).toHaveBeenCalled();
     expect(assign).toHaveBeenCalledWith("/login/");
+  });
+
+  it("a server error on /api/me/ is shown, not a blank page", async () => {
+    vi.mocked(account.getMe).mockRejectedValue(new ApiError("Something went wrong (500) — try again", 500, "server"));
+    renderPage("/nope/");
+    expect(await screen.findByText("Something went wrong (500) — try again")).toHaveClass("message", "error");
   });
 
   it("renders nothing until the user is known", () => {

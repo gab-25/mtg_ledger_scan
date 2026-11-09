@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import * as account from "../api/account";
 import { ApiError } from "../api/client";
 import { mockMe, renderPage } from "../test/renderPage";
+import { safeNext } from "./LoginPage";
 
 vi.mock("../api/account");
 
@@ -55,5 +56,18 @@ describe("LoginPage", () => {
     renderPage("/login/?next=%2Fapi%2Fdocs%2F");
     await signIn();
     await vi.waitFor(() => expect(assign).toHaveBeenCalledWith("/api/docs/"));
+  });
+});
+
+describe("safeNext", () => {
+  it("keeps paths of this site", () => {
+    expect(safeNext("/sale/?status=sold")).toBe("/sale/?status=sold");
+    expect(safeNext("/account/#cardtrader")).toBe("/account/#cardtrader");
+  });
+
+  it("anything that leads to another site becomes /", () => {
+    for (const next of [null, "", "https://evil.com/", "//evil.com", "/\\evil.com", "/\t/evil.com", "/\n\\evil.com", "/\r//evil.com", "evil"]) {
+      expect(safeNext(next)).toBe("/");
+    }
   });
 });

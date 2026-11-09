@@ -1,4 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { ApiError } from "../api/client";
+import PageState from "../components/PageState";
 import { signOut } from "../signOut";
 import { LogoutIcon, Logo, NavCards, NavCollection, NavSale, PackageIcon, SyncIcon } from "../components/icons";
 import { useMe } from "../hooks/useMe";
@@ -21,9 +23,13 @@ const current = (active: boolean) => (active ? ({ "aria-current": "page" } as co
 
 /** base.html: sidebar with counters and user card, messages, then the page. */
 export default function Layout() {
-  const { data: me } = useMe();
+  const { data: me, error } = useMe();
   const nav = section(useLocation().pathname);
-  if (!me) return null;
+  if (!me) {
+    // Not logged in: the client is already on its way to /login/. Any other failure is shown.
+    if (error instanceof ApiError && error.code === "not_authenticated") return null;
+    return <PageState error={error} />;
+  }
   const { user, counts } = me;
   const name = user.full_name || user.username;
 

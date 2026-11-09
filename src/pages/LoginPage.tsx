@@ -7,10 +7,15 @@ import Field, { Errors } from "../components/Field";
 import { Logo } from "../components/icons";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
-/** Where to go after login: a path of this site (never another host), else the collection. */
+/**
+ * Where to go after login: a path of this site, else the collection. The value is parsed as the browser would
+ * (which drops tabs and newlines and reads backslashes as slashes), so "/\t/evil.com" can't lead off-site.
+ */
 export function safeNext(next: string | null): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";
-  return next;
+  if (!next || !next.startsWith("/")) return "/";
+  const url = new URL(next, location.origin);
+  if (url.origin !== location.origin) return "/";
+  return url.pathname + url.search + url.hash;
 }
 
 const outsideApp = (path: string) => /^\/(api|admin|static)(\/|$)/.test(path);
