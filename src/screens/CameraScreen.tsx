@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { capture, getSession, getSetup, isNetworkError, undoLine, updateLine } from "../api/scan";
 import type { Line, LineResult, Session, Setup } from "../api/types";
@@ -115,7 +115,7 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
   }
 
 
-  const review = `/${session.uuid}/review`;
+  const review = `/scan/${session.uuid}/review`;
   return (
     <main className="scan-cam scan-body">
       <div className="scan-top">
@@ -164,6 +164,7 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
 
 export default function CameraScreen() {
   const { uuid = "" } = useParams();
+  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [setup, setSetup] = useState<Setup | null>(null);
   const [count, setCount] = useState(0);
@@ -174,14 +175,14 @@ export default function CameraScreen() {
   useEffect(() => {
     Promise.all([getSession(uuid), getSetup()])
       .then(([{ session: s }, st]) => {
-        if (s.status === "saved") return window.location.assign("/");
+        if (s.status === "saved") return void navigate("/");
         setSession(s);
         setSetup(st);
         setCount(s.count);
         if (s.last_line) setToast({ state: "Last added", line: s.last_line });
       })
       .catch((e: Error) => setError(e.message));
-  }, [uuid]);
+  }, [uuid, navigate]);
 
   function pickerDone(r: LineResult) {
     setCount(r.count);

@@ -1,30 +1,45 @@
 # mtg_ledger_ui
 
 MTG Ledger UI — the web interface of [MTG Ledger](https://github.com/gab-25/mtg_ledger_core), as a React
-single-page app. Frame a card with the phone: it is recognised, matched against the CardTrader catalog and added to a
-draft you review and save into the collection.
+single-page app: collection, sale listings, card database, shipments, sync, profile and the camera scan.
+
+mtg_ledger_core serves the built app (same origin, same login: `index.html` for every page URL, assets under
+`/static/ui/`) and does the work through its JSON API under `/api/`.
+
+### Scanning
+
+Frame a card with the phone: it is recognised, matched against the CardTrader catalog and added to a draft you
+review and save into the collection.
 
 - **No page reloads**: start, camera, confirm/search and review all happen in one page.
 - **Auto-shoot**: with **Auto** on, the phone shoots by itself when a card fills the box, is in focus and is held
   still; after each shot it waits for the box to be empty before the next card. The shutter always works too.
 - One card at a time: an uncertain card opens the confirm panel over the camera right away.
 
-mtg_ledger_core serves the built app (same origin, same login) and does the work through its JSON API under
-`/api/scan/` — see [gab-25/mtg_ledger_core#10](https://github.com/gab-25/mtg_ledger_core/issues/10) for the contract.
+The scan screens use the API under `/api/scan/` — see
+[gab-25/mtg_ledger_core#10](https://github.com/gab-25/mtg_ledger_core/issues/10) for the contract.
 
 ## Structure
 
-- `src/api/` — typed client of `/api/scan/` (session cookie + Django CSRF; DRF errors `{"detail", "code"}` or
-  field messages; `not_authenticated` → login, `closed` session → Collection; photo uploads retried with the same
-  `capture_id`)
+- `src/App.tsx` — the routes: the same URLs as the former Django pages (`/`, `/cards/…`, `/sale/…`, `/shipments/…`,
+  `/sync/`, `/account/`, `/login/`) and the scan under `/scan/…`
+- `src/pages/` — one component per page; `src/layout/` — sidebar with counters and user card
+- `src/api/` — typed client of `/api/`, one module per area (session cookie + Django CSRF; DRF errors
+  `{"detail", "code"}` or field messages kept by field; `not_authenticated` → login, `closed` session → Collection;
+  photo uploads retried with the same `capture_id`)
+- `src/actions.ts` — `useAction`: a form post of a page (messages, reload of every query, errors)
+- `src/notifications.tsx` — the message list of every page (like Django's messages: shown on this page, or on the
+  next one after an action that navigates)
+- `src/components/` — `DataTable` (every table, on [TanStack Table](https://tanstack.com/table); filtering and
+  pagination happen on the server), `Field`, `Pager`, `Badge`, `StatTile`, icons, and the scan components
+- `src/format.ts` — numbers and dates as Django's templates wrote them (en-us, Europe/Rome)
+- Data comes through [TanStack Query](https://tanstack.com/query).
 - `src/autoscan/` — `analyze.ts` (edges, sharpness, motion of the guide region), `machine.ts` (when to shoot),
   `useAutoscan.ts` (the loop), `config.ts` (thresholds)
 - `src/camera/` — rear camera stream and cropping the photo to the on-screen guide
-- `src/screens/` — Start, Camera (with the QR hand-off page for desktops) and Review
-- `src/components/` — header, last-card toast, confirm/search panel, review row
+- `src/screens/` — the scan: Start, Camera (with the QR hand-off page for desktops) and Review
 
-The look comes from mtg_ledger_core's `/static/theme/app.css` (loaded by `index.html`); `src/styles/scan.css` only adds
-what the single-page app needs.
+The look is `src/styles/app.css` (design tokens and components); `src/styles/scan.css` adds the scan screens.
 
 ## Development
 
@@ -42,8 +57,8 @@ Run mtg_ledger_core (`uv run python manage.py runserver` in its checkout), then:
 npm run dev
 ```
 
-and open http://localhost:5173/. Vite serves the scan app under `/scan/` with live reload and forwards every other
-URL (collection, login, `/api/scan/`, `/static/`…) to Django, so the whole site works from that address.
+and open http://localhost:5173/. Vite serves every page with live reload and forwards `/api/`, `/admin/` and
+`/static/` to Django, so the whole site works from that address.
 
 ### On the phone
 
@@ -66,7 +81,7 @@ The camera needs HTTPS and a phone. `npm run dev:phone` publishes the Vite dev s
 4. Open that address on the computer, start a session in **Scan cards** and scan the QR code with the phone.
 
 To try the production setup instead (Django serving the build, as in the Docker image), run `npm run build` and
-start Django with `SCAN_APP_DIR` pointing at `dist/`.
+start Django with `UI_APP_DIR` pointing at `dist/`.
 
 ### Tuning auto-shoot
 
@@ -76,5 +91,5 @@ Open the camera with `?debug=1` (e.g. `/scan/<session>/?debug=1`) to see the liv
 ## Release
 
 Publish a GitHub release `vX.Y.Z`: the Release workflow runs the tests, builds the app and attaches
-`mtg-ledger-scan.tar.gz` (the contents of `dist/`). The mtg_ledger_core Docker image downloads the latest release at
+`mtg-ledger-ui.tar.gz` (the contents of `dist/`). The mtg_ledger_core Docker image downloads the latest release at
 build time, so rebuilding it ships the new version.

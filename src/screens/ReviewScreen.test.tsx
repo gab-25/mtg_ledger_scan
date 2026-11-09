@@ -5,6 +5,7 @@ import { ApiError } from "../api/client";
 import * as api from "../api/scan";
 import type { Review } from "../api/types";
 import { candidate, line, session, setup } from "../test/fixtures";
+import { Messages, NotificationsProvider } from "../notifications";
 import ReviewScreen from "./ReviewScreen";
 
 vi.mock("../api/scan");
@@ -17,11 +18,14 @@ function review(over: Partial<Review> = {}): Review {
 
 function renderReview() {
   return render(
-    <MemoryRouter initialEntries={["/s1/review"]}>
-      <Routes>
-        <Route path="/:uuid/review" element={<ReviewScreen />} />
-        <Route path="/:uuid" element={<p>camera page</p>} />
-      </Routes>
+    <MemoryRouter initialEntries={["/scan/s1/review"]}>
+      <NotificationsProvider>
+        <Routes>
+          <Route path="/scan/:uuid/review" element={<ReviewScreen />} />
+          <Route path="/scan/:uuid" element={<p>camera page</p>} />
+          <Route path="/" element={<><Messages /><p>collection page</p></>} />
+        </Routes>
+      </NotificationsProvider>
     </MemoryRouter>,
   );
 }
@@ -39,7 +43,7 @@ describe("ReviewScreen", () => {
     expect(screen.getByText("Counterspell")).toBeInTheDocument();
     expect(screen.getByText("€ 5.00")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save 2" })).toBeEnabled();
-    expect(screen.getByRole("link", { name: "Continue scanning" })).toHaveAttribute("href", "/s1");
+    expect(screen.getByRole("link", { name: "Continue scanning" })).toHaveAttribute("href", "/scan/s1");
   });
 
   it("save disabled while cards need confirmation", async () => {
@@ -129,14 +133,15 @@ describe("ReviewScreen", () => {
     expect(api.updateLine).toHaveBeenCalledWith("p1", { quantity: 0 });
   });
 
-  it("save redirects to collection", async () => {
-    const assign = vi.fn();
-    vi.stubGlobal("location", { ...window.location, assign });
-    vi.mocked(api.saveSession).mockResolvedValue({ saved: 2, listed: 0, redirect: "/" });
+  it("save goes to the collection and shows the message there", async () => {
+    vi.mocked(api.saveSession).mockResolvedValue({
+      saved: 2, listed: 0, redirect: "/", messages: [{ level: "success", text: "Saved 2 cards, 0 queued for sale." }],
+    });
     renderReview();
     await userEvent.click(await screen.findByRole("button", { name: "Save 2" }));
     expect(api.saveSession).toHaveBeenCalledWith("s1");
-    expect(assign).toHaveBeenCalledWith("/");
+    expect(await screen.findByText("collection page")).toBeInTheDocument();
+    expect(screen.getByText("Saved 2 cards, 0 queued for sale.")).toHaveClass("message", "success");
   });
 
   it("save error is shown", async () => {

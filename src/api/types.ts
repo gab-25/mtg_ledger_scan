@@ -66,7 +66,8 @@ export type Review = {
   unique: number;
   listed: number;
 };
-export type SaveResult = { saved: number; listed: number; redirect: string };
+export type Msg = { level: "success" | "warning" | "error"; text: string };
+export type SaveResult = { saved: number; listed: number; redirect: string; messages: Msg[] };
 export type LineChanges = Partial<{
   foil: boolean;
   condition: string;

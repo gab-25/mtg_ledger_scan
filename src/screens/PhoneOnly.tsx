@@ -17,7 +17,7 @@ export default function PhoneOnly({ session, onSearch }: { session: Session; onS
         actions={
           <>
             <button type="button" className="btn" onClick={onSearch}>Search</button>
-            <Link className="btn" to={`/${session.uuid}/review`}>Review ({session.count})</Link>
+            <Link className="btn" to={`/scan/${session.uuid}/review`}>Review ({session.count})</Link>
           </>
         }
       />

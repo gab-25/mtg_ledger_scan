@@ -9,10 +9,10 @@ vi.mock("../api/scan");
 
 function renderStart() {
   return render(
-    <MemoryRouter initialEntries={["/"]}>
+    <MemoryRouter initialEntries={["/scan"]}>
       <Routes>
-        <Route path="/" element={<StartScreen />} />
-        <Route path="/:uuid" element={<p>camera page</p>} />
+        <Route path="/scan" element={<StartScreen />} />
+        <Route path="/scan/:uuid" element={<p>camera page</p>} />
       </Routes>
     </MemoryRouter>,
   );
