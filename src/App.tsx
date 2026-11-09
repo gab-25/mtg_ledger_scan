@@ -3,8 +3,10 @@ import Layout from "./layout/Layout";
 import CollectionPage from "./pages/CollectionPage";
 import ImportPage from "./pages/ImportPage";
 import ItemFormPage from "./pages/ItemFormPage";
+import ListingFormPage from "./pages/ListingFormPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import SalePage from "./pages/SalePage";
 import CameraScreen from "./screens/CameraScreen";
 import ReviewScreen from "./screens/ReviewScreen";
 import StartScreen from "./screens/StartScreen";
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/cards/add" element={<ItemFormPage />} />
         <Route path="/cards/import" element={<ImportPage />} />
         <Route path="/cards/:pk" element={<ItemFormPage />} />
+        <Route path="/sale" element={<SalePage />} />
+        <Route path="/sale/:itemPk" element={<ListingFormPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
