@@ -1,4 +1,4 @@
-// The JSON API of mtg_ledger under /api/scan/ (contract: gab-25/mtg_ledger#10).
+// The JSON API of mtg_ledger_core under /api/scan/ (contract: gab-25/mtg_ledger_core#10).
 
 export type Expansion = { id: number; code: string; name: string };
 export type Blueprint = {

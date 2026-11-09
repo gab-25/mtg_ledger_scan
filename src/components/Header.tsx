@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** The top of every non-camera screen: app name and the way back to mtg_ledger (no sidebar). */
+/** The top of every non-camera screen: app name and the way back to mtg_ledger_core (no sidebar). */
 export default function Header({ eyebrow, title, actions }: { eyebrow?: ReactNode; title: ReactNode; actions?: ReactNode }) {
   return (
     <>

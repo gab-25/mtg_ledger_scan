@@ -3,7 +3,7 @@ import CameraScreen from "./screens/CameraScreen";
 import ReviewScreen from "./screens/ReviewScreen";
 import StartScreen from "./screens/StartScreen";
 
-// Served by mtg_ledger at /scan/...: /scan/ start, /scan/<uuid>/ camera, /scan/<uuid>/review/ review.
+// Served by mtg_ledger_core at /scan/...: /scan/ start, /scan/<uuid>/ camera, /scan/<uuid>/review/ review.
 export default function App() {
   return (
     <BrowserRouter basename="/scan">
