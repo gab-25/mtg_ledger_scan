@@ -1,13 +1,18 @@
 // When to shoot: a pure state machine fed with frame measurements and UI events.
 //
-//   waitEmpty --(box empty for EMPTY_MS)--> armed --(card, sharp, still)--> steadying
-//   steadying --(held for STEADY_MS)--> busy [capture]      steadying --(lost)--> armed
-//   busy --(result)--> armed if the box was emptied meanwhile, else waitEmpty
-//   busy --(result, no card)--> waitEmpty, re-arming only after the scene moved (no loop of shots at an empty box)
-//   manual: waitEmpty/armed/steadying --> busy [capture]     pause: any --> paused --(resume)--> waitEmpty
+//   armed --(card, sharp, still)--> steadying --(held for STEADY_MS)--> busy [capture] --(result)--> armed
+//   steadying --(lost)--> armed
+//
+// After a shot the same scene must not be shot again, so `needChange` is set: a frame is only ready once it
+// differs from the shot (`changed`, measured by the caller against the photo). This works on any surface,
+// including a patterned mat that never looks empty, and lets the next card be laid on top of the last one.
+// A box empty for EMPTY_MS clears needChange, so a second copy of the same card can be shot in the same spot.
+//
+//   manual (the Retry button): armed/steadying --> busy [capture]
+//   pause: any --> paused --(resume)--> armed, needing a change (the card that was being confirmed is still there)
 import { EMPTY_MS, STEADY_MS } from "./config";
 
-export type Phase = "waitEmpty" | "armed" | "steadying" | "busy" | "paused";
+export type Phase = "armed" | "steadying" | "busy" | "paused";
 
 export type AutoscanState = {
   phase: Phase;
@@ -15,71 +20,48 @@ export type AutoscanState = {
   since: number;
   /** Start of the current run of empty frames (ms), or null. */
   emptySince: number | null;
-  /** While busy: the box has been empty for EMPTY_MS, so the next card may be shot right after the result. */
-  sawEmpty: boolean;
-  /** After a "no card" result: wait for a moving frame before the box may re-arm. */
+  /** The scene was just shot: only a frame that differs from it may be shot. */
   needChange: boolean;
-  enabled: boolean;
 };
 
 export type AutoscanEvent =
-  | { type: "frame"; t: number; present: boolean; sharp: boolean; still: boolean }
+  | { type: "frame"; t: number; present: boolean; sharp: boolean; still: boolean; changed: boolean }
   | { type: "manual" }
-  | { type: "result"; noCard?: boolean }
+  | { type: "result" }
   | { type: "pause" }
-  | { type: "resume" }
-  | { type: "enable"; enabled: boolean };
+  | { type: "resume" };
 
-export function initialState(enabled: boolean): AutoscanState {
-  return { phase: "waitEmpty", since: 0, emptySince: null, sawEmpty: false, needChange: false, enabled };
+export function initialState(): AutoscanState {
+  return { phase: "armed", since: 0, emptySince: null, needChange: false };
 }
 
 const idle = (s: AutoscanState) => ({ state: s, capture: false });
-
-/** Track runs of empty frames; returns the new emptySince and whether the box has now been empty long enough. */
-function emptiness(s: AutoscanState, t: number, present: boolean): [number | null, boolean] {
-  if (present) return [null, false];
-  const since = s.emptySince ?? t;
-  return [since, t - since >= EMPTY_MS];
-}
+const shot = (s: AutoscanState) => ({ state: { ...s, phase: "busy" as const, emptySince: null, needChange: true }, capture: true });
 
 export function step(s: AutoscanState, e: AutoscanEvent): { state: AutoscanState; capture: boolean } {
   switch (e.type) {
-    case "enable":
-      return idle({ ...s, enabled: e.enabled });
     case "pause":
       return idle({ ...s, phase: "paused" });
     case "resume":
-      return s.phase === "paused" ? idle({ ...s, phase: "waitEmpty", emptySince: null, sawEmpty: false }) : idle(s);
+      return s.phase === "paused" ? idle({ ...s, phase: "armed", emptySince: null, needChange: true }) : idle(s);
     case "result":
-      if (s.phase !== "busy") return idle(s);
-      if (e.noCard) return idle({ ...s, phase: "waitEmpty", emptySince: null, sawEmpty: false, needChange: true });
-      return idle({ ...s, phase: s.sawEmpty ? "armed" : "waitEmpty", sawEmpty: false });
+      return s.phase === "busy" ? idle({ ...s, phase: "armed" }) : idle(s);
     case "manual":
-      if (s.phase === "busy" || s.phase === "paused") return idle(s);
-      return { state: { ...s, phase: "busy", emptySince: null, sawEmpty: false }, capture: true };
+      return s.phase === "busy" || s.phase === "paused" ? idle(s) : shot(s);
     case "frame": {
-      const [emptySince, longEmpty] = emptiness(s, e.t, e.present);
-      const ready = e.present && e.sharp && e.still;
+      if (s.phase === "paused") return idle(s);
+      const emptySince = e.present ? null : (s.emptySince ?? e.t);
+      const needChange = s.needChange && !(emptySince !== null && e.t - emptySince >= EMPTY_MS);
+      const next = { ...s, emptySince, needChange };
+      const ready = e.present && e.sharp && e.still && (!needChange || e.changed);
       switch (s.phase) {
-        case "paused":
-          return idle(s);
-        case "waitEmpty": {
-          const needChange = s.needChange && e.still;
-          if (needChange) return idle({ ...s, emptySince: null });
-          return idle({ ...s, emptySince, needChange, phase: longEmpty ? "armed" : "waitEmpty" });
-        }
         case "busy":
-          return idle({ ...s, emptySince, sawEmpty: s.sawEmpty || longEmpty });
+          return idle(next);
         case "armed":
-          if (ready && s.enabled) return idle({ ...s, emptySince, phase: "steadying", since: e.t });
-          return idle({ ...s, emptySince });
+          return idle(ready ? { ...next, phase: "steadying", since: e.t } : next);
         case "steadying":
-          if (!ready || !s.enabled) return idle({ ...s, emptySince, phase: "armed" });
-          if (e.t - s.since >= STEADY_MS) {
-            return { state: { ...s, phase: "busy", emptySince: null, sawEmpty: false }, capture: true };
-          }
-          return idle({ ...s, emptySince });
+          if (!ready) return idle({ ...next, phase: "armed" });
+          return e.t - s.since >= STEADY_MS ? shot(next) : idle(next);
       }
     }
   }

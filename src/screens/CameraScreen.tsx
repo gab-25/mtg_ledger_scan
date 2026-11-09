@@ -3,39 +3,20 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { capture, getSession, getSetup, isNetworkError, undoLine, updateLine } from "../api/scan";
 import type { Line, LineResult, Session, Setup } from "../api/types";
-import type { Phase } from "../autoscan/machine";
-import { useAutoscan } from "../autoscan/useAutoscan";
+import { useAutoscan, type ScanPhase } from "../autoscan/useAutoscan";
 import { cropToGuide, toJpeg } from "../camera/crop";
 import { useCamera } from "../camera/useCamera";
 import CardPicker from "../components/CardPicker";
 import LastCardToast, { type Toast } from "../components/LastCardToast";
 import PhoneOnly, { sessionLabel } from "./PhoneOnly";
 
-const AUTOSCAN_KEY = "scan.autoscan";
-
-const HELP: Record<Phase, string> = {
-  waitEmpty: "Remove the card",
-  armed: "Frame the whole card and tap the shutter",
+const HELP: Record<ScanPhase, string> = {
+  armed: "Frame the whole card",
+  next: "Put the next card",
   steadying: "Hold still…",
   busy: "Recognising…",
-  paused: "Frame the whole card and tap the shutter",
+  paused: "Frame the whole card",
 };
-
-function readAutoscan() {
-  try {
-    return localStorage.getItem(AUTOSCAN_KEY) !== "0";
-  } catch {
-    return true;
-  }
-}
-
-function writeAutoscan(on: boolean) {
-  try {
-    localStorage.setItem(AUTOSCAN_KEY, on ? "1" : "0");
-  } catch {
-    /* private mode: the toggle just isn't remembered */
-  }
-}
 
 function addedState(line: Line) {
   return `Added · ${line.quantity} ${line.quantity === 1 ? "copy" : "copies"}`;
@@ -55,9 +36,8 @@ type CameraProps = {
 };
 
 function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPicker }: CameraProps) {
-  const { videoRef, ready, error } = useCamera();
+  const { videoRef, error } = useCamera();
   const guideRef = useRef<HTMLDivElement | null>(null);
-  const [autoOn, setAutoOn] = useState(readAutoscan);
   const [capturing, setCapturing] = useState(false);
   const busy = useRef(false);
   /** An upload that failed for lack of network: the next shot resends it (same photo, same id) instead. */
@@ -107,7 +87,7 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
     }
   }, [session.uuid, setCount, setToast, setPicker, videoRef]);
 
-  const auto = useAutoscan({ videoRef, guideRef, enabled: autoOn, paused: picker !== null, onCapture: shoot, debug });
+  const auto = useAutoscan({ videoRef, guideRef, paused: picker !== null, onCapture: shoot, debug });
   doneRef.current = auto.done;
 
   async function onFoil() {
@@ -134,12 +114,7 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
     }
   }
 
-  function toggleAuto() {
-    writeAutoscan(!autoOn);
-    setAutoOn(!autoOn);
-  }
 
-  const phase: Phase = autoOn ? auto.phase : capturing ? "busy" : "armed";
   const review = `/${session.uuid}/review`;
   return (
     <main className="scan-cam scan-body">
@@ -150,7 +125,6 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
           </svg>
         </Link>
         <span className="scan-pill">{sessionLabel(session)}</span>
-        <button type="button" className="scan-pill scan-auto" aria-pressed={autoOn} onClick={toggleAuto}>Auto</button>
         <span className="scan-pill scan-count">
           <span className="mono" data-testid="count">{count}</span> <span className="sub">cards</span>
         </span>
@@ -158,13 +132,16 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
 
       <div className="scan-stage">
         <video ref={videoRef} className="scan-video" playsInline muted autoPlay />
-        <div ref={guideRef} className="scan-guide" data-phase={phase} />
-        <p className="scan-help">{error ?? HELP[phase]}</p>
+        <div ref={guideRef} className="scan-guide" data-phase={auto.phase} />
+        <p className="scan-help">{error ?? HELP[auto.phase]}</p>
         {debug && auto.metrics && (
           <pre className="scan-debug" data-testid="debug">
             {`${auto.phase}\nedges ${auto.metrics.edges.toFixed(3)} ${auto.metrics.present ? "card" : "empty"}\n` +
-              `sharp ${auto.metrics.sharpness.toFixed(2)} ${auto.metrics.sharp ? "ok" : "blur"}\n` +
-              `motion ${auto.metrics.motion.toFixed(1)} ${auto.metrics.still ? "still" : "moving"}`}
+              `sharp ${auto.metrics.sharpness.toFixed(2)} ${auto.metrics.sharp ? "ok" : "blur"} ` +
+              `(${auto.metrics.sharpRange.map((x) => x.toFixed(2)).join("–")})\n` +
+              `motion ${auto.metrics.motion.toFixed(1)} ${auto.metrics.still ? "still" : "moving"} ` +
+              `(${auto.metrics.motionRange.map((x) => x.toFixed(1)).join("–")})\n` +
+              `change ${auto.metrics.change.toFixed(1)} bg ${auto.metrics.fromBackground.toFixed(1)}`}
           </pre>
         )}
       </div>
@@ -178,9 +155,6 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
             <path d="M20 20l-3.5-3.5" />
           </svg>
           Search
-        </button>
-        <button type="button" className="scan-shutter" aria-label="Take photo" disabled={!ready || capturing} onClick={auto.manual}>
-          <span />
         </button>
         <Link className="btn btn-primary" to={review}>Review</Link>
       </div>

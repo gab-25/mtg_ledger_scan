@@ -1,5 +1,5 @@
 // Cheap per-frame measurements of the guide region, used to decide when to shoot.
-import { EDGE_GRADIENT, PRESENT_EXIT_EDGES, PRESENT_MIN_EDGES, SHARP_MIN, STILL_MAX } from "./config";
+import { ALIGN_SHIFT, EDGE_GRADIENT, PRESENT_EXIT_EDGES, PRESENT_MIN_EDGES, SHARP_MIN, STILL_MAX } from "./config";
 
 /** A luminance image, one byte per pixel. */
 export type Gray = { data: Uint8ClampedArray; width: number; height: number };
@@ -57,12 +57,7 @@ export function measure(cur: Gray, prev: Gray | null, wasPresent = false): Metri
   const intensityVar = n ? sq / n - (sum / n) ** 2 : 0;
   const sharpness = lapVar / (intensityVar + 1);
 
-  let motion = Infinity;
-  if (prev && prev.width === w && prev.height === h) {
-    let diff = 0;
-    for (let i = 0; i < d.length; i++) diff += Math.abs(d[i] - prev.data[i]);
-    motion = diff / d.length;
-  }
+  const motion = meanDiff(cur, prev);
   return {
     edges,
     sharpness,
@@ -71,4 +66,39 @@ export function measure(cur: Gray, prev: Gray | null, wasPresent = false): Metri
     sharp: sharpness >= SHARP_MIN,
     still: motion <= STILL_MAX,
   };
+}
+
+/** Mean absolute difference between two images (0-255); Infinity without a comparable one. */
+export function meanDiff(a: Gray, b: Gray | null): number {
+  if (!b || b.width !== a.width || b.height !== a.height) return Infinity;
+  let diff = 0;
+  for (let i = 0; i < a.data.length; i++) diff += Math.abs(a.data[i] - b.data[i]);
+  return diff / a.data.length;
+}
+
+/**
+ * meanDiff after the best realignment of `a` over `b` by up to ALIGN_SHIFT pixels each way: the hand-held camera
+ * drifting over the same card scores low, another card or the empty box still scores high. Every 2nd pixel of each
+ * row and column is compared, to stay cheap at the analysis frame rate.
+ */
+export function alignedDiff(a: Gray, b: Gray | null, shift = ALIGN_SHIFT): number {
+  if (!b || b.width !== a.width || b.height !== a.height) return Infinity;
+  const { width: w, height: h } = a;
+  let best = Infinity;
+  for (let dy = -shift; dy <= shift; dy++) {
+    for (let dx = -shift; dx <= shift; dx++) {
+      let diff = 0;
+      let n = 0;
+      for (let y = Math.max(0, -dy); y < Math.min(h, h - dy); y += 2) {
+        const ra = y * w;
+        const rb = (y + dy) * w + dx;
+        for (let x = Math.max(0, -dx); x < Math.min(w, w - dx); x += 2) {
+          diff += Math.abs(a.data[ra + x] - b.data[rb + x]);
+          n++;
+        }
+      }
+      if (n && diff / n < best) best = diff / n;
+    }
+  }
+  return best;
 }

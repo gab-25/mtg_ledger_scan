@@ -11,13 +11,15 @@
   display: flex; flex-direction: column; gap: 20px; }
 .picker h1 { font-size: 32px; }
 
-/* Camera: autoscan states on the guide (data-phase), the Auto toggle and the debug overlay */
-.scan-guide { transition: border-color .15s, box-shadow .15s; }
-.scan-guide[data-phase="waitEmpty"] { border-style: dashed; border-color: var(--muted); }
+/* Camera: autoscan states on the guide (data-phase) and the debug overlay */
+/* Guide as large as the stage allows (app.css caps it at 300px), leaving room below for the help line */
+/* (size containment needs a definite stage height: app.css only gives .scan-cam a min-height) */
+.scan-cam { height: 100dvh; }
+.scan-stage { container-type: size; min-height: 0; }
+.scan-guide { width: min(88cqw, 78cqh * 63 / 88); transition: border-color .15s, box-shadow .15s; }
+.scan-guide[data-phase="next"] { border-style: dashed; border-color: var(--muted); }
 .scan-guide[data-phase="steadying"] { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-bg); }
 .scan-guide[data-phase="busy"] { border-color: var(--accent); border-style: dashed; }
-.scan-auto { border: 0; font: inherit; cursor: pointer; color: var(--text-3); }
-.scan-auto[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); font-weight: 600; }
 .scan-debug { position: absolute; top: 8px; left: 8px; margin: 0; padding: 8px; border-radius: 8px;
   background: rgba(0, 0, 0, .65); color: #fff; font: 12px/1.4 var(--mono); }
 

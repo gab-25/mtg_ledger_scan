@@ -28,7 +28,6 @@ beforeEach(() => {
   });
   vi.mocked(api.getSetup).mockResolvedValue(setup());
   vi.mocked(api.getSession).mockResolvedValue({ session: session() });
-  localStorage.clear();
 });
 
 function renderCamera(path = "/s1/") {
@@ -73,10 +72,11 @@ describe("CameraScreen", () => {
     await vi.waitFor(() => expect(assign).toHaveBeenCalledWith("/"));
   });
 
-  it("manual shot adds card and updates count", async () => {
+  it("a shot adds the card and updates count", async () => {
     vi.mocked(api.capture).mockResolvedValue(added({ count: 5 }));
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     expect(api.capture).toHaveBeenCalledWith("s1", expect.any(Blob), expect.any(String));
     expect(await screen.findByText("Added · 1 copy")).toBeInTheDocument();
     expect(screen.getByText("Counterspell")).toBeInTheDocument();
@@ -85,19 +85,11 @@ describe("CameraScreen", () => {
     expect(done).toHaveBeenCalledWith(false);
   });
 
-  it("autoscan shot goes through the same capture", async () => {
-    vi.mocked(api.capture).mockResolvedValue(added());
-    renderCamera();
-    await screen.findByRole("button", { name: "Take photo" });
-    await act(() => autoscan.onCapture());
-    expect(api.capture).toHaveBeenCalledTimes(1);
-  });
-
   it("only one capture at a time", async () => {
     let resolve!: (v: ReturnType<typeof added>) => void;
     vi.mocked(api.capture).mockReturnValue(new Promise((r) => (resolve = r)));
     renderCamera();
-    await screen.findByRole("button", { name: "Take photo" });
+    await screen.findByRole("button", { name: "Search" });
     act(() => void autoscan.onCapture());
     act(() => void autoscan.onCapture());
     await act(async () => resolve(added()));
@@ -108,7 +100,8 @@ describe("CameraScreen", () => {
     const pending = line({ uuid: "p1", blueprint: null, needs_confirmation: true, candidates: [line().blueprint!] });
     vi.mocked(api.capture).mockResolvedValue({ result: "confirm", message: "Which one is it?", line: pending, count: 1 });
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     expect(await screen.findByRole("dialog", { name: "Which one is it?" })).toBeInTheDocument();
     expect(autoscan.paused).toBe(true);
     await userEvent.click(screen.getByRole("button", { name: "Decide later" }));
@@ -121,7 +114,8 @@ describe("CameraScreen", () => {
     vi.mocked(api.capture).mockResolvedValue({ result: "confirm", message: "Which one is it?", line: pending, count: 1 });
     vi.mocked(api.confirmLine).mockResolvedValue({ line: line(), count: 1 });
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     await userEvent.click(await screen.findByRole("button", { name: "Confirm and continue" }));
     expect(await screen.findByText("Counterspell")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -131,7 +125,8 @@ describe("CameraScreen", () => {
     vi.mocked(api.capture).mockResolvedValue(added());
     vi.mocked(api.updateLine).mockResolvedValue({ line: line({ foil: true }), count: 1 });
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     await userEvent.click(await screen.findByRole("button", { name: "Foil" }));
     expect(api.updateLine).toHaveBeenCalledWith("l1", { foil: true });
     expect(await screen.findByRole("button", { name: "Foil" })).toHaveAttribute("aria-pressed", "true");
@@ -141,7 +136,8 @@ describe("CameraScreen", () => {
     vi.mocked(api.capture).mockResolvedValue(added());
     vi.mocked(api.undoLine).mockResolvedValue({ line: null, count: 0 });
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     await userEvent.click(await screen.findByRole("button", { name: "Undo" }));
     expect(api.undoLine).toHaveBeenCalledWith("l1");
     expect(await screen.findByText("Removed")).toBeInTheDocument();
@@ -152,7 +148,8 @@ describe("CameraScreen", () => {
   it("no card shows the message", async () => {
     vi.mocked(api.capture).mockResolvedValue({ result: "no_card", message: "No card in the picture — frame a card", line: null, count: 0 });
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     expect(await screen.findByText("No card in the picture — frame a card")).toBeInTheDocument();
     expect(done).toHaveBeenCalledWith(true);
   });
@@ -162,7 +159,8 @@ describe("CameraScreen", () => {
       new ApiError("CardTrader is not connected", 503, "service_missing", "/account/#cardtrader"),
     );
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     expect(await screen.findByText("CardTrader is not connected")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open Profile and settings" })).toHaveAttribute("href", "/account/#cardtrader");
     expect(done).toHaveBeenCalled();
@@ -172,7 +170,8 @@ describe("CameraScreen", () => {
     vi.mocked(api.isNetworkError).mockReturnValue(true);
     vi.mocked(api.capture).mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce(added());
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     expect(await screen.findByText("No connection — retry to send the same photo")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Added · 1 copy")).toBeInTheDocument();
@@ -181,13 +180,14 @@ describe("CameraScreen", () => {
     expect(second[2]).toBe(first[2]);
   });
 
-  it("the shutter after a failed upload resends it instead of a new photo", async () => {
+  it("the next shot after a failed upload resends it instead of a new photo", async () => {
     vi.mocked(api.isNetworkError).mockReturnValue(true);
     vi.mocked(api.capture).mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce(added());
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     await screen.findByText(/No connection/);
-    await userEvent.click(screen.getByRole("button", { name: "Take photo" }));
+    await act(() => autoscan.onCapture());
     const [first, second] = vi.mocked(api.capture).mock.calls;
     expect(second[2]).toBe(first[2]);
     expect(toJpeg).toHaveBeenCalledTimes(1);
@@ -197,33 +197,25 @@ describe("CameraScreen", () => {
     vi.mocked(api.isNetworkError).mockReturnValue(false);
     vi.mocked(toJpeg).mockRejectedValue(new Error("Could not take the photo"));
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    await act(() => autoscan.onCapture());
     expect(await screen.findByText("Could not take the photo")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
   });
 
-  it("autoscan toggle persists", async () => {
-    renderCamera();
-    const toggle = await screen.findByRole("button", { name: "Auto" });
-    expect(toggle).toHaveAttribute("aria-pressed", "true");
-    expect(autoscan.enabled).toBe(true);
-    await userEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-pressed", "false");
-    expect(autoscan.enabled).toBe(false);
-    expect(localStorage.getItem("scan.autoscan")).toBe("0");
-  });
-
-  it("autoscan off is remembered", async () => {
-    localStorage.setItem("scan.autoscan", "0");
-    renderCamera();
-    expect(await screen.findByRole("button", { name: "Auto" })).toHaveAttribute("aria-pressed", "false");
-  });
 
   it("reopened session shows the last added card", async () => {
     vi.mocked(api.getSession).mockResolvedValue({ session: session({ count: 2, last_line: line({ quantity: 2 }) }) });
     renderCamera();
     expect(await screen.findByText("Last added")).toBeInTheDocument();
     expect(screen.getByText("Counterspell")).toBeInTheDocument();
+  });
+
+  it("there is no manual shutter", async () => {
+    renderCamera();
+    await screen.findByRole("button", { name: "Search" });
+    expect(screen.queryByRole("button", { name: "Take photo" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Auto" })).not.toBeInTheDocument();
   });
 
   it("camera error is shown", async () => {
@@ -233,13 +225,13 @@ describe("CameraScreen", () => {
     });
     renderCamera();
     expect(await screen.findByText(/Camera not available/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Take photo" })).toBeDisabled();
   });
 
   it("search is disabled while a photo is being recognised", async () => {
     vi.mocked(api.capture).mockReturnValue(new Promise(() => {}));
     renderCamera();
-    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByRole("button", { name: "Search" });
+    act(() => void autoscan.onCapture());
     expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
   });
 
@@ -273,12 +265,15 @@ describe("CameraScreen", () => {
       autoscan = opts;
       return {
         phase: "steadying", manual: vi.fn(), done,
-        metrics: { edges: 0.12, sharpness: 3.4, motion: 1.5, present: true, sharp: true, still: true },
+        metrics: { edges: 0.12, sharpness: 3.4, motion: 1.5, present: true, sharp: true, still: true, change: 31.5, fromBackground: Infinity,
+          sharpRange: [2.9, 3.6], motionRange: [0.8, 2.1] },
       };
     });
     renderCamera("/s1/?debug=1");
     expect(await screen.findByTestId("debug")).toHaveTextContent("steadying");
     expect(screen.getByTestId("debug")).toHaveTextContent("edges 0.120");
+    expect(screen.getByTestId("debug")).toHaveTextContent("change 31.5 bg Infinity");
+    expect(screen.getByTestId("debug")).toHaveTextContent("sharp 3.40 ok (2.90–3.60)");
     expect(autoscan.debug).toBe(true);
   });
 });
