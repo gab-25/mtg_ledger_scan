@@ -84,7 +84,7 @@ function ItemForm({ item, choices }: FormProps) {
         )}
       </header>
 
-      <form method="post" className="panel" id="item-form" onSubmit={submit} noValidate>
+      <form method="post" className="panel" id="item-form" onSubmit={submit}>
         <Errors errors={errors("non_field_errors")} />
         <div className="form-grid">
           <Field label="Name" id="id_name" errors={errors("name")} wide>

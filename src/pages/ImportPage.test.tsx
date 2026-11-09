@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApiError } from "../api/client";
 import * as api from "../api/collection";
@@ -6,6 +6,9 @@ import { mockMe, renderPage } from "../test/renderPage";
 
 vi.mock("../api/account");
 vi.mock("../api/collection");
+
+// jsdom does not see files set by userEvent.upload when checking `required`: submit the form directly.
+const submit = () => fireEvent.submit(screen.getByRole("button", { name: "Import" }).closest("form")!);
 
 beforeEach(() => {
   mockMe();
@@ -29,8 +32,8 @@ describe("ImportPage", () => {
     renderPage("/cards/import/");
     const file = new File(["name,set\nBolt,M10\n"], "c.csv", { type: "text/csv" });
     await userEvent.upload(await screen.findByLabelText("CSV file"), file);
-    await userEvent.click(screen.getByRole("button", { name: "Import" }));
-    expect(api.importCsv).toHaveBeenCalledWith(file);
+    submit();
+    await vi.waitFor(() => expect(api.importCsv).toHaveBeenCalledWith(file));
     expect(await screen.findByText("Import complete: 1 new, 0 updated.")).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Collection" })).toBeInTheDocument();
   });
@@ -40,7 +43,8 @@ describe("ImportPage", () => {
       new ApiError("x", 400, "invalid", undefined, { file: ["Line 2: invalid condition “XX”."] }),
     );
     renderPage("/cards/import/");
-    await userEvent.click(await screen.findByRole("button", { name: "Import" }));
+    await userEvent.upload(await screen.findByLabelText("CSV file"), new File(["x"], "c.csv"));
+    submit();
     expect(await screen.findByText("Line 2: invalid condition “XX”.")).toBeInTheDocument();
   });
 });

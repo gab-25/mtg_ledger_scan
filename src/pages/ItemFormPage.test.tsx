@@ -64,10 +64,18 @@ describe("ItemFormPage", () => {
     expect(screen.getByRole("heading", { name: "Add cards" })).toBeInTheDocument();
   });
 
+  it("the browser checks required fields first, as on the Django form", async () => {
+    renderPage("/cards/add/");
+    await userEvent.click(await screen.findByRole("button", { name: "Save" }));
+    expect(api.createItem).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Name")).toBeRequired();
+  });
+
   it("shows validation errors under their fields", async () => {
     vi.mocked(api.createItem).mockRejectedValue(new ApiError("x", 400, "invalid", undefined, { name: ["This field is required."] }));
     renderPage("/cards/add/");
-    await userEvent.click(await screen.findByRole("button", { name: "Save" }));
+    await fillBolt();
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
     const error = await screen.findByText("This field is required.");
     expect(error.closest(".field")).toContainElement(screen.getByLabelText("Name"));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();

@@ -32,7 +32,7 @@ export default function ImportPage() {
         </div>
       </header>
 
-      <form method="post" encType="multipart/form-data" className="panel" onSubmit={submit} noValidate>
+      <form method="post" encType="multipart/form-data" className="panel" onSubmit={submit}>
         <p className="hint" style={{ margin: 0 }}>
           Columns:{" "}
           {cols.map((c, i) => (
