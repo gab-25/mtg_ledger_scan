@@ -4,12 +4,12 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ApiError } from "../api/client";
 import * as api from "../api/scan";
 import type { Review } from "../api/types";
-import { blueprint, line, session, setup } from "../test/fixtures";
+import { candidate, line, session, setup } from "../test/fixtures";
 import ReviewScreen from "./ReviewScreen";
 
 vi.mock("../api/scan");
 
-const pendingLine = line({ uuid: "p1", blueprint: null, needs_confirmation: true, frame_url: "/f.jpg", candidates: [blueprint()] });
+const pendingLine = line({ uuid: "p1", blueprint: null, needs_confirmation: true, frame_url: "/f.jpg", candidates: [candidate()] });
 
 function review(over: Partial<Review> = {}): Review {
   return { session: session(), lines: [line({ quantity: 2 })], pending: [], copies: 2, unique: 1, listed: 0, ...over };

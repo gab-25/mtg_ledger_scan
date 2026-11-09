@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { addManual, confirmLine, search } from "../api/scan";
-import type { Blueprint, Line, LineResult, Setup } from "../api/types";
+import type { Blueprint, Candidate, Line, LineResult, Setup } from "../api/types";
 
 type Props = {
   sessionUuid: string;
@@ -15,7 +15,9 @@ type Props = {
 
 const SEARCH_DELAY_MS = 250;
 
-function Option({ bp, checked, onPick }: { bp: Blueprint; checked: boolean; onPick: () => void }) {
+type OptionProps = { bp: Blueprint; checked: boolean; onPick: () => void; otherCard: boolean };
+
+function Option({ bp, checked, onPick, otherCard }: OptionProps) {
   const details = [bp.version, bp.rarity].filter(Boolean).join(" · ");
   return (
     <label className="scan-option">
@@ -23,6 +25,7 @@ function Option({ bp, checked, onPick }: { bp: Blueprint; checked: boolean; onPi
       {bp.image_url ? <img src={bp.image_url} alt="" loading="lazy" /> : <span className="scan-thumb" aria-hidden="true" />}
       <span className="scan-option-text">
         <span className="scan-option-name">{bp.name}</span>
+        {otherCard && <span className="badge badge-pending">Different card · same number</span>}
         <span className="mono sub">
           {bp.expansion.code.toUpperCase()} {bp.collector_number}
           {details && ` · ${details}`}
@@ -35,9 +38,13 @@ function Option({ bp, checked, onPick }: { bp: Blueprint; checked: boolean; onPi
 /** Full-screen panel to confirm an uncertain card (candidates + search) or to add one by hand. */
 export default function CardPicker({ sessionUuid, line, setup, defaultSet, onDone, onClose }: Props) {
   const confirming = line !== null;
-  const candidates = line?.candidates ?? [];
-  const [picked, setPicked] = useState<number | null>(candidates[0]?.id ?? null);
-  const [q, setQ] = useState("");
+  const candidates: Candidate[] = line?.candidates ?? [];
+  const readName = line?.read_name?.trim() ?? "";
+  // Only a candidate carrying the name read may be preselected: otherwise a quick confirm adds the wrong card.
+  const noNameMatch = readName !== "" && !candidates.some((c) => c.matches_name);
+  const [picked, setPicked] = useState<number | null>(candidates[0]?.matches_name ? candidates[0].id : null);
+  // No candidate has the name read: the right printing may only be found by searching it.
+  const [q, setQ] = useState(noNameMatch ? readName : "");
   const [set, setSet] = useState(defaultSet ?? "all");
   const [results, setResults] = useState<Blueprint[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -127,6 +134,9 @@ export default function CardPicker({ sessionUuid, line, setup, defaultSet, onDon
         ))}
 
         <form className="scan-panel" onSubmit={submit}>
+          {noNameMatch && (
+            <p className="scan-warn" role="status">No candidate is named “{readName}” — pick one or search.</p>
+          )}
           {error && (
             <ul className="errors" role="alert">
               <li>{error}</li>
@@ -134,7 +144,13 @@ export default function CardPicker({ sessionUuid, line, setup, defaultSet, onDon
           )}
           <div className="scan-options">
             {shown.map((bp) => (
-              <Option key={bp.id} bp={bp} checked={picked === bp.id} onPick={() => setPicked(bp.id)} />
+              <Option
+                key={bp.id}
+                bp={bp}
+                checked={picked === bp.id}
+                onPick={() => setPicked(bp.id)}
+                otherCard={readName !== "" && "matches_name" in bp && !bp.matches_name}
+              />
             ))}
             {shown.length === 0 && (
               <p className="hint">{q.trim() ? `No cards match “${q.trim()}”.` : "Search the card by name."}</p>

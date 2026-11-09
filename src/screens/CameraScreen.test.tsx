@@ -6,7 +6,7 @@ import * as api from "../api/scan";
 import { useAutoscan } from "../autoscan/useAutoscan";
 import { toJpeg } from "../camera/crop";
 import { useCamera } from "../camera/useCamera";
-import { line, session, setup } from "../test/fixtures";
+import { candidate, line, session, setup } from "../test/fixtures";
 import CameraScreen from "./CameraScreen";
 
 vi.mock("../api/scan");
@@ -97,7 +97,7 @@ describe("CameraScreen", () => {
   });
 
   it("uncertain capture opens the confirm panel and pauses autoscan", async () => {
-    const pending = line({ uuid: "p1", blueprint: null, needs_confirmation: true, candidates: [line().blueprint!] });
+    const pending = line({ uuid: "p1", blueprint: null, needs_confirmation: true, candidates: [candidate()] });
     vi.mocked(api.capture).mockResolvedValue({ result: "confirm", message: "Which one is it?", line: pending, count: 1 });
     renderCamera();
     await screen.findByRole("button", { name: "Search" });
@@ -110,7 +110,7 @@ describe("CameraScreen", () => {
   });
 
   it("confirming shows the card as added", async () => {
-    const pending = line({ uuid: "p1", blueprint: null, needs_confirmation: true, candidates: [line().blueprint!] });
+    const pending = line({ uuid: "p1", blueprint: null, needs_confirmation: true, candidates: [candidate()] });
     vi.mocked(api.capture).mockResolvedValue({ result: "confirm", message: "Which one is it?", line: pending, count: 1 });
     vi.mocked(api.confirmLine).mockResolvedValue({ line: line(), count: 1 });
     renderCamera();
@@ -244,7 +244,7 @@ describe("CameraScreen", () => {
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
     await userEvent.type(screen.getByLabelText("Search by name"), "sheol");
     act(() => void autoscan.onCapture());
-    const pending = line({ uuid: "p1", blueprint: null, language: "IT", condition: "EX", needs_confirmation: true, candidates: [line().blueprint!] });
+    const pending = line({ uuid: "p1", blueprint: null, language: "IT", condition: "EX", needs_confirmation: true, candidates: [candidate()] });
     await act(async () => resolve({ result: "confirm", message: "Which one is it?", line: pending, count: 1 }));
     expect(await screen.findByRole("dialog", { name: "Which one is it?" })).toBeInTheDocument();
     expect(screen.getByLabelText("Search by name")).toHaveValue("");

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as api from "../api/scan";
-import { blueprint, DMU, line, setup } from "../test/fixtures";
+import { blueprint, candidate, DMU, line, setup } from "../test/fixtures";
 import CardPicker from "./CardPicker";
 
 vi.mock("../api/scan");
@@ -9,7 +9,8 @@ vi.mock("../api/scan");
 const sheoldred = blueprint({ id: 1301, name: "Sheoldred, the Apocalypse", collector_number: "107", expansion: DMU });
 const pending = line({
   uuid: "p1", blueprint: null, language: "", needs_confirmation: true, frame_url: "/api/scan/lines/p1/frame.jpg",
-  candidates: [blueprint(), blueprint({ id: 1202, name: "Counterspell", version: "Retro frame" })],
+  read_name: "Counterspell",
+  candidates: [candidate(), candidate({ id: 1202, name: "Counterspell", version: "Retro frame" })],
 });
 
 function renderPicker(over: Partial<Parameters<typeof CardPicker>[0]> = {}) {
@@ -31,6 +32,37 @@ describe("CardPicker", () => {
     expect(options[0]).toBeChecked();
     expect(screen.getByText(/Retro frame/)).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Captured photo of the card" })).toHaveAttribute("src", pending.frame_url);
+  });
+
+  it("doesn't preselect a candidate with a different name and searches the name read", async () => {
+    const lotus = line({
+      uuid: "p2", blueprint: null, language: "", needs_confirmation: true, read_name: "Gilded Lotus",
+      candidates: [candidate({ id: 1401, name: "Destroy Evil", collector_number: "1", matches_name: false })],
+    });
+    renderPicker({ line: lotus });
+    expect(screen.getByRole("status")).toHaveTextContent("No candidate is named “Gilded Lotus” — pick one or search.");
+    expect(screen.getByLabelText("Search by name")).toHaveValue("Gilded Lotus");
+    expect(screen.getByRole("radio", { name: /Destroy Evil/ })).not.toBeChecked();
+    expect(screen.getByText("Different card · same number")).toBeInTheDocument();
+    await screen.findByRole("radio", { name: /Sheoldred/ });
+    expect(api.search).toHaveBeenLastCalledWith("s1", "Gilded Lotus", "dmr");
+    for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
+    await userEvent.click(screen.getByRole("button", { name: "Confirm and continue" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Pick a card and its language.");
+    expect(api.confirmLine).not.toHaveBeenCalled();
+  });
+
+  it("preselects the name match and tags the candidates that only share the number", () => {
+    const mixed = line({
+      uuid: "p3", blueprint: null, needs_confirmation: true, read_name: "Counterspell",
+      candidates: [candidate(), candidate({ id: 1402, name: "Destroy Evil", matches_name: false })],
+    });
+    renderPicker({ line: mixed });
+    expect(screen.getByRole("radio", { name: /Counterspell/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Destroy Evil/ })).toHaveAccessibleName(/Different card/);
+    expect(screen.getAllByText("Different card · same number")).toHaveLength(1);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Search by name")).toHaveValue("");
   });
 
   it("search shows results", async () => {

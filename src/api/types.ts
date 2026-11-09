@@ -10,6 +10,8 @@ export type Blueprint = {
   image_url: string;
   expansion: Expansion;
 };
+/** A capture candidate: matches_name tells whether it carries the name read (the server sorts those first). */
+export type Candidate = Blueprint & { matches_name: boolean };
 export type Choice = { code: string; label: string };
 export type Line = {
   uuid: string;
@@ -23,7 +25,9 @@ export type Line = {
   listed: boolean;
   needs_confirmation: boolean;
   frame_url: string | null;
-  candidates: Blueprint[];
+  /** The card name the model read ("" if it read none). */
+  read_name: string;
+  candidates: Candidate[];
 };
 export type Session = {
   uuid: string;

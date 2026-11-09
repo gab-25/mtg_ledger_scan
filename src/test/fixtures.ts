@@ -1,4 +1,4 @@
-import type { Blueprint, Line, Session, Setup } from "../api/types";
+import type { Blueprint, Candidate, Line, Session, Setup } from "../api/types";
 
 export const DMR = { id: 1, code: "dmr", name: "Dominaria Remastered" };
 export const DMU = { id: 2, code: "dmu", name: "Dominaria United" };
@@ -10,10 +10,15 @@ export function blueprint(over: Partial<Blueprint> = {}): Blueprint {
   };
 }
 
+export function candidate(over: Partial<Candidate> = {}): Candidate {
+  return { ...blueprint(), matches_name: true, ...over };
+}
+
 export function line(over: Partial<Line> = {}): Line {
   return {
     uuid: "l1", blueprint: blueprint(), language: "IT", foil: false, condition: "NM", quantity: 1, price: "5.00",
-    for_sale: null, listed: false, needs_confirmation: false, frame_url: null, candidates: [], ...over,
+    for_sale: null, listed: false, needs_confirmation: false, frame_url: null, read_name: "", candidates: [],
+    ...over,
   };
 }
 
