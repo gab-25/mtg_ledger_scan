@@ -1,5 +1,8 @@
 import { Route, Routes } from "react-router-dom";
 import Layout from "./layout/Layout";
+import CollectionPage from "./pages/CollectionPage";
+import ImportPage from "./pages/ImportPage";
+import ItemFormPage from "./pages/ItemFormPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import CameraScreen from "./screens/CameraScreen";
@@ -16,6 +19,10 @@ export default function App() {
       <Route path="/scan/:uuid" element={<CameraScreen />} />
       <Route path="/scan/:uuid/review" element={<ReviewScreen />} />
       <Route element={<Layout />}>
+        <Route path="/" element={<CollectionPage />} />
+        <Route path="/cards/add" element={<ItemFormPage />} />
+        <Route path="/cards/import" element={<ImportPage />} />
+        <Route path="/cards/:pk" element={<ItemFormPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
