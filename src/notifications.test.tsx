@@ -55,10 +55,10 @@ describe("notifications", () => {
     expect(screen.queryByText("Added 4× Lightning Bolt.")).not.toBeInTheDocument();
   });
 
-  it("new messages replace nothing: they add up", () => {
+  it("a new action's messages replace the ones already shown, as a new Django request consumed them", () => {
     renderProbe();
-    act(() => notify([{ level: "success", text: "One." }]));
-    act(() => notify([{ level: "error", text: "Two." }]));
-    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    act(() => notify([{ level: "success", text: "Listing saved." }]));
+    act(() => notify([{ level: "error", text: "Publish failed: down" }, { level: "warning", text: "Bolt: x" }]));
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Publish failed: down", "Bolt: x"]);
   });
 });

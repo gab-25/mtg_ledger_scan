@@ -29,7 +29,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   const notify = useCallback<Notify>((msgs, opts) => {
     const navigations = opts?.afterNavigation ? 1 : 0;
-    setEntries((list) => [...list, ...msgs.map((m) => ({ ...m, id: nextId++, navigations }))]);
+    // A new action is a new request: the messages already shown are consumed, as with Django.
+    setEntries(msgs.map((m) => ({ ...m, id: nextId++, navigations })));
   }, []);
 
   return (
