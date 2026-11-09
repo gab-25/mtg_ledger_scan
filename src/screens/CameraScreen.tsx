@@ -170,7 +170,7 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
       <LastCardToast toast={toast} onFoil={onFoil} onUndo={onUndo} onRetry={auto.manual} />
 
       <div className="scan-bottom">
-        <button type="button" className="btn" onClick={() => setPicker({ line: null })}>
+        <button type="button" className="btn" disabled={capturing} onClick={() => setPicker({ line: null })}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.5-3.5" />
@@ -226,6 +226,7 @@ export default function CameraScreen() {
       )}
       {picker && (
         <CardPicker
+          key={picker.line?.uuid ?? "search"}
           sessionUuid={session.uuid}
           line={picker.line}
           setup={setup}

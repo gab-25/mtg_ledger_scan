@@ -234,6 +234,31 @@ describe("CameraScreen", () => {
     expect(screen.getByRole("button", { name: "Take photo" })).toBeDisabled();
   });
 
+  it("search is disabled while a photo is being recognised", async () => {
+    vi.mocked(api.capture).mockReturnValue(new Promise(() => {}));
+    renderCamera();
+    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
+  });
+
+  it("a confirm arriving over the search panel opens a fresh confirm panel", async () => {
+    let resolve!: (v: Awaited<ReturnType<typeof api.capture>>) => void;
+    vi.mocked(api.capture).mockReturnValue(new Promise((r) => (resolve = r)));
+    vi.mocked(api.search).mockResolvedValue({ results: [], where: "dmr", warnings: [] });
+    renderCamera();
+    await screen.findByRole("button", { name: "Search" });
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    await userEvent.type(screen.getByLabelText("Search by name"), "sheol");
+    act(() => void autoscan.onCapture());
+    const pending = line({ uuid: "p1", blueprint: null, language: "IT", condition: "EX", needs_confirmation: true, candidates: [line().blueprint!] });
+    await act(async () => resolve({ result: "confirm", message: "Which one is it?", line: pending, count: 1 }));
+    expect(await screen.findByRole("dialog", { name: "Which one is it?" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Search by name")).toHaveValue("");
+    expect(screen.getAllByRole("radio")[0]).toBeChecked();
+    expect(screen.getByLabelText("Language")).toHaveValue("IT");
+    expect(screen.getByLabelText("Condition")).toHaveValue("EX");
+  });
+
   it("search opens the add panel", async () => {
     renderCamera();
     await userEvent.click(await screen.findByRole("button", { name: "Search" }));
