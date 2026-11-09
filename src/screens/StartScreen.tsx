@@ -29,7 +29,7 @@ export default function StartScreen() {
     setBusy(true);
     try {
       const { session } = await startSession(expansion ? Number(expansion) : null, condition);
-      navigate(`/${session.uuid}/`);
+      navigate(`/scan/${session.uuid}/`);
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);

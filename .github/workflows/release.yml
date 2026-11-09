@@ -1,7 +1,7 @@
 name: Release
 
-# Publishing a release attaches mtg-ledger-scan.tar.gz (the contents of dist/). The name carries no version, so
-# mtg_ledger_core's Dockerfile downloads it from releases/latest/download/mtg-ledger-scan.tar.gz.
+# Publishing a release attaches mtg-ledger-ui.tar.gz (the contents of dist/). The name carries no version, so
+# mtg_ledger_core's Dockerfile downloads it from releases/latest/download/mtg-ledger-ui.tar.gz.
 on:
   release:
     types: [published]
@@ -33,5 +33,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          tar -czf mtg-ledger-scan.tar.gz -C dist .
-          gh release upload "$TAG" mtg-ledger-scan.tar.gz --clobber
+          tar -czf mtg-ledger-ui.tar.gz -C dist .
+          gh release upload "$TAG" mtg-ledger-ui.tar.gz --clobber

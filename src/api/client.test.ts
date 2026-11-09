@@ -19,7 +19,7 @@ describe("request", () => {
   it("sends csrf header and JSON body on POST", async () => {
     const fetch = vi.fn().mockResolvedValue(json(200, { ok: 1 }));
     vi.stubGlobal("fetch", fetch);
-    await expect(request("POST", "sessions/", { condition: "NM" })).resolves.toEqual({ ok: 1 });
+    await expect(request("POST", "scan/sessions/", { condition: "NM" })).resolves.toEqual({ ok: 1 });
     const [url, init] = fetch.mock.calls[0];
     expect(url).toBe("/api/scan/sessions/");
     expect(init.headers["X-CSRFToken"]).toBe("tok123");
@@ -31,7 +31,7 @@ describe("request", () => {
   it("sends no csrf header on GET", async () => {
     const fetch = vi.fn().mockResolvedValue(json(200, {}));
     vi.stubGlobal("fetch", fetch);
-    await request("GET", "setup/");
+    await request("GET", "scan/setup/");
     expect(fetch.mock.calls[0][1].headers["X-CSRFToken"]).toBeUndefined();
   });
 
@@ -41,14 +41,14 @@ describe("request", () => {
       "fetch",
       vi.fn().mockResolvedValue(json(403, { detail: "Authentication credentials were not provided.", code: "not_authenticated" })),
     );
-    await expect(request("GET", "setup/")).rejects.toBeInstanceOf(ApiError);
+    await expect(request("GET", "scan/setup/")).rejects.toBeInstanceOf(ApiError);
     expect(assign).toHaveBeenCalledWith("/login/?next=%2Fscan%2Fabc%2F%3Fdebug%3D1");
   });
 
   it("403 for a missing CSRF token does not log out", async () => {
     const assign = stubLocation();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(403, { detail: "CSRF Failed", code: "permission_denied" })));
-    const err = await request("POST", "sessions/").catch((e) => e);
+    const err = await request("POST", "scan/sessions/").catch((e) => e);
     expect(err).toMatchObject({ status: 403, code: "permission_denied", message: "CSRF Failed" });
     expect(assign).not.toHaveBeenCalled();
   });
@@ -56,7 +56,7 @@ describe("request", () => {
   it("closed session goes to collection", async () => {
     const assign = stubLocation();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(409, { detail: "This scan session was already saved.", code: "closed" })));
-    await expect(request("POST", "lines/x/undo/")).rejects.toBeInstanceOf(ApiError);
+    await expect(request("POST", "scan/lines/x/undo/")).rejects.toBeInstanceOf(ApiError);
     expect(assign).toHaveBeenCalledWith("/");
   });
 
@@ -65,7 +65,7 @@ describe("request", () => {
       "fetch",
       vi.fn().mockResolvedValue(json(503, { detail: "CardTrader is not connected", code: "service_missing", help_url: "/account/#cardtrader" })),
     );
-    const err = await request("GET", "setup/").catch((e) => e);
+    const err = await request("GET", "scan/setup/").catch((e) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect(err).toMatchObject({ status: 503, code: "service_missing", helpUrl: "/account/#cardtrader", message: "CardTrader is not connected" });
   });
@@ -75,19 +75,39 @@ describe("request", () => {
       "fetch",
       vi.fn().mockResolvedValue(json(400, { threshold: ["Enter the threshold as a price, e.g. 2.50."], language: ["Unknown language."] })),
     );
-    const err = await request("PUT", "sessions/s1/threshold/", { threshold: "abc" }).catch((e) => e);
+    const err = await request("PUT", "scan/sessions/s1/threshold/", { threshold: "abc" }).catch((e) => e);
     expect(err).toMatchObject({ status: 400, code: "invalid", message: "Enter the threshold as a price, e.g. 2.50. Unknown language." });
+  });
+
+  it("validation errors keep the fields", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(400, { quantity: ["You only own 2 copies."], non_field_errors: ["No."] })));
+    const err = (await request("PUT", "listings/3/", {}).catch((e) => e)) as ApiError;
+    expect(err.fields).toEqual({ quantity: ["You only own 2 copies."], non_field_errors: ["No."] });
+  });
+
+  it("errors with a detail have no fields", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(502, { detail: "Publish failed: down", code: "service_error" })));
+    const err = (await request("POST", "listings/publish/").catch((e) => e)) as ApiError;
+    expect(err).toMatchObject({ status: 502, code: "service_error", message: "Publish failed: down" });
+    expect(err.fields).toBeUndefined();
+  });
+
+  it("no login redirect from the login page itself", async () => {
+    const assign = stubLocation("/login/", "?next=%2Fsale%2F");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(403, { detail: "x", code: "not_authenticated" })));
+    await expect(request("GET", "me/")).rejects.toBeInstanceOf(ApiError);
+    expect(assign).not.toHaveBeenCalled();
   });
 
   it("non_field_errors are shown too", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(400, { non_field_errors: ["Pick a card and its language."] })));
-    const err = (await request("POST", "lines/l1/confirm/", {}).catch((e) => e)) as Error;
+    const err = (await request("POST", "scan/lines/l1/confirm/", {}).catch((e) => e)) as Error;
     expect(err.message).toBe("Pick a card and its language.");
   });
 
   it("non-JSON error becomes a generic ApiError", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("<html>boom</html>", { status: 500 })));
-    const err = await request("GET", "setup/").catch((e) => e);
+    const err = await request("GET", "scan/setup/").catch((e) => e);
     expect(err).toMatchObject({ status: 500, code: "server" });
   });
 });

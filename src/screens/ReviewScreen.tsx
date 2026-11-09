@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { getReview, getSetup, saveSession, setThreshold, undoLine, updateLine } from "../api/scan";
 import type { Line, LineChanges, Review, Setup } from "../api/types";
 import CardPicker from "../components/CardPicker";
 import Header from "../components/Header";
 import LineRow from "../components/LineRow";
+import { useNotify } from "../notifications";
 import { sessionLabel } from "./PhoneOnly";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export default function ReviewScreen() {
   const { uuid = "" } = useParams();
+  const navigate = useNavigate();
+  const notify = useNotify();
   const [review, setReview] = useState<Review | null>(null);
   const [setup, setSetup] = useState<Setup | null>(null);
   const [threshold, setThresholdText] = useState("");
@@ -56,7 +59,8 @@ export default function ReviewScreen() {
     setError("");
     try {
       const r = await saveSession(uuid);
-      window.location.assign(r.redirect);
+      notify(r.messages, { afterNavigation: true });
+      navigate(r.redirect);
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
@@ -72,7 +76,7 @@ export default function ReviewScreen() {
   }
 
   const { session, lines, pending, copies, unique, listed } = review;
-  const camera = `/${uuid}`;
+  const camera = `/scan/${uuid}`;
   return (
     <main className="main app-main">
       <Header

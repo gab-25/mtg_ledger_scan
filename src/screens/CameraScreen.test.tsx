@@ -30,12 +30,13 @@ beforeEach(() => {
   vi.mocked(api.getSession).mockResolvedValue({ session: session() });
 });
 
-function renderCamera(path = "/s1/") {
+function renderCamera(path = "/scan/s1/") {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/:uuid" element={<CameraScreen />} />
-        <Route path="/:uuid/review" element={<p>review page</p>} />
+        <Route path="/scan/:uuid" element={<CameraScreen />} />
+        <Route path="/scan/:uuid/review" element={<p>review page</p>} />
+        <Route path="/" element={<p>collection page</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -53,7 +54,7 @@ describe("CameraScreen", () => {
     expect(qr.querySelector("path")?.getAttribute("d")).toMatch(/^M\d/);
     expect(screen.getByText("https://pc.ts.net/scan/s1/")).toBeInTheDocument();
     expect(screen.getByText(/not HTTPS/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Review (4)" })).toHaveAttribute("href", "/s1/review");
+    expect(screen.getByRole("link", { name: "Review (4)" })).toHaveAttribute("href", "/scan/s1/review");
     expect(useCamera).not.toHaveBeenCalled();
   });
 
@@ -65,11 +66,9 @@ describe("CameraScreen", () => {
   });
 
   it("saved session goes to collection", async () => {
-    const assign = vi.fn();
-    vi.stubGlobal("location", { ...window.location, assign });
     vi.mocked(api.getSession).mockResolvedValue({ session: session({ status: "saved" }) });
     renderCamera();
-    await vi.waitFor(() => expect(assign).toHaveBeenCalledWith("/"));
+    expect(await screen.findByText("collection page")).toBeInTheDocument();
   });
 
   it("a shot adds the card and updates count", async () => {
@@ -269,7 +268,7 @@ describe("CameraScreen", () => {
           sharpRange: [2.9, 3.6], motionRange: [0.8, 2.1] },
       };
     });
-    renderCamera("/s1/?debug=1");
+    renderCamera("/scan/s1/?debug=1");
     expect(await screen.findByTestId("debug")).toHaveTextContent("steadying");
     expect(screen.getByTestId("debug")).toHaveTextContent("edges 0.120");
     expect(screen.getByTestId("debug")).toHaveTextContent("change 31.5 bg Infinity");

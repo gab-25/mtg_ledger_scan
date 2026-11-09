@@ -1,7 +1,11 @@
-import { request } from "./client";
+import { request as apiRequest } from "./client";
 import type {
   CaptureResult, LineChanges, LineResult, Review, SaveResult, SearchResult, Session, Setup,
 } from "./types";
+
+/** The scan endpoints live under /api/scan/. */
+const request = <T,>(method: string, path: string, body?: unknown, signal?: AbortSignal) =>
+  apiRequest<T>(method, `scan/${path}`, body, signal);
 
 export const getSetup = () => request<Setup>("GET", "setup/");
 

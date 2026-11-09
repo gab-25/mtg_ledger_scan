@@ -1,18 +1,21 @@
-// fetch wrapper for mtg_ledger_core's /api/scan/: same-origin session, Django CSRF, JSON errors.
+// fetch wrapper for mtg_ledger_core's JSON API under /api/: same-origin session, Django CSRF, JSON errors.
 
-const PREFIX = "/api/scan/";
+const PREFIX = "/api/";
 
 export class ApiError extends Error {
   status: number;
   code: string;
   helpUrl?: string;
+  /** A validation error's messages by field (DRF's body, non_field_errors included). */
+  fields?: Record<string, string[]>;
 
-  constructor(message: string, status: number, code: string, helpUrl?: string) {
+  constructor(message: string, status: number, code: string, helpUrl?: string, fields?: Record<string, string[]>) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.helpUrl = helpUrl;
+    this.fields = fields;
   }
 }
 
@@ -39,23 +42,26 @@ export async function request<T>(method: string, path: string, body?: unknown, s
 
 type ErrorBody = Record<string, unknown> & { detail?: string; code?: string; help_url?: string };
 
-/** The messages of a DRF validation error: {"field": ["message"], "non_field_errors": [...]}. */
-function validationMessages(data: ErrorBody): string {
-  return Object.values(data)
-    .flatMap((v) => (Array.isArray(v) ? v : []))
-    .filter((m): m is string => typeof m === "string")
-    .join(" ");
+/** The fields of a DRF validation error: {"field": ["message"], "non_field_errors": [...]}. */
+function validationFields(data: ErrorBody): Record<string, string[]> {
+  const fields: Record<string, string[]> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (Array.isArray(value)) fields[key] = value.filter((m): m is string => typeof m === "string");
+  }
+  return fields;
 }
 
 // mtg_ledger_core answers errors in DRF's format: {"detail", "code", "help_url"?}, or field messages for validation.
 function fail(resp: Response, data: ErrorBody | null): never {
-  const validation = data && typeof data.detail !== "string" ? validationMessages(data) : "";
+  const fields = data && typeof data.detail !== "string" ? validationFields(data) : undefined;
+  const validation = fields ? Object.values(fields).flat().join(" ") : "";
   const code = data?.code ?? (validation ? "invalid" : "server");
-  if (resp.status === 401 || (resp.status === 403 && code === "not_authenticated")) {
+  const onLogin = location.pathname === "/login/";
+  if (!onLogin && (resp.status === 401 || (resp.status === 403 && code === "not_authenticated"))) {
     window.location.assign("/login/?next=" + encodeURIComponent(location.pathname + location.search));
   } else if (resp.status === 409 && code === "closed") {
     window.location.assign("/");
   }
   const message = data?.detail || validation || `Something went wrong (${resp.status}) — try again`;
-  throw new ApiError(message, resp.status, code, data?.help_url);
+  throw new ApiError(message, resp.status, code, data?.help_url, validation ? fields : undefined);
 }

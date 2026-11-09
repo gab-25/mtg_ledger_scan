@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Develop the scan app on the phone: Vite (live reload) published over HTTPS on your tailnet.
+# Develop the UI (the scan screens above all) on the phone: Vite (live reload) published over HTTPS on your tailnet.
 #
 #   npm run dev:phone
 #
@@ -43,7 +43,7 @@ fi
 
 # Django must be up and accept requests for the tailnet name, as they arrive through Tailscale.
 code="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: ${dns}" -H "X-Forwarded-Proto: https" \
-  "http://127.0.0.1:${DJANGO_PORT}/login/" || true)"
+  "http://127.0.0.1:${DJANGO_PORT}/api/auth/csrf/" || true)"
 if [[ "$code" == "000" ]]; then
   die "mtg_ledger_core is not running on port ${DJANGO_PORT}: start it with 'uv run python manage.py runserver ${DJANGO_PORT}'."
 fi
@@ -62,7 +62,7 @@ trap cleanup EXIT
 
 cat <<INFO
 
-  MTG Ledger with the live scan app is on your tailnet:  https://${dns}
+  MTG Ledger with the live UI is on your tailnet:  https://${dns}
 
   Open it on the computer, start a session in Scan cards and scan the QR code with the phone
   (Tailscale on). Saving a file in src/ reloads the page on the phone.
