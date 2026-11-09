@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Session } from "../api/types";
 import Header from "../components/Header";
+import QrCode from "../components/QrCode";
 
 export function sessionLabel(session: Session) {
   return `${session.expansion ? session.expansion.code.toUpperCase() : "All expansions"} · ${session.default_condition}`;
@@ -21,12 +22,7 @@ export default function PhoneOnly({ session, onSearch }: { session: Session; onS
         }
       />
       <section className="scan-qr" aria-labelledby="qr-help">
-        <div
-          className="scan-qr-code"
-          role="img"
-          aria-label={`QR code linking to ${session.phone_url}`}
-          dangerouslySetInnerHTML={{ __html: session.phone_qr_svg }}
-        />
+        <QrCode value={session.phone_url} label={`QR code linking to ${session.phone_url}`} />
         <p className="hint" id="qr-help">
           Scanning works with a smartphone camera only (webcams can't focus on a card up close). Scan this code with
           your phone, sign in if asked, and keep scanning there: the cards show up in Review here too.

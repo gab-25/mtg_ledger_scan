@@ -49,7 +49,9 @@ describe("CameraScreen", () => {
     vi.mocked(api.getSession).mockResolvedValue({ session: session({ is_phone: false, phone_secure: false, count: 4 }) });
     renderCamera();
     expect(await screen.findByRole("heading", { name: "Continue on your phone" })).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: /QR code/ }).innerHTML).toContain("data-qr");
+    const qr = screen.getByRole("img", { name: "QR code linking to https://pc.ts.net/scan/s1/" });
+    expect(qr.tagName).toBe("svg");
+    expect(qr.querySelector("path")?.getAttribute("d")).toMatch(/^M\d/);
     expect(screen.getByText("https://pc.ts.net/scan/s1/")).toBeInTheDocument();
     expect(screen.getByText(/not HTTPS/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Review (4)" })).toHaveAttribute("href", "/s1/review");

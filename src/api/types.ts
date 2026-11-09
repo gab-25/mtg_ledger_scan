@@ -35,7 +35,6 @@ export type Session = {
   last_line: Line | null;
   is_phone: boolean;
   phone_url: string;
-  phone_qr_svg: string;
   phone_secure: boolean;
 };
 export type Missing = { message: string; url: string };

@@ -20,7 +20,7 @@ export function line(over: Partial<Line> = {}): Line {
 export function session(over: Partial<Session> = {}): Session {
   return {
     uuid: "s1", status: "open", expansion: DMR, default_condition: "NM", sale_threshold: null, count: 0,
-    last_line: null, is_phone: true, phone_url: "https://pc.ts.net/scan/s1/", phone_qr_svg: "<svg data-qr></svg>",
+    last_line: null, is_phone: true, phone_url: "https://pc.ts.net/scan/s1/",
     phone_secure: true, ...over,
   };
 }
