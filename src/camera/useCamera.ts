@@ -20,6 +20,7 @@ export function useCamera() {
       .then((s) => {
         if (cancelled) return s.getTracks().forEach((t) => t.stop());
         stream = s;
+        keepFocusing(s);
         const video = videoRef.current;
         if (video) {
           video.srcObject = s;
@@ -34,4 +35,12 @@ export function useCamera() {
   }, []);
 
   return { videoRef, ready, error };
+}
+
+/** Ask for continuous autofocus where supported (Chrome on Android); a card held close otherwise often stays blurred. */
+function keepFocusing(stream: MediaStream) {
+  const track = stream.getVideoTracks()[0];
+  const modes = (track?.getCapabilities?.() as { focusMode?: string[] } | undefined)?.focusMode;
+  if (!modes?.includes("continuous")) return;
+  track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => {});
 }
