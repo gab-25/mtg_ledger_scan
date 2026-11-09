@@ -4,7 +4,7 @@
 #   npm run dev:phone
 #
 # Needs: Tailscale running on this computer and on the phone (same account), MagicDNS and HTTPS Certificates
-# enabled in the Tailscale admin console, and mtg_ledger's `manage.py runserver` already running on DJANGO_PORT
+# enabled in the Tailscale admin console, and mtg_ledger_core's `manage.py runserver` already running on DJANGO_PORT
 # with the tailnet name allowed in its .env (the script tells you the exact lines).
 # Options (environment or .env): DJANGO_PORT (default 8000), VITE_PORT (default 5173).
 # Ctrl+C stops Vite and removes the Tailscale serve rule.
@@ -45,10 +45,10 @@ fi
 code="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: ${dns}" -H "X-Forwarded-Proto: https" \
   "http://127.0.0.1:${DJANGO_PORT}/login/" || true)"
 if [[ "$code" == "000" ]]; then
-  die "mtg_ledger is not running on port ${DJANGO_PORT}: start it with 'uv run python manage.py runserver ${DJANGO_PORT}'."
+  die "mtg_ledger_core is not running on port ${DJANGO_PORT}: start it with 'uv run python manage.py runserver ${DJANGO_PORT}'."
 fi
 if [[ "$code" == "400" ]]; then
-  die "mtg_ledger refuses the tailnet address. Put these lines in mtg_ledger's .env and restart runserver:
+  die "mtg_ledger_core refuses the tailnet address. Put these lines in mtg_ledger_core's .env and restart runserver:
   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,${dns}
   DJANGO_CSRF_TRUSTED_ORIGINS=https://${dns}
   DJANGO_BEHIND_HTTPS_PROXY=true"

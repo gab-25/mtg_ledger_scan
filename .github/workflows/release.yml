@@ -1,7 +1,7 @@
 name: Release
 
 # Publishing a release attaches mtg-ledger-scan.tar.gz (the contents of dist/). The name carries no version, so
-# mtg_ledger's Dockerfile downloads it from releases/latest/download/mtg-ledger-scan.tar.gz.
+# mtg_ledger_core's Dockerfile downloads it from releases/latest/download/mtg-ledger-scan.tar.gz.
 on:
   release:
     types: [published]

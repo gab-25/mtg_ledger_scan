@@ -1,4 +1,4 @@
-// fetch wrapper for mtg_ledger's /api/scan/: same-origin session, Django CSRF, JSON errors.
+// fetch wrapper for mtg_ledger_core's /api/scan/: same-origin session, Django CSRF, JSON errors.
 
 const PREFIX = "/api/scan/";
 
@@ -47,7 +47,7 @@ function validationMessages(data: ErrorBody): string {
     .join(" ");
 }
 
-// mtg_ledger answers errors in DRF's format: {"detail", "code", "help_url"?}, or field messages for validation.
+// mtg_ledger_core answers errors in DRF's format: {"detail", "code", "help_url"?}, or field messages for validation.
 function fail(resp: Response, data: ErrorBody | null): never {
   const validation = data && typeof data.detail !== "string" ? validationMessages(data) : "";
   const code = data?.code ?? (validation ? "invalid" : "server");

@@ -2,7 +2,7 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
-// Django (mtg_ledger) serves the build: assets under /static/scan/, index.html for every /scan/... URL.
+// Django (mtg_ledger_core) serves the build: assets under /static/scan/, index.html for every /scan/... URL.
 // In development Vite serves the app under /scan/ and forwards every other URL (collection, login, /api, /static…)
 // to `manage.py runserver`, so the whole site works from the Vite address.
 // `npm run dev:phone` (scripts/dev-phone.sh) publishes it on the tailnet over HTTPS for the phone.

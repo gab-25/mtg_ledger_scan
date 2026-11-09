@@ -1,6 +1,6 @@
-# mtg_ledger_scan
+# mtg_ledger_ui
 
-MTG Ledger Scan — the camera scanning app of [MTG Ledger](https://github.com/gab-25/mtg_ledger), as a React
+MTG Ledger UI — the web interface of [MTG Ledger](https://github.com/gab-25/mtg_ledger_core), as a React
 single-page app. Frame a card with the phone: it is recognised, matched against the CardTrader catalog and added to a
 draft you review and save into the collection.
 
@@ -9,8 +9,8 @@ draft you review and save into the collection.
   still; after each shot it waits for the box to be empty before the next card. The shutter always works too.
 - One card at a time: an uncertain card opens the confirm panel over the camera right away.
 
-mtg_ledger serves the built app (same origin, same login) and does the work through its JSON API under
-`/api/scan/` — see [gab-25/mtg_ledger#10](https://github.com/gab-25/mtg_ledger/issues/10) for the contract.
+mtg_ledger_core serves the built app (same origin, same login) and does the work through its JSON API under
+`/api/scan/` — see [gab-25/mtg_ledger_core#10](https://github.com/gab-25/mtg_ledger_core/issues/10) for the contract.
 
 ## Structure
 
@@ -23,7 +23,7 @@ mtg_ledger serves the built app (same origin, same login) and does the work thro
 - `src/screens/` — Start, Camera (with the QR hand-off page for desktops) and Review
 - `src/components/` — header, last-card toast, confirm/search panel, review row
 
-The look comes from mtg_ledger's `/static/theme/app.css` (loaded by `index.html`); `src/styles/scan.css` only adds
+The look comes from mtg_ledger_core's `/static/theme/app.css` (loaded by `index.html`); `src/styles/scan.css` only adds
 what the single-page app needs.
 
 ## Development
@@ -36,7 +36,7 @@ npm run typecheck
 
 Copy `.env.example` to `.env` if you need other ports (`DJANGO_PORT`, default 8000; `VITE_PORT`, default 5173).
 
-Run mtg_ledger (`uv run python manage.py runserver` in its checkout), then:
+Run mtg_ledger_core (`uv run python manage.py runserver` in its checkout), then:
 
 ```bash
 npm run dev
@@ -53,7 +53,7 @@ The camera needs HTTPS and a phone. `npm run dev:phone` publishes the Vite dev s
 1. Install Tailscale on the computer and on the phone (same account); in the admin console enable **MagicDNS** and
    **HTTPS Certificates**. If `tailscale serve` is refused, allow your user once with
    `sudo tailscale set --operator=$USER`.
-2. In mtg_ledger's `.env` allow the tailnet name (`<pc>.<tailnet>.ts.net`, shown by `tailscale status`) and start
+2. In mtg_ledger_core's `.env` allow the tailnet name (`<pc>.<tailnet>.ts.net`, shown by `tailscale status`) and start
    `uv run python manage.py runserver`:
    ```
    DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,<pc>.<tailnet>.ts.net
@@ -76,5 +76,5 @@ Open the camera with `?debug=1` (e.g. `/scan/<session>/?debug=1`) to see the liv
 ## Release
 
 Publish a GitHub release `vX.Y.Z`: the Release workflow runs the tests, builds the app and attaches
-`mtg-ledger-scan.tar.gz` (the contents of `dist/`). The mtg_ledger Docker image downloads the latest release at
+`mtg-ledger-scan.tar.gz` (the contents of `dist/`). The mtg_ledger_core Docker image downloads the latest release at
 build time, so rebuilding it ships the new version.
