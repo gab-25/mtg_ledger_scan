@@ -8,6 +8,8 @@ export const ANALYSIS_FPS = 10;
 export const EDGE_GRADIENT = 40;
 /** Fraction of edge pixels from which the box holds a card (an empty table has few edges). */
 export const PRESENT_MIN_EDGES = 0.06;
+/** Once a card is seen, the box counts as empty only below this fraction (hysteresis against flicker). */
+export const PRESENT_EXIT_EDGES = 0.04;
 /** Laplacian variance / intensity variance from which the image is in focus (sharp card ≈ 4, blurred ≈ 0.1-0.25). */
 export const SHARP_MIN = 0.5;
 /** Mean absolute difference from the previous frame (0-255) up to which the picture is still. */

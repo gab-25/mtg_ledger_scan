@@ -72,6 +72,25 @@ describe("autoscan machine", () => {
     expect(send(s, { type: "result" }).state.phase).toBe("waitEmpty");
   });
 
+  it("a still empty box after no card never shoots again", () => {
+    let { s } = run(armed(), 1000, 1000 + STEADY_MS, CARD);
+    s = send(s, { type: "result", noCard: true }).state;
+    expect(s.phase).toBe("waitEmpty");
+    const flicker = run(s, 2000, 6000, EMPTY);
+    expect(flicker.s.phase).toBe("waitEmpty");
+    expect(run(flicker.s, 6050, 9000, CARD).shots).toBe(0);
+  });
+
+  it("no card re-arms once the scene has changed", () => {
+    let { s } = run(armed(), 1000, 1000 + STEADY_MS, CARD);
+    s = run(s, 1600, 1600 + EMPTY_MS + 50, EMPTY).s; // emptied during busy: would re-arm at once
+    s = send(s, { type: "result", noCard: true }).state;
+    expect(s.phase).toBe("waitEmpty");
+    s = send(s, { type: "frame", t: 2500, ...EMPTY, still: false }).state;
+    s = run(s, 2550, 2550 + EMPTY_MS + 50, EMPTY).s;
+    expect(s.phase).toBe("armed");
+  });
+
   it("motion resets steadying", () => {
     let { s } = run(armed(), 1000, 1000 + STEADY_MS - 100, CARD);
     s = send(s, { type: "frame", t: 1450, ...CARD, still: false }).state;

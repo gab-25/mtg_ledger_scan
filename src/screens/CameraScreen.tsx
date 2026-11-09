@@ -62,12 +62,13 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
   const busy = useRef(false);
   /** An upload that failed for lack of network: the next shot resends it (same photo, same id) instead. */
   const failed = useRef<{ frame: Blob; captureId: string } | null>(null);
-  const doneRef = useRef<() => void>(() => {});
+  const doneRef = useRef<(noCard: boolean) => void>(() => {});
   const debug = useSearchParams()[0].get("debug") === "1";
 
   const shoot = useCallback(async () => {
     if (busy.current) return;
     busy.current = true;
+    let noCard = false;
     setCapturing(true);
     try {
       let shot = failed.current;
@@ -88,7 +89,8 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
       } else if (r.result === "added" || r.result === "handled") {
         setToast({ state: r.message, line: r.line });
       } else {
-        setToast({ state: r.message, line: null, error: r.result === "no_card" });
+        noCard = r.result === "no_card";
+        setToast({ state: r.message, line: null, error: noCard });
       }
     } catch (err) {
       if (isNetworkError(err) && failed.current) {
@@ -101,7 +103,7 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
     } finally {
       busy.current = false;
       setCapturing(false);
-      doneRef.current();
+      doneRef.current(noCard);
     }
   }, [session.uuid, setCount, setToast, setPicker, videoRef]);
 

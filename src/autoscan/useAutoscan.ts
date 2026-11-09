@@ -37,6 +37,7 @@ export function useAutoscan({ videoRef, guideRef, enabled, paused, onCapture, de
   useEffect(() => {
     const canvas = document.createElement("canvas");
     let prev: Gray | null = null;
+    let wasPresent = false;
     const timer = setInterval(() => {
       const video = videoRef.current;
       const guide = guideRef.current;
@@ -46,8 +47,9 @@ export function useAutoscan({ videoRef, guideRef, enabled, paused, onCapture, de
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return;
       const gray = toGray(ctx.getImageData(0, 0, canvas.width, canvas.height));
-      const m = measure(gray, prev);
+      const m = measure(gray, prev, wasPresent);
       prev = gray;
+      wasPresent = m.present;
       if (debug) setMetrics(m);
       send({ type: "frame", t: performance.now(), present: m.present, sharp: m.sharp, still: m.still });
     }, 1000 / ANALYSIS_FPS);
@@ -55,6 +57,7 @@ export function useAutoscan({ videoRef, guideRef, enabled, paused, onCapture, de
   }, [videoRef, guideRef, debug, send]);
 
   const manual = useCallback(() => send({ type: "manual" }), [send]);
-  const done = useCallback(() => send({ type: "result" }), [send]);
+  /** The capture finished; noCard: the server saw no card in the photo. */
+  const done = useCallback((noCard = false) => send({ type: "result", noCard }), [send]);
   return { phase, metrics, manual, done };
 }

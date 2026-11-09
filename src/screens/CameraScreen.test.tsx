@@ -80,7 +80,7 @@ describe("CameraScreen", () => {
     expect(screen.getByText("Counterspell")).toBeInTheDocument();
     expect(screen.getByText("DMR 045 · NM · IT")).toBeInTheDocument();
     expect(screen.getByTestId("count")).toHaveTextContent("5");
-    expect(done).toHaveBeenCalled();
+    expect(done).toHaveBeenCalledWith(false);
   });
 
   it("autoscan shot goes through the same capture", async () => {
@@ -152,7 +152,7 @@ describe("CameraScreen", () => {
     renderCamera();
     await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
     expect(await screen.findByText("No card in the picture — frame a card")).toBeInTheDocument();
-    expect(done).toHaveBeenCalled();
+    expect(done).toHaveBeenCalledWith(true);
   });
 
   it("error shows message and help link", async () => {

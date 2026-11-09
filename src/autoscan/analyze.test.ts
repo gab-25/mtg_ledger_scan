@@ -66,6 +66,14 @@ describe("measure", () => {
     expect(measure(blur(card()), null).sharp).toBe(false);
   });
 
+  it("presence has hysteresis between leaving and entering", () => {
+    // Four thin lines: about 5% edge pixels, between PRESENT_EXIT_EDGES and PRESENT_MIN_EDGES.
+    const lines = image((x) => ([20, 60, 100, 140].includes(x) ? 200 : 100));
+    expect(measure(lines, null, false).present).toBe(false);
+    expect(measure(lines, null, true).present).toBe(true);
+    expect(measure(image(() => 100), null, true).present).toBe(false);
+  });
+
   it("same frame is still", () => {
     const c = card();
     const m = measure(c, c);

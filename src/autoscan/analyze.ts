@@ -1,5 +1,5 @@
 // Cheap per-frame measurements of the guide region, used to decide when to shoot.
-import { EDGE_GRADIENT, PRESENT_MIN_EDGES, SHARP_MIN, STILL_MAX } from "./config";
+import { EDGE_GRADIENT, PRESENT_EXIT_EDGES, PRESENT_MIN_EDGES, SHARP_MIN, STILL_MAX } from "./config";
 
 /** A luminance image, one byte per pixel. */
 export type Gray = { data: Uint8ClampedArray; width: number; height: number };
@@ -25,7 +25,8 @@ export function toGray(img: ImageData): Gray {
   return { data: out, width, height };
 }
 
-export function measure(cur: Gray, prev: Gray | null): Metrics {
+/** `wasPresent`: the previous frame held a card (it then takes fewer edges to keep calling it present). */
+export function measure(cur: Gray, prev: Gray | null, wasPresent = false): Metrics {
   const { data: d, width: w, height: h } = cur;
   let edgeCount = 0;
   let lapSum = 0;
@@ -66,7 +67,7 @@ export function measure(cur: Gray, prev: Gray | null): Metrics {
     edges,
     sharpness,
     motion,
-    present: edges >= PRESENT_MIN_EDGES,
+    present: edges >= (wasPresent ? PRESENT_EXIT_EDGES : PRESENT_MIN_EDGES),
     sharp: sharpness >= SHARP_MIN,
     still: motion <= STILL_MAX,
   };
