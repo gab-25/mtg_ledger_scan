@@ -35,16 +35,27 @@ describe("request", () => {
     expect(fetch.mock.calls[0][1].headers["X-CSRFToken"]).toBeUndefined();
   });
 
-  it("401 redirects to login", async () => {
+  it("403 not_authenticated redirects to login", async () => {
     const assign = stubLocation("/scan/abc/", "?debug=1");
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(401, { error: "Log in", code: "login" })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(json(403, { detail: "Authentication credentials were not provided.", code: "not_authenticated" })),
+    );
     await expect(request("GET", "setup/")).rejects.toBeInstanceOf(ApiError);
     expect(assign).toHaveBeenCalledWith("/login/?next=%2Fscan%2Fabc%2F%3Fdebug%3D1");
   });
 
+  it("403 for a missing CSRF token does not log out", async () => {
+    const assign = stubLocation();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(403, { detail: "CSRF Failed", code: "permission_denied" })));
+    const err = await request("POST", "sessions/").catch((e) => e);
+    expect(err).toMatchObject({ status: 403, code: "permission_denied", message: "CSRF Failed" });
+    expect(assign).not.toHaveBeenCalled();
+  });
+
   it("closed session goes to collection", async () => {
     const assign = stubLocation();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(409, { error: "saved", code: "closed" })));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(409, { detail: "This scan session was already saved.", code: "closed" })));
     await expect(request("POST", "lines/x/undo/")).rejects.toBeInstanceOf(ApiError);
     expect(assign).toHaveBeenCalledWith("/");
   });
@@ -52,11 +63,26 @@ describe("request", () => {
   it("throws ApiError with code and help_url", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(json(503, { error: "CardTrader is not connected", code: "service_missing", help_url: "/account/#cardtrader" })),
+      vi.fn().mockResolvedValue(json(503, { detail: "CardTrader is not connected", code: "service_missing", help_url: "/account/#cardtrader" })),
     );
     const err = await request("GET", "setup/").catch((e) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect(err).toMatchObject({ status: 503, code: "service_missing", helpUrl: "/account/#cardtrader", message: "CardTrader is not connected" });
+  });
+
+  it("validation errors become their messages", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(json(400, { threshold: ["Enter the threshold as a price, e.g. 2.50."], language: ["Unknown language."] })),
+    );
+    const err = await request("PUT", "sessions/s1/threshold/", { threshold: "abc" }).catch((e) => e);
+    expect(err).toMatchObject({ status: 400, code: "invalid", message: "Enter the threshold as a price, e.g. 2.50. Unknown language." });
+  });
+
+  it("non_field_errors are shown too", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(400, { non_field_errors: ["Pick a card and its language."] })));
+    const err = (await request("POST", "lines/l1/confirm/", {}).catch((e) => e)) as Error;
+    expect(err.message).toBe("Pick a card and its language.");
   });
 
   it("non-JSON error becomes a generic ApiError", async () => {

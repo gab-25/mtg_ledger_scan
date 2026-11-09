@@ -14,8 +14,9 @@ mtg_ledger serves the built app (same origin, same login) and does the work thro
 
 ## Structure
 
-- `src/api/` — typed client of `/api/scan/` (session cookie + Django CSRF; 401 → login, closed session →
-  Collection; photo uploads retried with the same `capture_id`)
+- `src/api/` — typed client of `/api/scan/` (session cookie + Django CSRF; DRF errors `{"detail", "code"}` or
+  field messages; `not_authenticated` → login, `closed` session → Collection; photo uploads retried with the same
+  `capture_id`)
 - `src/autoscan/` — `analyze.ts` (edges, sharpness, motion of the guide region), `machine.ts` (when to shoot),
   `useAutoscan.ts` (the loop), `config.ts` (thresholds)
 - `src/camera/` — rear camera stream and cropping the photo to the on-screen guide
