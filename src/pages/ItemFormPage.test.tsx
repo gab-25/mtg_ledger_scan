@@ -60,7 +60,7 @@ describe("ItemFormPage", () => {
     await fillBolt();
     await userEvent.click(screen.getByRole("button", { name: "Save and add another" }));
     expect(await screen.findByText("Added 4× Lightning Bolt.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Name")).toHaveValue("");
+    await vi.waitFor(() => expect(screen.getByLabelText("Name")).toHaveValue("")); // the navigation is a transition
     expect(screen.getByRole("heading", { name: "Add cards" })).toBeInTheDocument();
   });
 
