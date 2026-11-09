@@ -93,7 +93,7 @@ describe("ItemFormPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(api.updateItem).toHaveBeenCalledWith(7, expect.objectContaining({ foil: true, quantity: "3", price: "12.00" }));
     expect(await screen.findByText("Saved Thoughtseize.")).toBeInTheDocument();
-    expect(document.title).toBe("Collection · MTG Ledger");
+    await vi.waitFor(() => expect(document.title).toBe("Collection · MTG Ledger")); // the navigation is a transition
   });
 
   it("a card with a listing links to it", async () => {

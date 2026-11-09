@@ -10,6 +10,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import SalePage from "./pages/SalePage";
 import ShipmentsPage from "./pages/ShipmentsPage";
+import SyncPage from "./pages/SyncPage";
 import CameraScreen from "./screens/CameraScreen";
 import ReviewScreen from "./screens/ReviewScreen";
 import StartScreen from "./screens/StartScreen";
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/sale/:itemPk" element={<ListingFormPage />} />
         <Route path="/shipments" element={<ShipmentsPage />} />
         <Route path="/shipments/:pk" element={<OrderDetailPage />} />
+        <Route path="/sync" element={<SyncPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
