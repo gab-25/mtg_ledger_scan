@@ -24,24 +24,24 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/scan" element={<StartScreen />} />
-      <Route path="/scan/:uuid" element={<CameraScreen />} />
-      <Route path="/scan/:uuid/review" element={<ReviewScreen />} />
-      <Route element={<Layout />}>
-        <Route path="/" element={<CollectionPage />} />
-        <Route path="/cards/add" element={<ItemFormPage />} />
-        <Route path="/cards/import" element={<ImportPage />} />
-        <Route path="/cards" element={<CardsPage />} />
-        <Route path="/cards/:pk" element={<ItemFormPage />} />
-        <Route path="/sale" element={<SalePage />} />
-        <Route path="/sale/:itemPk" element={<ListingFormPage />} />
-        <Route path="/shipments" element={<ShipmentsPage />} />
-        <Route path="/shipments/:pk" element={<OrderDetailPage />} />
-        <Route path="/sync" element={<SyncPage />} />
-        <Route path="/account" element={<ProfilePage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/scan" element={<StartScreen />} />
+        <Route path="/scan/:uuid" element={<CameraScreen />} />
+        <Route path="/scan/:uuid/review" element={<ReviewScreen />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<CollectionPage />} />
+          <Route path="/cards/add" element={<ItemFormPage />} />
+          <Route path="/cards/import" element={<ImportPage />} />
+          <Route path="/cards" element={<CardsPage />} />
+          <Route path="/cards/:pk" element={<ItemFormPage />} />
+          <Route path="/sale" element={<SalePage />} />
+          <Route path="/sale/:itemPk" element={<ListingFormPage />} />
+          <Route path="/shipments" element={<ShipmentsPage />} />
+          <Route path="/shipments/:pk" element={<OrderDetailPage />} />
+          <Route path="/sync" element={<SyncPage />} />
+          <Route path="/account" element={<ProfilePage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Routes>
     </>
   );
