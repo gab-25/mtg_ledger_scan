@@ -7,7 +7,9 @@ import ItemFormPage from "./pages/ItemFormPage";
 import ListingFormPage from "./pages/ListingFormPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
 import SalePage from "./pages/SalePage";
+import ShipmentsPage from "./pages/ShipmentsPage";
 import CameraScreen from "./screens/CameraScreen";
 import ReviewScreen from "./screens/ReviewScreen";
 import StartScreen from "./screens/StartScreen";
@@ -29,6 +31,8 @@ export default function App() {
         <Route path="/cards/:pk" element={<ItemFormPage />} />
         <Route path="/sale" element={<SalePage />} />
         <Route path="/sale/:itemPk" element={<ListingFormPage />} />
+        <Route path="/shipments" element={<ShipmentsPage />} />
+        <Route path="/shipments/:pk" element={<OrderDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
