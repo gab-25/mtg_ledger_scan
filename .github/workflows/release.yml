@@ -1,0 +1,37 @@
+name: Release
+
+# Publishing a release attaches mtg-ledger-scan.tar.gz (the contents of dist/). The name carries no version, so
+# mtg_ledger's Dockerfile downloads it from releases/latest/download/mtg-ledger-scan.tar.gz.
+on:
+  release:
+    types: [published]
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+    permissions:
+      contents: read
+
+  build:
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Upload the build to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          tar -czf mtg-ledger-scan.tar.gz -C dist .
+          gh release upload "$TAG" mtg-ledger-scan.tar.gz --clobber
