@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { capture, getSession, getSetup, undoLine, updateLine } from "../api/scan";
+import { capture, getSession, getSetup, isNetworkError, undoLine, updateLine } from "../api/scan";
 import type { Line, LineResult, Session, Setup } from "../api/types";
 import type { Phase } from "../autoscan/machine";
 import { useAutoscan } from "../autoscan/useAutoscan";
@@ -60,6 +60,8 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
   const [autoOn, setAutoOn] = useState(readAutoscan);
   const [capturing, setCapturing] = useState(false);
   const busy = useRef(false);
+  /** An upload that failed for lack of network: the next shot resends it (same photo, same id) instead. */
+  const failed = useRef<{ frame: Blob; captureId: string } | null>(null);
   const doneRef = useRef<() => void>(() => {});
   const debug = useSearchParams()[0].get("debug") === "1";
 
@@ -68,11 +70,17 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
     busy.current = true;
     setCapturing(true);
     try {
-      const video = videoRef.current;
-      const guide = guideRef.current;
-      const frame = await toJpeg(video && guide ? cropToGuide(video, guide) : document.createElement("canvas"));
-      navigator.vibrate?.(30);
-      const r = await capture(session.uuid, frame, crypto.randomUUID());
+      let shot = failed.current;
+      if (!shot) {
+        const video = videoRef.current;
+        const guide = guideRef.current;
+        const frame = await toJpeg(video && guide ? cropToGuide(video, guide) : document.createElement("canvas"));
+        navigator.vibrate?.(30);
+        shot = { frame, captureId: crypto.randomUUID() };
+      }
+      failed.current = shot;
+      const r = await capture(session.uuid, shot.frame, shot.captureId);
+      failed.current = null;
       setCount(r.count);
       if (r.result === "confirm" && r.line) {
         setToast(null);
@@ -83,8 +91,13 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
         setToast({ state: r.message, line: null, error: r.result === "no_card" });
       }
     } catch (err) {
+      if (isNetworkError(err) && failed.current) {
+        setToast({ state: "No connection — retry to send the same photo", line: null, error: true, retry: true });
+        return;
+      }
+      failed.current = null;
       if (err instanceof ApiError) setToast({ state: err.message, line: null, error: true, helpUrl: err.helpUrl });
-      else setToast({ state: "No connection — take the photo again", line: null, error: true });
+      else setToast({ state: (err as Error).message, line: null, error: true });
     } finally {
       busy.current = false;
       setCapturing(false);
@@ -154,7 +167,7 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
         )}
       </div>
 
-      <LastCardToast toast={toast} onFoil={onFoil} onUndo={onUndo} />
+      <LastCardToast toast={toast} onFoil={onFoil} onUndo={onUndo} onRetry={auto.manual} />
 
       <div className="scan-bottom">
         <button type="button" className="btn" onClick={() => setPicker({ line: null })}>

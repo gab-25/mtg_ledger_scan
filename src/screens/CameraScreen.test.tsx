@@ -166,11 +166,38 @@ describe("CameraScreen", () => {
     expect(done).toHaveBeenCalled();
   });
 
-  it("network error asks to retry", async () => {
-    vi.mocked(api.capture).mockRejectedValue(new TypeError("Failed to fetch"));
+  it("network error offers retry with the same photo and id", async () => {
+    vi.mocked(api.isNetworkError).mockReturnValue(true);
+    vi.mocked(api.capture).mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce(added());
     renderCamera();
     await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
-    expect(await screen.findByText("No connection — take the photo again")).toBeInTheDocument();
+    expect(await screen.findByText("No connection — retry to send the same photo")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("Added · 1 copy")).toBeInTheDocument();
+    const [first, second] = vi.mocked(api.capture).mock.calls;
+    expect(second[1]).toBe(first[1]);
+    expect(second[2]).toBe(first[2]);
+  });
+
+  it("the shutter after a failed upload resends it instead of a new photo", async () => {
+    vi.mocked(api.isNetworkError).mockReturnValue(true);
+    vi.mocked(api.capture).mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce(added());
+    renderCamera();
+    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    await screen.findByText(/No connection/);
+    await userEvent.click(screen.getByRole("button", { name: "Take photo" }));
+    const [first, second] = vi.mocked(api.capture).mock.calls;
+    expect(second[2]).toBe(first[2]);
+    expect(toJpeg).toHaveBeenCalledTimes(1);
+  });
+
+  it("other errors show their own message", async () => {
+    vi.mocked(api.isNetworkError).mockReturnValue(false);
+    vi.mocked(toJpeg).mockRejectedValue(new Error("Could not take the photo"));
+    renderCamera();
+    await userEvent.click(await screen.findByRole("button", { name: "Take photo" }));
+    expect(await screen.findByText("Could not take the photo")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
   });
 
   it("autoscan toggle persists", async () => {

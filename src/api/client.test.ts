@@ -67,13 +67,15 @@ describe("request", () => {
 });
 
 describe("capture", () => {
+  const fast = { retryDelays: [1, 1], timeoutMs: 1000, busyPollMs: 1, busyPolls: 5 };
+
   it("retries capture with same id on network errors", async () => {
     const fetch = vi
       .fn()
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockResolvedValueOnce(json(200, { result: "added", message: "Added · 1 copy", line: null, count: 1 }));
     vi.stubGlobal("fetch", fetch);
-    const result = await capture("s1", new Blob(["x"]), "cap-1");
+    const result = await capture("s1", new Blob(["x"]), "cap-1", fast);
     expect(result.result).toBe("added");
     expect(fetch).toHaveBeenCalledTimes(2);
     const ids = fetch.mock.calls.map(([, init]) => (init.body as FormData).get("capture_id"));
@@ -85,7 +87,52 @@ describe("capture", () => {
   it("gives up after the retries", async () => {
     const fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     vi.stubGlobal("fetch", fetch);
-    await expect(capture("s1", new Blob(["x"]), "cap-1", 2)).rejects.toBeInstanceOf(TypeError);
+    await expect(capture("s1", new Blob(["x"]), "cap-1", fast)).rejects.toBeInstanceOf(TypeError);
     expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("waits between retries", async () => {
+    vi.useFakeTimers();
+    try {
+      const fetch = vi
+        .fn()
+        .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+        .mockResolvedValueOnce(json(200, { result: "added", message: "", line: null, count: 1 }));
+      vi.stubGlobal("fetch", fetch);
+      const done = capture("s1", new Blob(["x"]), "cap-1", { ...fast, retryDelays: [1000] });
+      await vi.advanceTimersByTimeAsync(999);
+      expect(fetch).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await expect(done).resolves.toMatchObject({ result: "added" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a stalled upload times out and is retried with the same id", async () => {
+    const fetch = vi
+      .fn()
+      .mockImplementationOnce((_url, init: RequestInit) =>
+        new Promise((_, reject) => init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))),
+      )
+      .mockResolvedValueOnce(json(200, { result: "added", message: "", line: null, count: 1 }));
+    vi.stubGlobal("fetch", fetch);
+    const result = await capture("s1", new Blob(["x"]), "cap-1", { ...fast, timeoutMs: 5 });
+    expect(result.result).toBe("added");
+    const ids = fetch.mock.calls.map(([, init]) => (init.body as FormData).get("capture_id"));
+    expect(ids).toEqual(["cap-1", "cap-1"]);
+  });
+
+  it("a busy answer polls the same id until the card is recognised", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(json(202, { result: "busy", message: "Still recognising the previous photo…", line: null, count: 0 }))
+      .mockResolvedValueOnce(json(202, { result: "busy", message: "Still recognising the previous photo…", line: null, count: 0 }))
+      .mockResolvedValueOnce(json(200, { result: "added", message: "Added · 1 copy", line: null, count: 1 }));
+    vi.stubGlobal("fetch", fetch);
+    const result = await capture("s1", new Blob(["x"]), "cap-1", fast);
+    expect(result).toMatchObject({ result: "added", count: 1 });
+    const ids = fetch.mock.calls.map(([, init]) => (init.body as FormData).get("capture_id"));
+    expect(ids).toEqual(["cap-1", "cap-1", "cap-1"]);
   });
 });

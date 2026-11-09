@@ -21,7 +21,7 @@ export function csrfToken(): string {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
-export async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+export async function request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (method !== "GET") headers["X-CSRFToken"] = csrfToken();
   let payload: BodyInit | undefined;
@@ -31,9 +31,13 @@ export async function request<T>(method: string, path: string, body?: unknown): 
     headers["Content-Type"] = "application/json";
     payload = JSON.stringify(body);
   }
-  const resp = await fetch(PREFIX + path, { method, headers, body: payload, credentials: "same-origin" });
+  const resp = await fetch(PREFIX + path, { method, headers, body: payload, credentials: "same-origin", signal });
   const data = await resp.json().catch(() => null);
   if (resp.ok) return data as T;
+  return fail(resp, data);
+}
+
+function fail(resp: Response, data: { code?: string; error?: string; help_url?: string } | null): never {
 
   const code: string = data?.code ?? "server";
   if (resp.status === 401) {
