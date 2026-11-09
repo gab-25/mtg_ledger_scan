@@ -28,6 +28,18 @@ describe("request", () => {
     expect(init.credentials).toBe("same-origin");
   });
 
+  it("gets the csrf cookie first when it is missing", async () => {
+    document.cookie = "csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    const fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/auth/csrf/") document.cookie = "csrftoken=fresh";
+      return Promise.resolve(json(200, {}));
+    });
+    vi.stubGlobal("fetch", fetch);
+    await request("POST", "listings/publish/");
+    expect(fetch.mock.calls[0][0]).toBe("/api/auth/csrf/");
+    expect(fetch.mock.calls[1][1].headers["X-CSRFToken"]).toBe("fresh");
+  });
+
   it("sends no csrf header on GET", async () => {
     const fetch = vi.fn().mockResolvedValue(json(200, {}));
     vi.stubGlobal("fetch", fetch);

@@ -24,9 +24,17 @@ export function csrfToken(): string {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
+/** Django sets the csrftoken cookie with index.html; without it (e.g. under the Vite dev server) ask for it once. */
+async function ensureCsrfCookie() {
+  if (!csrfToken()) await fetch(PREFIX + "auth/csrf/", { credentials: "same-origin" });
+}
+
 export async function request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (method !== "GET") headers["X-CSRFToken"] = csrfToken();
+  if (method !== "GET") {
+    await ensureCsrfCookie();
+    headers["X-CSRFToken"] = csrfToken();
+  }
   let payload: BodyInit | undefined;
   if (body instanceof FormData) {
     payload = body;
@@ -35,6 +43,7 @@ export async function request<T>(method: string, path: string, body?: unknown, s
     payload = JSON.stringify(body);
   }
   const resp = await fetch(PREFIX + path, { method, headers, body: payload, credentials: "same-origin", signal });
+  if (resp.status === 204) return undefined as T;
   const data = await resp.json().catch(() => null);
   if (resp.ok) return data as T;
   return fail(resp, data);
