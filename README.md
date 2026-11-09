@@ -33,24 +33,39 @@ npm test            # Vitest
 npm run typecheck
 ```
 
-Run mtg_ledger on port 8000 (`uv run python manage.py runserver`), then:
+Copy `.env.example` to `.env` if you need other ports (`DJANGO_PORT`, default 8000; `VITE_PORT`, default 5173).
+
+Run mtg_ledger (`uv run python manage.py runserver` in its checkout), then:
 
 ```bash
 npm run dev
 ```
 
-and open http://localhost:5173/scan/. Vite forwards `/api`, `/static`, `/login`, `/logout` and `/account` to Django,
-so you log in once through the proxied login page.
+and open http://localhost:5173/. Vite serves the scan app under `/scan/` with live reload and forwards every other
+URL (collection, login, `/api/scan/`, `/static/`…) to Django, so the whole site works from that address.
 
 ### On the phone
 
-The camera needs HTTPS and a phone. Build the app and let mtg_ledger serve it over Tailscale:
+The camera needs HTTPS and a phone. `npm run dev:phone` publishes the Vite dev server on your tailnet with
+`tailscale serve`, so the phone gets the app with live reload:
 
-```bash
-npm run build
-# in ../mtg_ledger
-SCAN_APP_DIR=../mtg_ledger_scan/dist scripts/dev-phone.sh
-```
+1. Install Tailscale on the computer and on the phone (same account); in the admin console enable **MagicDNS** and
+   **HTTPS Certificates**. If `tailscale serve` is refused, allow your user once with
+   `sudo tailscale set --operator=$USER`.
+2. In mtg_ledger's `.env` allow the tailnet name (`<pc>.<tailnet>.ts.net`, shown by `tailscale status`) and start
+   `uv run python manage.py runserver`:
+   ```
+   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,<pc>.<tailnet>.ts.net
+   DJANGO_CSRF_TRUSTED_ORIGINS=https://<pc>.<tailnet>.ts.net
+   DJANGO_BEHIND_HTTPS_PROXY=true
+   ```
+   (`OPENROUTER_API_KEY` must be set there too for card recognition.)
+3. `npm run dev:phone`: it checks Tailscale and that Django accepts the tailnet name (printing the lines above if
+   not), then prints `https://<pc>.<tailnet>.ts.net`.
+4. Open that address on the computer, start a session in **Scan cards** and scan the QR code with the phone.
+
+To try the production setup instead (Django serving the build, as in the Docker image), run `npm run build` and
+start Django with `SCAN_APP_DIR` pointing at `dist/`.
 
 ### Tuning auto-shoot
 
