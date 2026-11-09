@@ -60,5 +60,5 @@ Open the camera with `?debug=1` (e.g. `/scan/<session>/?debug=1`) to see the liv
 ## Release
 
 Publish a GitHub release `vX.Y.Z`: the Release workflow runs the tests, builds the app and attaches
-`mtg-ledger-scan-X.Y.Z.tar.gz` (the contents of `dist/`). In mtg_ledger, set `SCAN_VERSION=X.Y.Z` in the `Dockerfile`
-to ship it.
+`mtg-ledger-scan.tar.gz` (the contents of `dist/`). The mtg_ledger Docker image downloads the latest release at
+build time, so rebuilding it ships the new version.

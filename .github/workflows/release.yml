@@ -1,7 +1,7 @@
 name: Release
 
-# Publishing a release vX.Y.Z attaches mtg-ledger-scan-X.Y.Z.tar.gz (the contents of dist/).
-# mtg_ledger's Dockerfile downloads it at the version named by SCAN_VERSION.
+# Publishing a release attaches mtg-ledger-scan.tar.gz (the contents of dist/). The name carries no version, so
+# mtg_ledger's Dockerfile downloads it from releases/latest/download/mtg-ledger-scan.tar.gz.
 on:
   release:
     types: [published]
@@ -33,6 +33,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          VERSION="${TAG#v}"
-          tar -czf "mtg-ledger-scan-${VERSION}.tar.gz" -C dist .
-          gh release upload "$TAG" "mtg-ledger-scan-${VERSION}.tar.gz" --clobber
+          tar -czf mtg-ledger-scan.tar.gz -C dist .
+          gh release upload "$TAG" mtg-ledger-scan.tar.gz --clobber
