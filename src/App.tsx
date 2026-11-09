@@ -8,6 +8,7 @@ import ListingFormPage from "./pages/ListingFormPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
+import ProfilePage from "./pages/ProfilePage";
 import SalePage from "./pages/SalePage";
 import ShipmentsPage from "./pages/ShipmentsPage";
 import SyncPage from "./pages/SyncPage";
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/shipments" element={<ShipmentsPage />} />
         <Route path="/shipments/:pk" element={<OrderDetailPage />} />
         <Route path="/sync" element={<SyncPage />} />
+        <Route path="/account" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

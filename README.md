@@ -21,16 +21,23 @@ The scan screens use the API under `/api/scan/` — see
 
 ## Structure
 
-- `src/api/` — typed client of `/api/` (session cookie + Django CSRF; DRF errors `{"detail", "code"}` or
-  field messages kept by field; `not_authenticated` → login, `closed` session → Collection; photo uploads retried
-  with the same `capture_id`)
+- `src/App.tsx` — the routes: the same URLs as the former Django pages (`/`, `/cards/…`, `/sale/…`, `/shipments/…`,
+  `/sync/`, `/account/`, `/login/`) and the scan under `/scan/…`
+- `src/pages/` — one component per page; `src/layout/` — sidebar with counters and user card
+- `src/api/` — typed client of `/api/`, one module per area (session cookie + Django CSRF; DRF errors
+  `{"detail", "code"}` or field messages kept by field; `not_authenticated` → login, `closed` session → Collection;
+  photo uploads retried with the same `capture_id`)
+- `src/actions.ts` — `useAction`: a form post of a page (messages, reload of every query, errors)
 - `src/notifications.tsx` — the message list of every page (like Django's messages: shown on this page, or on the
   next one after an action that navigates)
+- `src/components/` — `DataTable` (every table, on [TanStack Table](https://tanstack.com/table); filtering and
+  pagination happen on the server), `Field`, `Pager`, `Badge`, `StatTile`, icons, and the scan components
+- `src/format.ts` — numbers and dates as Django's templates wrote them (en-us, Europe/Rome)
+- Data comes through [TanStack Query](https://tanstack.com/query).
 - `src/autoscan/` — `analyze.ts` (edges, sharpness, motion of the guide region), `machine.ts` (when to shoot),
   `useAutoscan.ts` (the loop), `config.ts` (thresholds)
 - `src/camera/` — rear camera stream and cropping the photo to the on-screen guide
-- `src/screens/` — Start, Camera (with the QR hand-off page for desktops) and Review
-- `src/components/` — header, last-card toast, confirm/search panel, review row
+- `src/screens/` — the scan: Start, Camera (with the QR hand-off page for desktops) and Review
 
 The look is `src/styles/app.css` (design tokens and components); `src/styles/scan.css` adds the scan screens.
 

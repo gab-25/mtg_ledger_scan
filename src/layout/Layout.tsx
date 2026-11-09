@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { logout } from "../api/account";
+import { signOut } from "../signOut";
 import { LogoutIcon, Logo, NavCards, NavCollection, NavSale, PackageIcon, SyncIcon } from "../components/icons";
 import { useMe } from "../hooks/useMe";
 import { Messages } from "../notifications";
@@ -26,11 +26,6 @@ export default function Layout() {
   if (!me) return null;
   const { user, counts } = me;
   const name = user.full_name || user.username;
-
-  async function signOut() {
-    await logout();
-    window.location.assign("/login/");
-  }
 
   return (
     <div className="shell">

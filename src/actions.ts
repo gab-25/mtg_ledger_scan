@@ -16,7 +16,7 @@ export function useAction<A = void, R = unknown>(fn: (args: A) => Promise<R>, op
   const navigate = useNavigate();
   const notify = useNotify();
   return useMutation<R, Error, A>({
-    mutationFn: fn,
+    mutationFn: (args: A) => fn(args), // only the args: React Query passes a context too
     onSuccess: async (result) => {
       const to = typeof options?.navigateTo === "function" ? options.navigateTo(result) : options?.navigateTo;
       const messages = (result as { messages?: Msg[] } | undefined)?.messages ?? [];
