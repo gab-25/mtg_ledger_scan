@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 
@@ -12,9 +13,12 @@ export default defineConfig(({ command, mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
   const django = `http://127.0.0.1:${env.DJANGO_PORT || "8000"}`;
   const phone = env.DEV_PHONE === "1";
+  const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string };
   return {
     base: command === "build" ? "/static/ui/" : "/",
     plugins: [react(), tailwindcss()],
+    // The app version (package.json), shown at the bottom of the sidebar.
+    define: { __APP_VERSION__: JSON.stringify(version) },
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server: {
       port: Number(env.VITE_PORT || 5173),

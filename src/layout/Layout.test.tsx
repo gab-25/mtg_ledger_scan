@@ -19,6 +19,8 @@ describe("Layout", () => {
     expect(within(nav).getByText("Gabriele S")).toBeInTheDocument();
     expect(within(nav).getByText("G")).toHaveAttribute("aria-hidden", "true");
     expect(within(nav).getByRole("link", { name: "Profile and settings" })).toHaveAttribute("href", "/account/");
+    expect(__APP_VERSION__).toMatch(/^\d+\.\d+\.\d+/);
+    expect(within(nav).getByText(`v${__APP_VERSION__}`)).toBeInTheDocument();
     for (const [name, href] of [["Collection", "/"], ["For sale", "/sale/"], ["Cards", "/cards/"]]) {
       expect(within(nav).getByRole("link", { name })).toHaveAttribute("href", href);
     }
