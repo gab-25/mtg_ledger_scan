@@ -22,3 +22,15 @@ export const PRICE_LABEL = "text-[11px] tracking-[1px] text-muted-foreground upp
 export const META = "mt-0.5 font-mono text-xs text-muted-foreground";
 /** Inline code in help text. */
 export const CODE = "font-mono text-[13px] text-gold-hi";
+/** A two-column definition list of facts (dt grey, dd below). */
+export const FACTS = "m-0 grid grid-cols-2 gap-3.5 [&_dd]:mx-0 [&_dd]:mt-1 [&_dd]:mb-0 [&_dd]:text-sm [&_dt]:text-xs [&_dt]:text-muted-foreground";
+/** A page section: heading line and its content. */
+export const SECTION = "flex flex-col gap-3.5";
+/** The heading line of a section: h2 on the left, a hint or action on the right. */
+export const SECTION_HEAD = "flex flex-wrap items-baseline justify-between gap-3";
+/** A section title. */
+export const H2 = "m-0 font-serif text-[26px] font-semibold";
+/** Boxes side by side, wrapping under 300px. */
+export const DETAIL_GRID = "grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-5";
+/** An amber note box. */
+export const NOTE = "rounded-md bg-warn-bg px-3 py-2.5 text-[13px] text-warn";

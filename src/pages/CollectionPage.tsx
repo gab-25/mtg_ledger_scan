@@ -7,6 +7,7 @@ import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import DataTable, { TableFoot } from "../components/DataTable";
 import { ClearLink, FilterDivider, FilterSelect, Filters, PillDot } from "../components/Filters";
+import FoilTag from "../components/FoilTag";
 import { PageHead } from "../components/Header";
 import SearchBox from "../components/SearchBox";
 import { Button } from "@/components/ui/button";
@@ -55,13 +56,6 @@ const columns: ColumnDef<CollectionRow>[] = [
   },
   { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge> },
 ];
-
-/** The small gold FOIL tag after a card name. */
-export function FoilTag() {
-  return (
-    <span className="ml-1.5 rounded-sm border border-[#4A4128] px-1 py-px align-[2px] text-[10px] tracking-[1px] text-gold uppercase">Foil</span>
-  );
-}
 
 /** ledger/collection.html */
 export default function CollectionPage() {

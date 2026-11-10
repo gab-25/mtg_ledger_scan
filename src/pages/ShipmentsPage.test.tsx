@@ -35,7 +35,7 @@ describe("ShipmentsPage", () => {
     vi.mocked(api.getOrders).mockResolvedValue(orders());
     renderPage("/shipments/");
     expect(await screen.findByRole("heading", { name: "Shipments" })).toBeInTheDocument();
-    expect(screen.getByText("Imported 2 hours ago")).toHaveClass("hint");
+    expect(screen.getByText("Imported 2 hours ago")).toBeInTheDocument();
     const stats = screen.getByRole("region", { name: "Shipping summary" });
     expect(within(stats).getByText("1")).toHaveAttribute("data-tone", "warn");
     expect(within(stats).getByText("€40.00")).toHaveAttribute("data-tone", "accent");
@@ -48,7 +48,7 @@ describe("ShipmentsPage", () => {
     expect(within(order).getByText("Torino · IT")).toBeInTheDocument();
     expect(within(order).getByText("2 cards")).toBeInTheDocument();
     expect(within(order).getByText("Paid today")).toBeInTheDocument();
-    expect(within(order).getByText("€12.34")).toHaveClass("order-total");
+    expect(within(order).getByText("€12.34")).toBeInTheDocument();
     expect(document.title).toBe("Shipments · MTG Ledger");
   });
 

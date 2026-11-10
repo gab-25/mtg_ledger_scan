@@ -6,7 +6,16 @@ import { useAction } from "../actions";
 import { getOrder, shipOrder, type OrderDetail, type OrderItem } from "../api/orders";
 import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
-import DataTable from "../components/DataTable";
+import DataTable, { TableFoot } from "../components/DataTable";
+import Field from "../components/Field";
+import { PageHead } from "../components/Header";
+import FoilTag from "../components/FoilTag";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { DETAIL_GRID, DIM, FACTS, H2, HINT, NOTE, NUM, SECTION, SECTION_HEAD, SUB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import { dateTime, euro, pluralize } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -15,16 +24,17 @@ const columns: ColumnDef<OrderItem>[] = [
   {
     id: "packed",
     header: () => <span className="sr-only">Packed</span>,
-    cell: ({ row: { original: it } }) => <input type="checkbox" id={`pack-${it.id}`} aria-label={`Packed ${it.name}`} />,
+    meta: { className: "w-9" },
+    cell: ({ row: { original: it } }) => <Checkbox id={`pack-${it.id}`} aria-label={`Packed ${it.name}`} className="align-middle" />,
   },
   {
     id: "card",
     header: "Card",
     cell: ({ row: { original: it } }) => (
       <>
-        <label htmlFor={`pack-${it.id}`} style={{ fontWeight: 500 }}>{it.name}</label>
-        {it.foil && <span className="foil-tag">Foil</span>}
-        <div className="sub">
+        <label htmlFor={`pack-${it.id}`} className="cursor-pointer font-medium">{it.name}</label>
+        {it.foil && <FoilTag />}
+        <div className={SUB}>
           {it.expansion}
           {it.item_pk !== null && (
             <>
@@ -36,11 +46,11 @@ const columns: ColumnDef<OrderItem>[] = [
       </>
     ),
   },
-  { id: "cond", header: "Cond.", meta: { className: "dim" }, cell: ({ row: { original: it } }) => it.condition || "—" },
-  { id: "language", header: "Language", meta: { className: "dim" }, cell: ({ row: { original: it } }) => it.language || "—" },
-  { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: "num" } },
+  { id: "cond", header: "Cond.", meta: { className: DIM }, cell: ({ row: { original: it } }) => it.condition || "—" },
+  { id: "language", header: "Language", meta: { className: DIM }, cell: ({ row: { original: it } }) => it.language || "—" },
+  { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: NUM } },
   {
-    id: "price", header: "Price", meta: { align: "right", className: "num" },
+    id: "price", header: "Price", meta: { align: "right", className: NUM },
     cell: ({ row: { original: it } }) => (it.price !== null ? euro(it.price, 2) : ""),
   },
 ];
@@ -70,39 +80,40 @@ function Order({ order }: { order: OrderDetail }) {
 
   return (
     <>
-      <header className="page-head">
-        <div>
-          <div className="eyebrow no-print">
-            <Link to="/shipments/" style={{ color: "inherit", textDecoration: "none" }}>Shipments</Link>
-          </div>
-          <h1>Order #{order.code}</h1>
-          <div className="sub" style={{ marginTop: 6 }}>
+      <PageHead
+        eyebrow={<Link to="/shipments/" className="text-inherit no-underline print:hidden">Shipments</Link>}
+        title={`Order #${order.code}`}
+        meta={
+          <span className="font-sans">
             {order.packing_number && order.can_ship ? `Pack ${order.packing_number} · ` : ""}
             {order.size} card{pluralize(order.size)}
             {order.paid_at && ` · paid ${dateTime(order.paid_at)}`}
             {order.via_cardtrader_zero && " · CardTrader Zero"}
+          </span>
+        }
+        actions={
+          <div className="flex flex-wrap items-center gap-3 print:hidden">
+            <Badge variant={badgeVariant(order.badge.tone)}>{order.badge.label}</Badge>
+            <Button type="button" onClick={() => window.print()}>Print packing slip</Button>
           </div>
-        </div>
-        <div className="actions no-print">
-          <Badge variant={badgeVariant(order.badge.tone)}>{order.badge.label}</Badge>
-          <button type="button" className="btn" onClick={() => window.print()}>Print packing slip</button>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="detail-grid">
-        <section className="box" aria-labelledby="ship-to">
-          <h2 id="ship-to">Ship to</h2>
+      <div className={DETAIL_GRID}>
+        <Card asChild>
+          <section aria-labelledby="ship-to">
+          <CardTitle id="ship-to">Ship to</CardTitle>
           {order.address_lines.length ? (
-            <address className="address">
+            <address className="m-0 text-base leading-[1.55] not-italic print:text-[14pt]">
               {order.address_lines.map((line, i) => (
-                <div key={i} className={i === 0 ? "address-name" : undefined}>{line}</div>
+                <div key={i} className={i === 0 ? "font-semibold" : undefined}>{line}</div>
               ))}
             </address>
           ) : (
-            <p className="hint" style={{ margin: 0 }}>No shipping address on this order.</p>
+            <p className={cn(HINT, "m-0")}>No shipping address on this order.</p>
           )}
-          {order.ship_note && <div className="note">Note from buyer: {order.ship_note}</div>}
-          <dl className="facts">
+          {order.ship_note && <div className={NOTE}>Note from buyer: {order.ship_note}</div>}
+          <dl className={FACTS}>
             <div>
               <dt>Buyer</dt>
               <dd>{order.buyer_username || "—"}</dd>
@@ -119,70 +130,74 @@ function Order({ order }: { order: OrderDetail }) {
               <dt>Shipping method</dt>
               <dd>
                 {order.shipping_method || "—"}
-                {order.max_shipping_days ? <div className="sub">up to {order.max_shipping_days} days</div> : null}
+                {order.max_shipping_days ? <div className={SUB}>up to {order.max_shipping_days} days</div> : null}
               </dd>
             </div>
             <div>
               <dt>Tracking</dt>
-              <dd className="mono">{order.tracking_code || "—"}</dd>
+              <dd className="font-mono">{order.tracking_code || "—"}</dd>
             </div>
           </dl>
-        </section>
+          </section>
+        </Card>
 
-        <section className="box no-print" aria-labelledby="ship-title">
-          <h2 id="ship-title">Shipping</h2>
+        <Card asChild className="print:hidden">
+          <section aria-labelledby="ship-title">
+          <CardTitle id="ship-title">Shipping</CardTitle>
           {order.can_ship ? (
             <>
-              <form method="post" className="inline-form" onSubmit={submit}>
-                <div className="field">
-                  <label htmlFor="id_tracking_code">Tracking code{required ? " (required)" : " (optional)"}</label>
-                  <input type="text" name="tracking_code" id="id_tracking_code" maxLength={120} value={tracking}
-                    onChange={(e) => setTracking(e.target.value)} />
+              <form method="post" className="m-0 flex flex-wrap items-start gap-2.5" onSubmit={submit}>
+                <div className="flex-[1_1_200px]">
+                  <Field label={`Tracking code${required ? " (required)" : " (optional)"}`} id="id_tracking_code">
+                    <Input type="text" name="tracking_code" id="id_tracking_code" maxLength={120} value={tracking}
+                      onChange={(e) => setTracking(e.target.value)} />
+                  </Field>
                 </div>
-                <button type="submit" name="save_tracking" value="1" className="btn" disabled={ship.isPending}>Save code</button>
-                <button type="submit" className="btn btn-primary" disabled={ship.isPending}>Mark as shipped</button>
+                <Button type="submit" name="save_tracking" value="1" className="mt-[26px]" disabled={ship.isPending}>Save code</Button>
+                <Button type="submit" variant="primary" className="mt-[26px]" disabled={ship.isPending}>Mark as shipped</Button>
               </form>
-              <p className="hint" style={{ margin: 0 }}>
+              <p className={cn(HINT, "m-0")}>
                 “Mark as shipped” saves the tracking code on CardTrader, then moves the order to Shipped.
                 {order.via_cardtrader_zero && " CardTrader Zero orders must have a tracking code before shipping."}
               </p>
             </>
           ) : order.state === "hub_pending" ? (
-            <p className="hint" style={{ margin: 0 }}>
+            <p className={cn(HINT, "m-0")}>
               Sold through CardTrader Zero: set this card aside. CardTrader will merge it into the weekly order to send to the hub.
             </p>
           ) : order.sent_at ? (
-            <p style={{ margin: 0 }}>
+            <p className="m-0">
               Shipped on {dateTime(order.sent_at)}
               {order.tracking_code && (
                 <>
-                  {" "}with tracking <span className="mono">{order.tracking_code}</span>
+                  {" "}with tracking <span className="font-mono">{order.tracking_code}</span>
                 </>
               )}
               .
             </p>
           ) : (
-            <p className="hint" style={{ margin: 0 }}>
+            <p className={cn(HINT, "m-0")}>
               This order is {order.state_label.toLowerCase()}: no shipping action available.
             </p>
           )}
-        </section>
+          </section>
+        </Card>
       </div>
 
-      <section className="section" aria-labelledby="items-title">
-        <div className="section-head">
-          <h2 id="items-title">Packing list</h2>
-          <span className="hint no-print">Tick each card as you pack it</span>
+      <section className={SECTION} aria-labelledby="items-title">
+        <div className={SECTION_HEAD}>
+          <h2 id="items-title" className={H2}>Packing list</h2>
+          <span className={cn(HINT, "print:hidden")}>Tick each card as you pack it</span>
         </div>
-        <DataTable className="check-list" style={{ minWidth: 640 }} columns={columns} data={order.items}
+        <DataTable className="min-w-[640px]" columns={columns} data={order.items}
           getRowId={(it) => String(it.id)} empty="No items on this order." />
         {order.total !== null && (
-          <div className="table-foot">
+          <TableFoot>
             <span />
             <span>
-              Total to you <strong className="mono" style={{ color: "var(--text)" }}>{euro(order.total, 2)}</strong>
+              Total to you <strong className="font-mono text-foreground print:text-black">{euro(order.total, 2)}</strong>
             </span>
-          </div>
+          </TableFoot>
         )}
       </section>
     </>

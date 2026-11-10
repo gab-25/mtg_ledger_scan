@@ -1,10 +1,12 @@
+import { Slot } from "radix-ui";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /** The app's boxes: surface background, line border, 14px corners. */
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({ className, asChild = false, ...props }: React.ComponentProps<"div"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "div";
   return (
-    <div
+    <Comp
       data-slot="card"
       className={cn("flex flex-col gap-4 rounded-xl border border-line bg-card p-6 text-card-foreground print:border-[#999] print:bg-transparent print:text-black", className)}
       {...props}

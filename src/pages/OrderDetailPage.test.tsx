@@ -37,9 +37,9 @@ describe("OrderDetailPage", () => {
     renderPage("/shipments/5/");
     expect(await screen.findByRole("heading", { name: "Order #c5" })).toBeInTheDocument();
     expect(screen.getByText("Pack 3 · 2 cards · paid 9 Nov 2026 10:05")).toBeInTheDocument();
-    expect(screen.getByText("Ada")).toHaveClass("address-name");
+    expect(within(screen.getByRole("region", { name: "Ship to" })).getByText("Ada")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ada@example.com" })).toHaveAttribute("href", "mailto:ada@example.com");
-    expect(screen.getByText("up to 5 days")).toHaveClass("sub");
+    expect(screen.getByText("up to 5 days")).toBeInTheDocument();
     expect(screen.getByLabelText("Tracking code (optional)")).toHaveValue("");
     const table = screen.getByRole("table");
     expect(within(table).getByLabelText("Packed Sheoldred")).not.toBeChecked();
@@ -47,6 +47,17 @@ describe("OrderDetailPage", () => {
     expect(within(table).getAllByText("—")).toHaveLength(2);
     expect(screen.getByText("€12.34", { selector: "strong" })).toBeInTheDocument();
     expect(document.title).toBe("Order #c5 · MTG Ledger");
+  });
+
+  it("the packing checkboxes tick and untick", async () => {
+    vi.mocked(api.getOrder).mockResolvedValue(detail());
+    renderPage("/shipments/5/");
+    const box = await screen.findByRole("checkbox", { name: "Packed Sheoldred" });
+    expect(box).toHaveAttribute("aria-checked", "false");
+    await userEvent.click(box);
+    expect(box).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(screen.getByText("Sheoldred"));
+    expect(box).toHaveAttribute("aria-checked", "false");
   });
 
   it("marks as shipped and goes back to the list", async () => {
