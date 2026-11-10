@@ -1,22 +1,25 @@
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 /** The pager of the paginated tables: Previous, "n / N", Next (hidden with a single page). */
 export default function Pager({ page, numPages, href }: { page: number; numPages: number; href: (page: number) => string }) {
   if (numPages <= 1) return null;
   return (
-    <nav className="pager" aria-label="Pagination">
+    <nav className="flex gap-2" aria-label="Pagination">
       {page > 1 && (
-        <Link className="btn btn-sm" to={href(page - 1)}>
-          Previous
-        </Link>
+        <Button asChild size="sm">
+          <Link to={href(page - 1)}>Previous</Link>
+        </Button>
       )}
-      <span className="btn btn-sm btn-ghost" aria-current="page">
-        {page} / {numPages}
-      </span>
+      <Button asChild size="sm" variant="ghost">
+        <span aria-current="page">
+          {page} / {numPages}
+        </span>
+      </Button>
       {page < numPages && (
-        <Link className="btn btn-sm" to={href(page + 1)}>
-          Next
-        </Link>
+        <Button asChild size="sm">
+          <Link to={href(page + 1)}>Next</Link>
+        </Button>
       )}
     </nav>
   );

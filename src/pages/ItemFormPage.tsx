@@ -3,7 +3,12 @@ import { useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { fieldErrors, useAction } from "../actions";
 import { createItem, deleteItem, getChoices, getItem, updateItem, type Item, type ItemFields } from "../api/collection";
-import Field, { Errors } from "../components/Field";
+import Field, { ChoiceSelect, Errors } from "../components/Field";
+import { PageHead } from "../components/Header";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { BUTTON_GROUP, FORM_ACTIONS, FORM_GRID, PANEL } from "@/lib/styles";
 import PageState from "../components/PageState";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
@@ -43,8 +48,8 @@ function ItemForm({ item, choices }: FormProps) {
   const remove = useAction(() => deleteItem(item!.id), { navigateTo: "/" });
   const errors = (name: string) => fieldErrors(save.error, name);
 
-  const set = (name: keyof ItemFields) => (e: { target: HTMLInputElement | HTMLSelectElement }) =>
-    setFields((f) => ({ ...f, [name]: e.target instanceof HTMLInputElement && e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+  const set = (name: keyof ItemFields) => (e: { target: HTMLInputElement }) => setValue(name, e.target.value);
+  const setValue = (name: keyof ItemFields, value: string | boolean) => setFields((f) => ({ ...f, [name]: value }));
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,80 +65,72 @@ function ItemForm({ item, choices }: FormProps) {
 
   const select = (name: "color" | "condition" | "language", label: string, options: [string, string][]) => (
     <Field label={label} id={`id_${name}`} errors={errors(name)}>
-      <select name={name} id={`id_${name}`} value={fields[name]} onChange={set(name)}>
-        {options.map(([value, text]) => (
-          <option key={value} value={value}>{text}</option>
-        ))}
-      </select>
+      <ChoiceSelect name={name} id={`id_${name}`} value={fields[name]} options={options} onChange={(v) => setValue(name, v)} />
     </Field>
   );
 
   return (
     <>
-      <header className="page-head">
-        <div>
-          <div className="eyebrow">
-            <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>Collection</Link>
-          </div>
-          <h1>{title}</h1>
-        </div>
-        {item && (
-          <div className="actions">
-            <Link className="btn" to={`/sale/${item.id}/`}>{item.has_listing ? "Edit listing" : "List for sale"}</Link>
-          </div>
-        )}
-      </header>
+      <PageHead
+        eyebrow={<Link to="/" className="text-inherit no-underline">Collection</Link>}
+        title={title}
+        actions={
+          item && (
+            <Button asChild>
+              <Link to={`/sale/${item.id}/`}>{item.has_listing ? "Edit listing" : "List for sale"}</Link>
+            </Button>
+          )
+        }
+      />
 
-      <form method="post" className="panel" id="item-form" onSubmit={submit}>
+      <form method="post" className={PANEL} id="item-form" onSubmit={submit}>
         <Errors errors={errors("non_field_errors")} />
-        <div className="form-grid">
+        <div className={FORM_GRID}>
           <Field label="Name" id="id_name" errors={errors("name")} wide>
-            <input type="text" name="name" id="id_name" maxLength={200} required value={fields.name} onChange={set("name")} />
+            <Input type="text" name="name" id="id_name" maxLength={200} required value={fields.name} onChange={set("name")} />
           </Field>
           <Field label="Set" id="id_set_code" errors={errors("set_code")}>
-            <input type="text" name="set_code" id="id_set_code" maxLength={10} required value={fields.set_code}
+            <Input type="text" name="set_code" id="id_set_code" maxLength={10} required value={fields.set_code}
               onChange={set("set_code")} />
           </Field>
           <Field label="Collector number" id="id_collector_number" errors={errors("collector_number")}>
-            <input type="text" name="collector_number" id="id_collector_number" maxLength={40}
+            <Input type="text" name="collector_number" id="id_collector_number" maxLength={40}
               value={fields.collector_number} onChange={set("collector_number")} />
           </Field>
           {select("color", "Color", choices.colors)}
           <Field label="Type" id="id_type_line" errors={errors("type_line")} wide>
-            <input type="text" name="type_line" id="id_type_line" maxLength={200} value={fields.type_line}
+            <Input type="text" name="type_line" id="id_type_line" maxLength={200} value={fields.type_line}
               onChange={set("type_line")} />
           </Field>
           {select("condition", "Condition", choices.conditions)}
           {select("language", "Language", choices.languages)}
           <Field label="Quantity" id="id_quantity" errors={errors("quantity")}>
-            <input type="number" name="quantity" id="id_quantity" min={0} required value={fields.quantity}
+            <Input type="number" name="quantity" id="id_quantity" min={0} required value={fields.quantity}
               onChange={set("quantity")} />
           </Field>
           <Field label="Unit price" id="id_price" errors={errors("price")}>
-            <input type="number" name="price" id="id_price" step="0.01" required value={fields.price} onChange={set("price")} />
+            <Input type="number" name="price" id="id_price" step="0.01" required value={fields.price} onChange={set("price")} />
           </Field>
           <Field label="Foil" id="id_foil" errors={errors("foil")} check>
-            <input type="checkbox" name="foil" id="id_foil" checked={fields.foil} onChange={set("foil")} />
+            <Checkbox name="foil" id="id_foil" checked={fields.foil} onCheckedChange={(c) => setValue("foil", c === true)} />
           </Field>
         </div>
       </form>
-      <div className="panel" style={{ padding: 0, border: 0, background: "none" }}>
-        <div className="form-actions">
-          <div className="group">
-            <button type="submit" form="item-form" className="btn btn-primary" disabled={save.isPending}>Save</button>
-            {!item && (
-              <button type="submit" form="item-form" name="add_another" value="1" className="btn" disabled={save.isPending}>
-                Save and add another
-              </button>
-            )}
-            <Link className="btn btn-ghost" to="/">Cancel</Link>
-          </div>
-          {item && (
-            <form method="post" onSubmit={confirmRemove}>
-              <button type="submit" className="btn btn-danger" disabled={remove.isPending}>Remove from collection</button>
-            </form>
+      <div className={FORM_ACTIONS}>
+        <div className={BUTTON_GROUP}>
+          <Button type="submit" form="item-form" variant="primary" disabled={save.isPending}>Save</Button>
+          {!item && (
+            <Button type="submit" form="item-form" name="add_another" value="1" disabled={save.isPending}>
+              Save and add another
+            </Button>
           )}
+          <Button asChild variant="ghost"><Link to="/">Cancel</Link></Button>
         </div>
+        {item && (
+          <form method="post" onSubmit={confirmRemove}>
+            <Button type="submit" variant="danger" disabled={remove.isPending}>Remove from collection</Button>
+          </form>
+        )}
       </div>
     </>
   );

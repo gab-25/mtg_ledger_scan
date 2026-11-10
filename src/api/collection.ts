@@ -1,5 +1,5 @@
 // /api/collection/ and /api/choices/: the collection, its cards, CSV import/export.
-import type { BadgeData } from "../components/Badge";
+import type { BadgeData } from "./types";
 import type { Done } from "./account";
 import { request } from "./client";
 

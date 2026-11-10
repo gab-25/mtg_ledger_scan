@@ -1,0 +1,109 @@
+/* MTG Ledger's look on Tailwind v4 + shadcn/ui. */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* The app is dark only: shadcn's `dark:` variants always apply. */
+@custom-variant dark (&);
+
+/* Colors are defined straight as --color-* tokens, with shadcn's names and MTG Ledger's own. */
+@theme {
+  /* shadcn names */
+  --color-background: #121318;
+  --color-foreground: #ECE8DF;
+  --color-card: #1B1D24;
+  --color-card-foreground: #ECE8DF;
+  --color-popover: #1B1D24;
+  --color-popover-foreground: #ECE8DF;
+  --color-primary: #D4B062;
+  --color-primary-foreground: #17140C;
+  --color-secondary: #22242D;
+  --color-secondary-foreground: #ECE8DF;
+  --color-muted: #22242D;
+  --color-muted-foreground: #A7A39A;
+  --color-accent: #1C1E25; /* hover surface, not the gold */
+  --color-accent-foreground: #ECE8DF;
+  --color-destructive: #E07A5F;
+  --color-border: #262833;
+  --color-input: #2A2D36;
+  --color-ring: #D4B062;
+  --color-sidebar: #16171D;
+
+  /* MTG Ledger names */
+  --color-surface: #1B1D24;
+  --color-surface-2: #22242D;
+  --color-line: #262833;
+  --color-line-2: #2A2D36;
+  --color-line-hover: #3A3D48;
+  --color-text-2: #D6D1C7;
+  --color-text-3: #B8B3A9;
+  --color-placeholder: #8E8A82;
+  --color-gold: #D4B062;
+  --color-gold-hi: #E9CD8C;
+  --color-gold-bg: #2A2619;
+  --color-warn: #F0B36B;
+  --color-warn-bg: #2E2418;
+  --color-ok: #8FD3A6;
+  --color-ok-bg: #1C2A22;
+  --color-danger: #E07A5F;
+  --color-danger-hi: #F0A08A;
+  --color-danger-bg: #2A1C19;
+  --color-danger-line: #4A2C27;
+
+  --font-serif: Spectral, Georgia, serif;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Line heights as before Tailwind: the browser's "normal" (Tailwind's text-* sizes would add ~20% height). */
+  --text-xs--line-height: normal;
+  --text-sm--line-height: normal;
+  --text-base--line-height: normal;
+  --text-lg--line-height: normal;
+  --text-xl--line-height: normal;
+  --text-2xl--line-height: normal;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;  /* buttons, inputs, nav links */
+  --radius-lg: 10px; /* user card, small panels */
+  --radius-xl: 14px; /* boxes, cards, tables */
+}
+
+@layer base {
+  html {
+    line-height: normal;
+  }
+  body {
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  a {
+    color: var(--color-gold);
+    text-decoration-line: underline;
+  }
+  a:hover {
+    color: var(--color-gold-hi);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+  ::placeholder {
+    color: var(--color-placeholder);
+  }
+
+  /* Printing a packing slip: black on white. */
+  @media print {
+    :root {
+      --color-background: #fff;
+      --color-foreground: #000;
+      --color-text-2: #111;
+      --color-text-3: #333;
+      --color-muted-foreground: #444;
+      --color-gold: #000;
+      --color-gold-hi: #000;
+      --color-primary: #000;
+    }
+  }
+}

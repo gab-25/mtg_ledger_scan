@@ -35,7 +35,7 @@ describe("ListingFormPage", () => {
     renderPage("/sale/7/");
     expect(await screen.findByRole("heading", { name: "Counterspell" })).toBeInTheDocument();
     expect(screen.getByText("DMR · NM · EN · 3 owned")).toBeInTheDocument();
-    expect(screen.getByLabelText("Status")).toHaveValue("to_publish");
+    expect(screen.getByLabelText("Status")).toHaveTextContent("To publish");
     expect(document.title).toBe("Listing · Counterspell · MTG Ledger");
     await userEvent.click(screen.getByRole("button", { name: "Use" }));
     expect(screen.getByLabelText("Price")).toHaveValue(0.95);
@@ -65,7 +65,7 @@ describe("ListingFormPage", () => {
     renderPage("/sale/7/");
     await userEvent.click(await screen.findByRole("button", { name: "Save listing" }));
     const error = await screen.findByText("You only own 3 copies.");
-    expect(error.closest(".field")).toContainElement(screen.getByLabelText("Quantity"));
+    expect(error.closest('[data-slot="field"]')).toContainElement(screen.getByLabelText("Quantity"));
   });
 
   it("removes the listing after confirming; an error keeps the page", async () => {
@@ -75,7 +75,7 @@ describe("ListingFormPage", () => {
     renderPage("/sale/7/");
     await userEvent.click(await screen.findByRole("button", { name: "Remove listing" }));
     expect(window.confirm).toHaveBeenCalledWith("Remove this listing?");
-    expect(await screen.findByText("Listing not removed: down")).toHaveClass("message", "error");
+    expect(await screen.findByText("Listing not removed: down")).toHaveAttribute("data-variant", "error");
     expect(screen.getByRole("heading", { name: "Counterspell" })).toBeInTheDocument();
   });
 });

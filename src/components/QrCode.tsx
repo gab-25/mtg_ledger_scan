@@ -11,7 +11,7 @@ export default function QrCode({ value, label, scale = 6 }: { value: string; lab
   }, [value]);
   return (
     <svg
-      className="scan-qr-code"
+      className="self-start overflow-hidden rounded-lg leading-none"
       role="img"
       aria-label={label}
       width={size * scale}

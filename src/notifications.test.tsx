@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import { Messages, NotificationsProvider, useNotify, type Msg } from "./notifications";
 
@@ -31,9 +31,8 @@ describe("notifications", () => {
     renderProbe();
     act(() => notify([{ level: "success", text: "Saved." }, { level: "warning", text: "Careful." }]));
     const list = screen.getByRole("status");
-    expect(list).toHaveClass("messages");
-    expect(screen.getByText("Saved.")).toHaveClass("message", "success");
-    expect(screen.getByText("Careful.")).toHaveClass("message", "warning");
+    expect(within(list).getByText("Saved.")).toHaveAttribute("data-variant", "success");
+    expect(within(list).getByText("Careful.")).toHaveAttribute("data-variant", "warning");
   });
 
   it("a message shown on this page is cleared by the next navigation", () => {

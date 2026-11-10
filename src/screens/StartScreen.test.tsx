@@ -1,3 +1,4 @@
+import { chooseOption } from "@/test/select";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -22,7 +23,7 @@ describe("StartScreen", () => {
   it("preselects last expansion and condition", async () => {
     vi.mocked(api.getSetup).mockResolvedValue(setup({ defaults: { expansion_id: DMR.id, condition: "EX" } }));
     renderStart();
-    expect(await screen.findByLabelText("Expansion")).toHaveValue(String(DMR.id));
+    expect(await screen.findByLabelText("Expansion")).toHaveTextContent("DMR · Dominaria Remastered");
     expect(screen.getByRole("radio", { name: "EX" })).toBeChecked();
     expect(screen.getByRole("link", { name: "Collection" })).toHaveAttribute("href", "/");
   });
@@ -40,7 +41,7 @@ describe("StartScreen", () => {
     vi.mocked(api.getSetup).mockResolvedValue(setup());
     vi.mocked(api.startSession).mockResolvedValue({ session: session({ uuid: "abc" }), warnings: [] });
     renderStart();
-    await userEvent.selectOptions(await screen.findByLabelText("Expansion"), String(DMR.id));
+    await chooseOption(await screen.findByLabelText("Expansion"), "DMR · Dominaria Remastered");
     await userEvent.click(screen.getByRole("radio", { name: "EX" }));
     await userEvent.click(screen.getByRole("button", { name: /Open camera|Start and continue on phone/ }));
     expect(api.startSession).toHaveBeenCalledWith(DMR.id, "EX");
@@ -51,7 +52,7 @@ describe("StartScreen", () => {
     vi.mocked(api.getSetup).mockResolvedValue(setup({ defaults: { expansion_id: DMR.id, condition: "NM" } }));
     vi.mocked(api.startSession).mockResolvedValue({ session: session(), warnings: [] });
     renderStart();
-    await userEvent.selectOptions(await screen.findByLabelText("Expansion"), "All expansions");
+    await chooseOption(await screen.findByLabelText("Expansion"), "All expansions");
     await userEvent.click(screen.getByRole("button", { name: /Open camera|Start and continue on phone/ }));
     expect(api.startSession).toHaveBeenCalledWith(null, "NM");
   });

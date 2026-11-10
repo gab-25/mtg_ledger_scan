@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Link } from "react-router-dom";
@@ -5,6 +6,11 @@ import { useAction } from "../actions";
 import { publish } from "../api/sale";
 import { getSync, resolveConflict, runSync, type Conflict } from "../api/sync";
 import DataTable from "../components/DataTable";
+import { PageHead } from "../components/Header";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { DIM, FACTS, H2, HINT, SECTION, SECTION_HEAD, SUB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import { SyncIcon } from "../components/icons";
 import PageState from "../components/PageState";
 import { capfirst, naturalday, time } from "../format";
@@ -29,24 +35,24 @@ export default function SyncPage() {
       header: "Card",
       cell: ({ row: { original: d } }) => (
         <>
-          <div style={{ fontWeight: 500 }}>{d.name}</div>
-          <div className="sub">{d.set_code} · {d.condition} · {d.language}</div>
+          <div className="font-medium">{d.name}</div>
+          <div className={SUB}>{d.set_code} · {d.condition} · {d.language}</div>
         </>
       ),
     },
-    { id: "service", header: "Service", accessorKey: "service", meta: { className: "dim" } },
-    { id: "ledger", header: "In Ledger", accessorKey: "local_value", meta: { className: "mono" } },
-    { id: "remote", header: "On service", accessorKey: "remote_value", meta: { className: "mono remote" } },
+    { id: "service", header: "Service", accessorKey: "service", meta: { className: DIM } },
+    { id: "ledger", header: "In Ledger", accessorKey: "local_value", meta: { className: "font-mono" } },
+    { id: "remote", header: "On service", accessorKey: "remote_value", meta: { className: "font-mono text-warn" } },
     {
       id: "action",
       header: "Action",
       meta: { align: "right" },
       cell: ({ row: { original: d } }) => (
-        <div className="row-actions">
-          <button type="button" className="btn btn-sm btn-raised" disabled={resolve.isPending}
-            onClick={() => resolve.mutate({ id: d.id, keep: "ledger" })}>Keep Ledger</button>
-          <button type="button" className="btn btn-sm btn-ghost" disabled={resolve.isPending}
-            onClick={() => resolve.mutate({ id: d.id, keep: "remote" })}>Keep remote</button>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="raised" size="sm" disabled={resolve.isPending}
+            onClick={() => resolve.mutate({ id: d.id, keep: "ledger" })}>Keep Ledger</Button>
+          <Button type="button" variant="ghost" size="sm" disabled={resolve.isPending}
+            onClick={() => resolve.mutate({ id: d.id, keep: "remote" })}>Keep remote</Button>
         </div>
       ),
     },
@@ -54,84 +60,87 @@ export default function SyncPage() {
 
   return (
     <>
-      <header className="page-head">
-        <div>
-          <div className="eyebrow">Connected services</div>
-          <h1>Sync</h1>
-        </div>
-        <form method="post" onSubmit={(e) => { e.preventDefault(); syncAll.mutate(); }}>
-          <button type="submit" className="btn btn-primary" disabled={syncAll.isPending}>
-            <SyncIcon />
-            Sync all
-          </button>
-        </form>
-      </header>
+      <PageHead
+        eyebrow="Connected services"
+        title="Sync"
+        actions={
+          <form method="post" onSubmit={(e) => { e.preventDefault(); syncAll.mutate(); }}>
+            <Button type="submit" variant="primary" disabled={syncAll.isPending}>
+              <SyncIcon />
+              Sync all
+            </Button>
+          </form>
+        }
+      />
 
-      <section className="connections" aria-label="Connections">
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5" aria-label="Connections">
         {connections.map((s) => {
           const waiting = pending + s.open_conflicts;
           return (
-            <article key={s.name} className="connection">
-              <div className="connection-head">
+            <Card asChild key={s.name} className="gap-[18px]">
+              <article>
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2>{s.name}</h2>
-                  <div className="hint" style={{ marginTop: 4 }}>{s.description}</div>
+                  <h2 className={cn(H2, "text-2xl")}>{s.name}</h2>
+                  <div className={cn(HINT, "mt-1")}>{s.description}</div>
                 </div>
                 {waiting ? (
-                  <span className="badge badge-pending"><span className="pill-dot" />{waiting} pending</span>
+                  <Badge variant="pending"><span className="size-2 rounded-full bg-current" aria-hidden="true" />{waiting} pending</Badge>
                 ) : (
-                  <span className="badge badge-ok"><span className="pill-dot" />In sync</span>
+                  <Badge variant="ok"><span className="size-2 rounded-full bg-current" aria-hidden="true" />In sync</Badge>
                 )}
               </div>
-              <dl className="facts">
-                <div><dt>Last sync</dt><dd className="mono">{when(s.last_sync)}</dd></div>
+              <dl className={FACTS}>
+                <div><dt>Last sync</dt><dd className="font-mono">{when(s.last_sync)}</dd></div>
                 <div><dt>Direction</dt><dd>{s.direction || "—"}</dd></div>
-                <div><dt>Orders imported</dt><dd className="mono">{when(s.orders_synced_at)}</dd></div>
+                <div><dt>Orders imported</dt><dd className="font-mono">{when(s.orders_synced_at)}</dd></div>
                 <div>
                   <dt>API token</dt>
                   <dd>{s.token_ok ? "Configured" : <Link to="/account/#cardtrader">Not configured</Link>}</dd>
                 </div>
               </dl>
-              <div className="actions" style={{ gap: 10 }}>
+              <div className="flex flex-wrap items-center gap-2.5 [&_form]:m-0">
                 <form method="post" onSubmit={(e) => { e.preventDefault(); pushChanges.mutate(); }}>
-                  <button type="submit" className="btn btn-raised" disabled={!pending || pushChanges.isPending}>
+                  <Button type="submit" variant="raised" disabled={!pending || pushChanges.isPending}>
                     Publish changes
-                  </button>
+                  </Button>
                 </form>
-                <Link className="btn btn-ghost" to="/account/#cardtrader">Settings</Link>
+                <Button asChild variant="ghost"><Link to="/account/#cardtrader">Settings</Link></Button>
               </div>
-            </article>
+              </article>
+            </Card>
           );
         })}
       </section>
 
-      <section className="section" aria-labelledby="diff-title">
-        <div className="section-head">
-          <h2 id="diff-title">Conflicts to resolve</h2>
-          <span className="hint">Choose which source wins for each card</span>
+      <section className={SECTION} aria-labelledby="diff-title">
+        <div className={SECTION_HEAD}>
+          <h2 id="diff-title" className={H2}>Conflicts to resolve</h2>
+          <span className={HINT}>Choose which source wins for each card</span>
         </div>
-        <DataTable className="table-conflicts" columns={columns} data={conflicts} getRowId={(d) => String(d.id)}
+        <DataTable className="min-w-[820px]" columns={columns} data={conflicts} getRowId={(d) => String(d.id)}
           empty="No conflicts — Ledger and connected services agree." />
       </section>
 
-      <section className="section" aria-labelledby="log-title">
-        <h2 id="log-title">Activity log</h2>
+      <section className={SECTION} aria-labelledby="log-title">
+        <h2 id="log-title" className={H2}>Activity log</h2>
         {log.length ? (
-          <ol className="log">
+          <ol className="m-0 flex list-none flex-col rounded-[12px] border border-line bg-card p-0">
             {log.map((l, i) => (
-              <li key={i}>
-                <time className="log-when" dateTime={l.created_at}>
+              <li key={i} className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-3.5 last:border-b-0">
+                <time className="min-w-[130px] font-mono text-[13px] text-muted-foreground" dateTime={l.created_at}>
                   {capfirst(naturalday(l.created_at, "M j"))} {time(l.created_at)}
                 </time>
-                <span className={`log-dot${l.level === "warn" ? " warn" : ""}`}>
+                <span data-slot="log-dot" data-tone={l.level === "warn" ? "warn" : "ok"}
+                  className={cn("size-2 rounded-full", l.level === "warn" ? "bg-warn" : "bg-ok")}>
                   <span className="sr-only">{l.level_label}</span>
                 </span>
-                <span className="log-text">{l.message}</span>
+                <span className="min-w-[200px] flex-1 text-sm">{l.message}</span>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="hint">No activity yet.</p>
+          <p className={cn(HINT, "m-0")}>No activity yet.</p>
         )}
       </section>
     </>

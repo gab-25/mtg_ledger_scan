@@ -5,8 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { NotificationsProvider } from "./notifications";
 import { makeQueryClient } from "./queryClient";
-import "./styles/app.css";
-import "./styles/scan.css";
+import "./styles/globals.css";
 
 const queryClient = makeQueryClient();
 

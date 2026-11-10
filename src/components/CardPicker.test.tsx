@@ -1,3 +1,4 @@
+import { chooseOption } from "@/test/select";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as api from "../api/scan";
@@ -67,7 +68,7 @@ describe("CardPicker", () => {
 
   it("search shows results", async () => {
     renderPicker();
-    await userEvent.selectOptions(screen.getByLabelText("Expansion"), "dmu");
+    await chooseOption(screen.getByLabelText("Expansion"), "DMU · Dominaria United");
     await userEvent.type(screen.getByLabelText("Search by name"), "sheol");
     expect(await screen.findByText("Sheoldred, the Apocalypse")).toBeInTheDocument();
     expect(api.search).toHaveBeenLastCalledWith("s1", "sheol", "dmu");
@@ -77,8 +78,10 @@ describe("CardPicker", () => {
     vi.mocked(api.confirmLine).mockResolvedValue({ line: line(), count: 3 });
     const props = renderPicker();
     await userEvent.click(screen.getAllByRole("radio")[1]);
-    await userEvent.selectOptions(screen.getByLabelText("Language"), "IT");
-    await userEvent.selectOptions(screen.getByLabelText("Condition"), "EX");
+    await chooseOption(screen.getByLabelText("Language"), "Italian");
+    expect(screen.getByRole("dialog")).toBeInTheDocument(); // the menu closed over the picker, which stays open
+    expect(screen.getByLabelText("Language")).toHaveTextContent("Italian");
+    await chooseOption(screen.getByLabelText("Condition"), "Excellent");
     await userEvent.click(screen.getByLabelText("Foil"));
     await userEvent.click(screen.getByRole("button", { name: "Confirm and continue" }));
     expect(api.confirmLine).toHaveBeenCalledWith("p1", { blueprintId: 1202, language: "IT", condition: "EX", foil: true });

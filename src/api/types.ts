@@ -1,4 +1,5 @@
 // The JSON API of mtg_ledger_core under /api/scan/ (contract: gab-25/mtg_ledger_core#10).
+import { BADGE_VARIANTS, type BadgeVariant } from "@/components/ui/badge";
 
 export type Expansion = { id: number; code: string; name: string };
 export type Blueprint = {
@@ -75,3 +76,11 @@ export type LineChanges = Partial<{
   quantity: number;
   for_sale: boolean | null;
 }>;
+
+/** A status badge from the API: the tone is one of the Badge variants (neutral, gold, pending, live…). */
+export type BadgeData = { label: string; tone: string };
+
+/** The Badge variant of an API tone; an unknown tone shows as neutral. */
+export function badgeVariant(tone: string): BadgeVariant {
+  return (BADGE_VARIANTS as readonly string[]).includes(tone) ? (tone as BadgeVariant) : "neutral";
+}

@@ -9,6 +9,19 @@ import { useCamera } from "../camera/useCamera";
 import CardPicker from "../components/CardPicker";
 import LastCardToast, { type Toast } from "../components/LastCardToast";
 import PhoneOnly, { sessionLabel } from "./PhoneOnly";
+import { Button } from "@/components/ui/button";
+import { APP_MAIN, EMPTY, SCAN_WARN, SUB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
+
+const PILL = "inline-flex min-h-9 items-center gap-1.5 rounded-full bg-card px-3 text-[13px]";
+/** The card-shaped frame over the video; its border shows the autoscan phase (data-phase). */
+const GUIDE = [
+  "relative flex aspect-[63/88] w-[min(88cqw,calc(78cqh*63/88))] items-center justify-center rounded-xl",
+  "border-2 border-[rgba(236,232,223,.7)] shadow-[0_0_0_100vmax_rgba(10,10,13,.55)] transition-[border-color,box-shadow] duration-150",
+  "data-[phase=next]:border-dashed data-[phase=next]:border-muted-foreground",
+  "data-[phase=steadying]:border-primary data-[phase=steadying]:shadow-[0_0_0_4px_var(--color-gold-bg)]",
+  "data-[phase=busy]:border-dashed data-[phase=busy]:border-primary",
+].join(" ");
 
 const HELP: Record<ScanPhase, string> = {
   armed: "Frame the whole card",
@@ -117,25 +130,26 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
 
   const review = `/scan/${session.uuid}/review`;
   return (
-    <main className="scan-cam scan-body">
-      <div className="scan-top">
-        <Link className="scan-round" to={review} aria-label="Close and review">
+    <main className="flex h-dvh flex-col overscroll-none bg-[#0A0A0D] text-foreground">
+      <div className="flex items-center gap-2 p-4">
+        <Link className="flex size-11 items-center justify-center rounded-full bg-card text-foreground hover:text-foreground" to={review} aria-label="Close and review">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </Link>
-        <span className="scan-pill">{sessionLabel(session)}</span>
-        <span className="scan-pill scan-count">
-          <span className="mono" data-testid="count">{count}</span> <span className="sub">cards</span>
+        <span className={PILL}>{sessionLabel(session)}</span>
+        <span className={cn(PILL, "ml-auto")}>
+          <span className="font-mono" data-testid="count">{count}</span> <span className={SUB}>cards</span>
         </span>
       </div>
 
-      <div className="scan-stage">
-        <video ref={videoRef} className="scan-video" playsInline muted autoPlay />
-        <div ref={guideRef} className="scan-guide" data-phase={auto.phase} />
-        <p className="scan-help">{error ?? HELP[auto.phase]}</p>
+      {/* size containment: the guide is as large as the stage allows, leaving room below for the help line */}
+      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3.5 overflow-hidden @container-size">
+        <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted autoPlay />
+        <div ref={guideRef} className={GUIDE} data-phase={auto.phase} />
+        <p className="relative m-0 px-4 text-center text-[13px] text-text-3">{error ?? HELP[auto.phase]}</p>
         {debug && auto.metrics && (
-          <pre className="scan-debug" data-testid="debug">
+          <pre className="absolute top-2 left-2 m-0 rounded-lg bg-black/65 p-2 font-mono text-xs leading-[1.4] text-white" data-testid="debug">
             {`${auto.phase}\nedges ${auto.metrics.edges.toFixed(3)} ${auto.metrics.present ? "card" : "empty"}\n` +
               `sharp ${auto.metrics.sharpness.toFixed(2)} ${auto.metrics.sharp ? "ok" : "blur"} ` +
               `(${auto.metrics.sharpRange.map((x) => x.toFixed(2)).join("–")})\n` +
@@ -148,15 +162,15 @@ function PhoneCamera({ session, count, setCount, toast, setToast, picker, setPic
 
       <LastCardToast toast={toast} onFoil={onFoil} onUndo={onUndo} onRetry={auto.manual} />
 
-      <div className="scan-bottom">
-        <button type="button" className="btn" disabled={capturing} onClick={() => setPicker({ line: null })}>
+      <div className="flex items-center justify-between gap-2 px-5 pt-2 pb-[max(24px,env(safe-area-inset-bottom))]">
+        <Button type="button" disabled={capturing} onClick={() => setPicker({ line: null })}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.5-3.5" />
           </svg>
           Search
-        </button>
-        <Link className="btn btn-primary" to={review}>Review</Link>
+        </Button>
+        <Button asChild variant="primary"><Link to={review}>Review</Link></Button>
       </div>
     </main>
   );
@@ -190,8 +204,8 @@ export default function CameraScreen() {
     setPicker(null);
   }
 
-  if (error) return <main className="main app-main"><p className="scan-warn" role="alert">{error}</p></main>;
-  if (!session || !setup) return <main className="main app-main"><p className="empty">Loading…</p></main>;
+  if (error) return <main className={APP_MAIN}><p className={SCAN_WARN} role="alert">{error}</p></main>;
+  if (!session || !setup) return <main className={APP_MAIN}><p className={EMPTY}>Loading…</p></main>;
 
   const props = { session, setup, count, setCount, toast, setToast, picker, setPicker };
   return (

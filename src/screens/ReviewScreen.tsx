@@ -3,6 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { getReview, getSetup, saveSession, setThreshold, undoLine, updateLine } from "../api/scan";
 import type { Line, LineChanges, Review, Setup } from "../api/types";
 import CardPicker from "../components/CardPicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { APP_MAIN, EMPTY, SCAN_LINE, SCAN_LINE_TEXT, SCAN_WARN, SUB, THUMB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import Header from "../components/Header";
 import LineRow from "../components/LineRow";
 import { useNotify } from "../notifications";
@@ -69,8 +73,8 @@ export default function ReviewScreen() {
 
   if (!review || !setup) {
     return (
-      <main className="main app-main">
-        {error ? <p className="scan-warn" role="alert">{error}</p> : <p className="empty">Loading…</p>}
+      <main className={APP_MAIN}>
+        {error ? <p className={SCAN_WARN} role="alert">{error}</p> : <p className={EMPTY}>Loading…</p>}
       </main>
     );
   }
@@ -78,35 +82,36 @@ export default function ReviewScreen() {
   const { session, lines, pending, copies, unique, listed } = review;
   const camera = `/scan/${uuid}`;
   return (
-    <main className="main app-main">
+    <main className={APP_MAIN}>
       <Header
         eyebrow={`Session · ${sessionLabel(session)}`}
         title={`${plural(copies, "card")} to save`}
-        actions={<Link className="btn" to={camera}>Continue scanning</Link>}
+        actions={<Button asChild><Link to={camera}>Continue scanning</Link></Button>}
       />
-      <div className="sub">{unique} unique · duplicates already merged</div>
+      <div className={SUB}>{unique} unique · duplicates already merged</div>
 
-      {error && <p className="scan-warn" role="alert">{error}</p>}
+      {error && <p className={SCAN_WARN} role="alert">{error}</p>}
       {pending.length > 0 && (
-        <button type="button" className="scan-warn scan-warn-button" onClick={() => setConfirming(pending[0])}>
+        <button type="button" className={cn(SCAN_WARN, "w-full cursor-pointer border-0 text-left font-sans hover:underline")}
+          onClick={() => setConfirming(pending[0])}>
           {plural(pending.length, "card")} to confirm — saving is blocked until they are resolved or removed
         </button>
       )}
 
-      <form className="scan-threshold" onSubmit={applyThreshold}>
+      <form className="m-0 flex flex-wrap items-center gap-2.5 rounded-lg border border-line bg-card px-3.5 py-2.5 text-sm text-text-2" onSubmit={applyThreshold}>
         <label htmlFor="threshold">List for sale cards worth more than €</label>
-        <input
+        <Input
           id="threshold"
           inputMode="decimal"
-          className="input mono"
+          className="w-[90px] font-mono"
           placeholder="—"
           value={threshold}
           onChange={(e) => setThresholdText(e.target.value)}
         />
-        <button type="submit" className="btn btn-sm">Apply</button>
+        <Button type="submit" size="sm">Apply</Button>
       </form>
 
-      <div className="scan-list">
+      <div className="flex flex-col">
         {lines.map((l) => (
           <LineRow
             key={`${l.uuid}-${l.condition}-${l.language}-${l.foil}`}
@@ -117,26 +122,26 @@ export default function ReviewScreen() {
             onUndo={() => act(() => undoLine(l.uuid))}
           />
         ))}
-        {lines.length === 0 && <p className="empty">No cards scanned yet.</p>}
+        {lines.length === 0 && <p className={EMPTY}>No cards scanned yet.</p>}
         {pending.map((l) => (
-          <div className="scan-line scan-line-pending" key={l.uuid}>
-            {l.frame_url ? <img src={l.frame_url} alt="" /> : <span className="scan-thumb" aria-hidden="true" />}
-            <div className="scan-line-text">
-              <span className="scan-option-name">Unconfirmed card</span>
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setConfirming(l)}>Confirm</button>
+          <div className={SCAN_LINE} key={l.uuid}>
+            {l.frame_url ? <img className={THUMB} src={l.frame_url} alt="" /> : <span className={THUMB} aria-hidden="true" />}
+            <div className={SCAN_LINE_TEXT}>
+              <span className="text-[15px] font-semibold text-warn">Unconfirmed card</span>
+              <Button type="button" size="sm" variant="ghost" className="self-start" onClick={() => setConfirming(l)}>Confirm</Button>
             </div>
-            <button type="button" className="btn btn-sm btn-danger" onClick={() => act(() => updateLine(l.uuid, { quantity: 0 }))}>
+            <Button type="button" size="sm" variant="danger" onClick={() => act(() => updateLine(l.uuid, { quantity: 0 }))}>
               Remove
-            </button>
+            </Button>
           </div>
         ))}
       </div>
 
-      <div className="scan-save">
-        <Link className="btn" to={camera}>Continue</Link>
-        <button type="button" className="btn btn-primary" disabled={busy || pending.length > 0 || lines.length === 0} onClick={save}>
+      <div className="sticky bottom-0 flex gap-2 border-t border-line bg-background py-3">
+        <Button asChild><Link to={camera}>Continue</Link></Button>
+        <Button type="button" variant="primary" className="min-h-[52px] flex-1" disabled={busy || pending.length > 0 || lines.length === 0} onClick={save}>
           {`Save ${copies}${listed ? ` · list ${listed}` : ""}`}
-        </button>
+        </Button>
       </div>
 
       {confirming && (

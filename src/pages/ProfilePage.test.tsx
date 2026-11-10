@@ -29,14 +29,14 @@ describe("ProfilePage", () => {
     renderPage("/account/");
     expect(await screen.findByRole("heading", { name: "Profile and settings" })).toBeInTheDocument();
     const summary = screen.getByRole("region", { name: "Account summary" });
-    expect(within(summary).getByText("@gab · admin")).toHaveClass("sub", "mono");
+    expect(within(summary).getByText("@gab · admin")).toBeInTheDocument();
     expect(within(summary).getByText("5 Jan 2026")).toBeInTheDocument();
     expect(within(summary).getByText("—")).toBeInTheDocument();
     expect(screen.getByLabelText("First name")).toHaveValue("Gabriele");
     expect(screen.getByLabelText("Email address")).toHaveValue("gab@example.com");
     expect(screen.getByLabelText("Username")).toHaveAttribute("readonly");
     expect(screen.getByText("Your password must contain at least 8 characters.")).toBeInTheDocument();
-    expect(screen.getByText("Not connected")).toHaveClass("badge", "badge-pending");
+    expect(screen.getByText("Not connected")).toHaveAttribute("data-variant", "pending");
     expect(screen.getByText(/Never synced\./)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Connect" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Remove token" })).not.toBeInTheDocument();
@@ -55,9 +55,9 @@ describe("ProfilePage", () => {
     await userEvent.type(email, "other@example.com");
     await userEvent.click(screen.getByRole("button", { name: "Save details" }));
     const error = await screen.findByText("This email is already used by another account.");
-    expect(error.closest(".field")).toContainElement(email);
+    expect(error.closest('[data-slot="field"]')).toContainElement(email);
     await userEvent.click(screen.getByRole("button", { name: "Save details" }));
-    expect(await screen.findByText("Profile updated.")).toHaveClass("message", "success");
+    expect(await screen.findByText("Profile updated.")).toHaveAttribute("data-variant", "success");
     expect(api.updateProfile).toHaveBeenLastCalledWith({ first_name: "Gabriele", last_name: "S", email: "other@example.com" });
   });
 
@@ -99,7 +99,7 @@ describe("ProfilePage", () => {
     const confirm = vi.fn().mockReturnValue(true);
     vi.stubGlobal("confirm", confirm);
     renderPage("/account/");
-    expect(await screen.findByText("Connected")).toHaveClass("badge", "badge-ok");
+    expect(await screen.findByText("Connected")).toHaveAttribute("data-variant", "ok");
     expect(screen.getByText(/Last sync 5 minutes ago\./)).toBeInTheDocument();
     expect(screen.getByText(/also used to load the card catalog and prices for every user/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Replace token" })).toBeInTheDocument();

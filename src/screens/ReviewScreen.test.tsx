@@ -1,3 +1,4 @@
+import { chooseOption } from "@/test/select";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -107,9 +108,9 @@ describe("ReviewScreen", () => {
     renderReview();
     await userEvent.click(await screen.findByText("Edit"));
     const row = screen.getByRole("group", { name: "Edit Counterspell" });
-    await userEvent.selectOptions(within(row).getByLabelText("Condition"), "EX");
-    await userEvent.selectOptions(within(row).getByLabelText("Language"), "EN");
-    await userEvent.selectOptions(within(row).getByLabelText("Foil"), "1");
+    await chooseOption(within(row).getByLabelText("Condition"), "EX");
+    await chooseOption(within(row).getByLabelText("Language"), "EN");
+    await chooseOption(within(row).getByLabelText("Foil"), "Foil");
     await userEvent.click(within(row).getByRole("button", { name: "Update" }));
     expect(api.updateLine).toHaveBeenCalledWith("l1", { condition: "EX", language: "EN", foil: true });
   });
@@ -141,7 +142,7 @@ describe("ReviewScreen", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Save 2" }));
     expect(api.saveSession).toHaveBeenCalledWith("s1");
     expect(await screen.findByText("collection page")).toBeInTheDocument();
-    expect(screen.getByText("Saved 2 cards, 0 queued for sale.")).toHaveClass("message", "success");
+    expect(screen.getByText("Saved 2 cards, 0 queued for sale.")).toHaveAttribute("data-variant", "success");
   });
 
   it("save error is shown", async () => {

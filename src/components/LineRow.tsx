@@ -1,3 +1,8 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SCAN_LINE, SCAN_LINE_TEXT, SUB, THUMB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
+import { ChoiceSelect } from "./Field";
 import { useState, type FormEvent } from "react";
 import type { Choice, Line, LineChanges } from "../api/types";
 import { lineMeta } from "./LastCardToast";
@@ -23,20 +28,21 @@ export default function LineRow({ line, conditions, languages, onChange, onUndo 
   }
 
   return (
-    <div className="scan-line">
+    <div className={SCAN_LINE}>
       {line.blueprint?.image_url ? (
-        <img src={line.blueprint.image_url} alt="" loading="lazy" />
+        <img className={THUMB} src={line.blueprint.image_url} alt="" loading="lazy" />
       ) : (
-        <span className="scan-thumb" aria-hidden="true" />
+        <span className={THUMB} aria-hidden="true" />
       )}
-      <div className="scan-line-text">
-        <span className="scan-option-name">{name}</span>
-        <span className="mono sub">{lineMeta(line)}</span>
-        <span className="scan-line-meta">
-          <span className="mono">{line.price !== null ? `€ ${line.price}` : "no price"}</span>
+      <div className={SCAN_LINE_TEXT}>
+        <span className="text-[15px] font-semibold">{name}</span>
+        <span className={cn(SUB, "font-mono")}>{lineMeta(line)}</span>
+        <span className="flex items-center gap-2 text-[13px]">
+          <span className="font-mono">{line.price !== null ? `€ ${line.price}` : "no price"}</span>
+          <Badge asChild variant={line.listed ? "gold" : "neutral"}>
           <button
             type="button"
-            className={`badge ${line.listed ? "badge-gold" : "badge-neutral"}`}
+            className="cursor-pointer border-0 font-sans disabled:cursor-not-allowed disabled:opacity-60"
             aria-pressed={line.listed}
             disabled={line.price === null}
             title={line.price === null ? "No market price: cannot be listed" : undefined}
@@ -44,32 +50,29 @@ export default function LineRow({ line, conditions, languages, onChange, onUndo 
           >
             {line.listed ? "For sale" : "Collection only"}
           </button>
+          </Badge>
         </span>
-        <details className="scan-edit">
-          <summary>Edit</summary>
-          <form onSubmit={submit}>
-            <fieldset className="scan-row scan-edit-fields" aria-label={`Edit ${name}`}>
-              <select className="input" aria-label="Condition" value={condition} onChange={(e) => setCondition(e.target.value)}>
-                {conditions.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
-              </select>
-              <select className="input" aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                {languages.map((l) => <option key={l.code} value={l.code}>{l.code}</option>)}
-              </select>
-              <select className="input" aria-label="Foil" value={foil} onChange={(e) => setFoil(e.target.value)}>
-                <option value="0">Non-foil</option>
-                <option value="1">Foil</option>
-              </select>
-              <button type="submit" className="btn btn-sm">Update</button>
+        <details>
+          <summary className="flex min-h-7 cursor-pointer items-center text-xs text-muted-foreground">Edit</summary>
+          <form className="m-0" onSubmit={submit}>
+            <fieldset className="m-0 flex flex-wrap items-end gap-2.5 border-0 p-0" aria-label={`Edit ${name}`}>
+              <ChoiceSelect aria-label="Condition" className="min-h-9 w-auto" value={condition} onChange={setCondition}
+                options={conditions.map((c) => [c.code, c.code])} />
+              <ChoiceSelect aria-label="Language" className="min-h-9 w-auto" value={language} onChange={setLanguage}
+                options={languages.map((l) => [l.code, l.code])} />
+              <ChoiceSelect aria-label="Foil" className="min-h-9 w-auto" value={foil} onChange={setFoil}
+                options={[["0", "Non-foil"], ["1", "Foil"]]} />
+              <Button type="submit" size="sm">Update</Button>
             </fieldset>
           </form>
         </details>
       </div>
-      <div className="stepper">
-        <button type="button" className="btn btn-sm" aria-label={`Remove one copy of ${name}`} onClick={onUndo}>−</button>
-        <span className="mono">{line.quantity}</span>
-        <button type="button" className="btn btn-sm" aria-label={`Add one copy of ${name}`} onClick={() => onChange({ quantity: line.quantity + 1 })}>
+      <div className="flex items-center gap-1">
+        <Button type="button" size="sm" className="w-10 px-0" aria-label={`Remove one copy of ${name}`} onClick={onUndo}>−</Button>
+        <span className="min-w-6 text-center font-mono">{line.quantity}</span>
+        <Button type="button" size="sm" className="w-10 px-0" aria-label={`Add one copy of ${name}`} onClick={() => onChange({ quantity: line.quantity + 1 })}>
           +
-        </button>
+        </Button>
       </div>
     </div>
   );

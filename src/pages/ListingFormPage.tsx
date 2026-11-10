@@ -4,7 +4,12 @@ import { Link, useParams } from "react-router-dom";
 import { fieldErrors, useAction } from "../actions";
 import { getChoices } from "../api/collection";
 import { deleteListing, getListing, saveListing, type ListingDetail, type ListingFields } from "../api/sale";
-import Field from "../components/Field";
+import Field, { ChoiceSelect } from "../components/Field";
+import { PageHead } from "../components/Header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { BUTTON_GROUP, FORM_ACTIONS, FORM_GRID, HINT, PANEL, PRICE_LABEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import { euro } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -45,69 +50,62 @@ function ListingForm({ detail, statuses }: { detail: ListingDetail; statuses: [s
 
   return (
     <>
-      <header className="page-head">
-        <div>
-          <div className="eyebrow">
-            <Link to="/sale/" style={{ color: "inherit", textDecoration: "none" }}>For sale</Link>
-          </div>
-          <h1>{item.name}</h1>
-          <div className="sale-meta" style={{ marginTop: 6 }}>
+      <PageHead
+        eyebrow={<Link to="/sale/" className="text-inherit no-underline">For sale</Link>}
+        title={item.name}
+        meta={
+          <>
             {item.set_code} · {item.condition} · {item.language}
             {item.foil && " · FOIL"} · {item.quantity} owned
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <form method="post" className="panel" id="listing-form" onSubmit={submit}>
-        <div className="form-grid">
+      <form method="post" className={PANEL} id="listing-form" onSubmit={submit}>
+        <div className={FORM_GRID}>
           <Field label="Quantity" id="id_quantity" errors={errors("quantity")}>
-            <input type="number" name="quantity" id="id_quantity" min={0} required value={fields.quantity}
+            <Input type="number" name="quantity" id="id_quantity" min={0} required value={fields.quantity}
               onChange={set("quantity")} />
           </Field>
           <Field label="Price" id="id_price" errors={errors("price")}>
-            <input type="number" name="price" id="id_price" step="0.01" required value={fields.price} onChange={set("price")} />
+            <Input type="number" name="price" id="id_price" step="0.01" required value={fields.price} onChange={set("price")} />
           </Field>
           <Field label="Market price" id="id_market_price" errors={errors("market_price")}>
-            <input type="number" name="market_price" id="id_market_price" step="0.01" value={fields.market_price}
+            <Input type="number" name="market_price" id="id_market_price" step="0.01" value={fields.market_price}
               onChange={set("market_price")} />
           </Field>
           <Field label="Status" id="id_status" errors={errors("status")}>
-            <select name="status" id="id_status" value={fields.status} onChange={set("status")}>
-              {statuses.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+            <ChoiceSelect name="status" id="id_status" value={fields.status} options={statuses}
+              onChange={(status) => setFields((f) => ({ ...f, status }))} />
           </Field>
         </div>
-        <p className="hint" style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <p className={cn(HINT, "mt-0 mb-3 flex flex-wrap items-center gap-2.5")}>
           <span>
-            <span className="price-label">Cardmarket trend{item.foil && " (foil)"}</span>{" "}
+            <span className={PRICE_LABEL}>Cardmarket trend{item.foil && " (foil)"}</span>{" "}
             {suggestion !== null ? euro(suggestion, 2) : "—"}
           </span>
           {suggestion !== null && (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setFields((f) => ({ ...f, price: suggestion }))}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setFields((f) => ({ ...f, price: suggestion }))}>
               Use
-            </button>
+            </Button>
           )}
         </p>
-        <p className="hint" style={{ margin: 0 }}>
+        <p className={cn(HINT, "m-0")}>
           Changes to a published listing are queued as “To publish” until you publish them to CardTrader.
         </p>
       </form>
-      <div className="panel" style={{ padding: 0, border: 0, background: "none" }}>
-        <div className="form-actions">
-          <div className="group">
-            <button type="submit" form="listing-form" className="btn btn-primary" disabled={save.isPending}>
-              {listing.exists ? "Save listing" : "Create listing"}
-            </button>
-            <Link className="btn btn-ghost" to="/sale/">Cancel</Link>
-          </div>
-          {listing.exists && (
-            <form method="post" onSubmit={confirmRemove}>
-              <button type="submit" className="btn btn-danger" disabled={remove.isPending}>Remove listing</button>
-            </form>
-          )}
+      <div className={FORM_ACTIONS}>
+        <div className={BUTTON_GROUP}>
+          <Button type="submit" form="listing-form" variant="primary" disabled={save.isPending}>
+            {listing.exists ? "Save listing" : "Create listing"}
+          </Button>
+          <Button asChild variant="ghost"><Link to="/sale/">Cancel</Link></Button>
         </div>
+        {listing.exists && (
+          <form method="post" onSubmit={confirmRemove}>
+            <Button type="submit" variant="danger" disabled={remove.isPending}>Remove listing</Button>
+          </form>
+        )}
       </div>
     </>
   );

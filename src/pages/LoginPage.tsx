@@ -3,6 +3,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { fieldErrors } from "../actions";
 import { ensureCsrf, login } from "../api/account";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PANEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import Field, { Errors } from "../components/Field";
 import { Logo } from "../components/icons";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -56,24 +60,24 @@ export default function LoginPage() {
     && !fieldErrors(error, "password") ? [(error as Error).message] : undefined;
 
   return (
-    <main className="login">
-      <form method="post" className="panel" onSubmit={submit}>
-        <div className="brand" style={{ padding: 0 }}>
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <form method="post" className={cn(PANEL, "w-full max-w-[400px]")} onSubmit={submit}>
+        <div className="flex items-center gap-3 text-foreground">
           <Logo />
-          <span className="brand-name">MTG Ledger</span>
+          <span className="font-serif text-[22px] font-bold tracking-[.2px]">MTG Ledger</span>
         </div>
         <Errors errors={fieldErrors(error, "non_field_errors") ?? generic} />
-        <div className="form-grid">
+        <div className="grid grid-cols-1 gap-[18px]">
           <Field label="Username" id="id_username" errors={fieldErrors(error, "username")}>
-            <input type="text" id="id_username" name="username" autoFocus autoCapitalize="none" autoComplete="username"
+            <Input type="text" id="id_username" name="username" autoFocus autoCapitalize="none" autoComplete="username"
               maxLength={150} required value={username} onChange={(e) => setUsername(e.target.value)} />
           </Field>
           <Field label="Password" id="id_password" errors={fieldErrors(error, "password")}>
-            <input type="password" id="id_password" name="password" autoComplete="current-password" required
+            <Input type="password" id="id_password" name="password" autoComplete="current-password" required
               value={password} onChange={(e) => setPassword(e.target.value)} />
           </Field>
         </div>
-        <button type="submit" className="btn btn-primary">Sign in</button>
+        <Button type="submit" variant="primary">Sign in</Button>
       </form>
     </main>
   );

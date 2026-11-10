@@ -4,6 +4,11 @@ import { Link } from "react-router-dom";
 import { fieldErrors, useAction } from "../actions";
 import { EXPORT_URL, getImportColumns, importCsv } from "../api/collection";
 import Field from "../components/Field";
+import { PageHead } from "../components/Header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { BUTTON_GROUP, CODE, FORM_ACTIONS, FORM_GRID, HINT, PANEL } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
@@ -23,37 +28,30 @@ export default function ImportPage() {
 
   return (
     <>
-      <header className="page-head">
-        <div>
-          <div className="eyebrow">
-            <Link to="/" style={{ color: "inherit", textDecoration: "none" }}>Collection</Link>
-          </div>
-          <h1>Import CSV</h1>
-        </div>
-      </header>
+      <PageHead eyebrow={<Link to="/" className="text-inherit no-underline">Collection</Link>} title="Import CSV" />
 
-      <form method="post" encType="multipart/form-data" className="panel" onSubmit={submit}>
-        <p className="hint" style={{ margin: 0 }}>
+      <form method="post" encType="multipart/form-data" className={PANEL} onSubmit={submit}>
+        <p className={cn(HINT, "m-0")}>
           Columns:{" "}
           {cols.map((c, i) => (
             <span key={c}>
-              <code>{c}</code>
+              <code className={CODE}>{c}</code>
               {i < cols.length - 1 && ", "}
             </span>
           ))}
-          . Only <code>name</code> and <code>set</code> are required. Rows matching an existing card, condition, language
+          . Only <code className={CODE}>name</code> and <code className={CODE}>set</code> are required. Rows matching an existing card, condition, language
           and foil update its quantity and price; the others are added. The same format is produced by{" "}
           <a href={EXPORT_URL}>Export CSV</a>.
         </p>
-        <div className="form-grid">
+        <div className={FORM_GRID}>
           <Field label="CSV file" id="id_file" errors={fieldErrors(upload.error, "file")} wide>
-            <input type="file" name="file" id="id_file" required onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <Input type="file" name="file" id="id_file" required onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </Field>
         </div>
-        <div className="form-actions">
-          <div className="group">
-            <button type="submit" className="btn btn-primary" disabled={upload.isPending}>Import</button>
-            <Link className="btn btn-ghost" to="/">Cancel</Link>
+        <div className={FORM_ACTIONS}>
+          <div className={BUTTON_GROUP}>
+            <Button type="submit" variant="primary" disabled={upload.isPending}>Import</Button>
+            <Button asChild variant="ghost"><Link to="/">Cancel</Link></Button>
           </div>
         </div>
       </form>

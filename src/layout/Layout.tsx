@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ApiError } from "../api/client";
 import PageState from "../components/PageState";
 import { signOut } from "../signOut";
@@ -34,67 +37,90 @@ export default function Layout() {
   const name = user.full_name || user.username;
 
   return (
-    <div className="shell">
-      <nav className="sidebar" aria-label="Main navigation">
-        <Link className="brand" to="/">
+    <div className="flex min-h-screen flex-wrap min-[840px]:bg-[linear-gradient(to_right,var(--color-sidebar)_259px,var(--color-line)_259px_260px,var(--color-background)_260px)] print:block print:bg-none">
+      <nav
+        className="flex max-w-full flex-[1_1_240px] flex-col gap-7 border-r border-line bg-sidebar px-5 py-7 min-[840px]:sticky min-[840px]:top-0 min-[840px]:h-screen min-[840px]:flex-[0_0_260px] print:hidden"
+        aria-label="Main navigation"
+      >
+        <Link className="flex items-center gap-3 px-2 text-foreground no-underline hover:text-foreground" to="/">
           <Logo />
-          <span className="brand-name">MTG Ledger</span>
+          <span className="font-serif text-[22px] font-bold tracking-[.2px]">MTG Ledger</span>
         </Link>
-        <div className="nav-links">
-          <Link className="nav-link" to="/" {...current(nav === "collection")}>
+        <div className="flex flex-col gap-1">
+          <NavLink to="/" active={nav === "collection"}>
             <NavCollection />
             Collection
-          </Link>
-          <Link className="nav-link" to="/sale/" {...current(nav === "sale")}>
+          </NavLink>
+          <NavLink to="/sale/" active={nav === "sale"}>
             <NavSale />
             For sale
-          </Link>
-          <Link className="nav-link" to="/cards/" {...current(nav === "cards")}>
+          </NavLink>
+          <NavLink to="/cards/" active={nav === "cards"}>
             <NavCards />
             Cards
-          </Link>
-          <Link className="nav-link" to="/shipments/" {...current(nav === "shipments")}>
+          </NavLink>
+          <NavLink to="/shipments/" active={nav === "shipments"}>
             <PackageIcon />
             Shipments
-            {counts.orders_to_ship > 0 && (
-              <span className="nav-count nav-count-gold">
-                {counts.orders_to_ship}
-                <span className="sr-only"> orders to ship</span>
-              </span>
-            )}
-          </Link>
-          <Link className="nav-link" to="/sync/" {...current(nav === "sync")}>
+            {counts.orders_to_ship > 0 && <NavCount value={counts.orders_to_ship} label="orders to ship" variant="gold" />}
+          </NavLink>
+          <NavLink to="/sync/" active={nav === "sync"}>
             <SyncIcon />
             Sync
-            {counts.pending_changes > 0 && (
-              <span className="nav-count">
-                {counts.pending_changes}
-                <span className="sr-only"> changes to publish</span>
-              </span>
-            )}
-          </Link>
+            {counts.pending_changes > 0 && <NavCount value={counts.pending_changes} label="changes to publish" variant="warn" />}
+          </NavLink>
         </div>
-        <div className="user-card">
-          <span className="avatar" aria-hidden="true">
+        <div className="mt-auto flex items-center gap-3 rounded-lg border border-line p-3">
+          <span
+            className="inline-flex size-10 flex-none items-center justify-center rounded-full bg-gold-bg font-serif text-base font-bold text-gold"
+            aria-hidden="true"
+          >
             {user.username.slice(0, 1).toUpperCase()}
           </span>
-          <div className="user-meta">
-            <div className="user-name">{name}</div>
-            <Link to="/account/" {...current(nav === "profile")}>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{name}</div>
+            <Link className="text-xs text-muted-foreground no-underline hover:text-foreground aria-[current=page]:text-gold" to="/account/" {...current(nav === "profile")}>
               Profile and settings
             </Link>
           </div>
-          <button type="button" className="btn btn-ghost" aria-label="Log out" style={{ width: 44, padding: 0 }}
-            onClick={signOut}>
+          <Button variant="ghost" size="icon" aria-label="Log out" onClick={signOut}>
             <LogoutIcon />
-          </button>
+          </Button>
         </div>
       </nav>
 
-      <main className="main">
+      <main className="flex min-w-0 flex-[999_1_560px] flex-col gap-7 px-[clamp(16px,3vw,48px)] py-8 print:p-0">
         <Messages />
         <Outlet />
       </main>
     </div>
+  );
+}
+
+function NavLink({ to, active, children }: { to: string; active: boolean; children: ReactNode }) {
+  return (
+    <Link
+      className="flex min-h-11 items-center gap-3 rounded-md px-3 text-[15px] text-text-3 no-underline hover:bg-accent hover:text-foreground aria-[current=page]:bg-surface-2 aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+      to={to}
+      {...current(active)}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/** A sidebar counter: gold for orders to ship, amber for changes to publish. */
+function NavCount({ value, label, variant }: { value: number; label: string; variant: "gold" | "warn" }) {
+  return (
+    <span
+      data-variant={variant}
+      className={cn(
+        "ml-auto inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full px-[7px] text-xs font-bold text-primary-foreground",
+        variant === "gold" ? "bg-gold" : "bg-warn",
+      )}
+    >
+      {value}
+      <span className="sr-only"> {label}</span>
+    </span>
   );
 }
