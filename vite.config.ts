@@ -1,5 +1,7 @@
 /// <reference types="vitest/config" />
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 
 // Django (mtg_ledger_core) serves the build: assets under /static/ui/, index.html for every page URL.
@@ -12,7 +14,8 @@ export default defineConfig(({ command, mode }) => {
   const phone = env.DEV_PHONE === "1";
   return {
     base: command === "build" ? "/static/ui/" : "/",
-    plugins: [react()],
+    plugins: [react(), tailwindcss()],
+    resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server: {
       port: Number(env.VITE_PORT || 5173),
       strictPort: true,
