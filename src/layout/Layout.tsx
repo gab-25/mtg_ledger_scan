@@ -87,6 +87,7 @@ export default function Layout() {
             <LogoutIcon />
           </Button>
         </div>
+        <div className="-mt-5 px-3 font-mono text-[11px] text-placeholder">v{__APP_VERSION__}</div>
       </nav>
 
       <main className="flex min-w-0 flex-[999_1_560px] flex-col gap-7 px-[clamp(16px,3vw,48px)] py-8 print:p-0">
