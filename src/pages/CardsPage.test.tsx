@@ -51,6 +51,7 @@ describe("CardsPage", () => {
     expect(within(ugin).getByText("€12.75")).toBeInTheDocument();
     expect(within(ugin).getAllByText("—")).toHaveLength(3); // owned, foil low, foil avg
     expect(ugin.querySelector("img")).toHaveAttribute("src", "https://img/ugin.jpg");
+    expect(ugin.querySelector("img")).toHaveClass("h-[50px]", "w-9", "object-cover"); // fixed thumbnail size
     expect(within(counter).getByText("2")).toBeInTheDocument();
     expect(within(counter).getByText("Showcase")).toBeInTheDocument();
     expect(within(counter).getAllByText("—")).toHaveLength(6);

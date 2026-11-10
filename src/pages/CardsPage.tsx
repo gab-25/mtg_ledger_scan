@@ -39,7 +39,7 @@ const columns: ColumnDef<Printing>[] = [
     cell: ({ row: { original: p } }) => (
       <div className="flex items-center gap-3">
         {p.image_url && (
-          <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="rounded-[3px] object-cover" />
+          <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="h-[50px] w-9 rounded-[3px] object-cover" />
         )}
         <div>
           {p.name}

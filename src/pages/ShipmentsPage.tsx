@@ -73,7 +73,7 @@ export default function ShipmentsPage() {
             className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-4 rounded-[12px] border border-line bg-card px-5 py-4 text-foreground no-underline hover:border-line-hover hover:bg-[#1F2129] hover:text-foreground min-[761px]:grid-cols-[64px_minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto]"
             to={`/shipments/${o.id}/`}
           >
-            <div className="text-center font-mono text-[22px] text-gold">
+            <div className="flex flex-col items-center font-mono text-[22px] text-gold">
               {o.packing_number && o.can_ship ? (
                 <>
                   <small className="block text-[10px] tracking-[1px] text-muted-foreground uppercase">Pack</small>

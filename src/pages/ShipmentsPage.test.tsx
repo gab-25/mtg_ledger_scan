@@ -49,6 +49,7 @@ describe("ShipmentsPage", () => {
     expect(within(order).getByText("2 cards")).toBeInTheDocument();
     expect(within(order).getByText("Paid today")).toBeInTheDocument();
     expect(within(order).getByText("€12.34")).toBeInTheDocument();
+    expect(order.firstElementChild).toHaveClass("flex", "flex-col", "items-center"); // the pack number or icon, centred
     expect(document.title).toBe("Shipments · MTG Ledger");
   });
 

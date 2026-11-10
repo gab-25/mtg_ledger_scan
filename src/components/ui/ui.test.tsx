@@ -1,3 +1,6 @@
+import userEvent from "@testing-library/user-event";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { render, screen } from "@testing-library/react";
 import { badgeVariant } from "@/api/types";
 import { Alert } from "@/components/ui/alert";
@@ -29,5 +32,24 @@ describe("ui primitives", () => {
   test("badgeVariant maps API tones, unknown ones to neutral", () => {
     expect(badgeVariant("live")).toBe("live");
     expect(badgeVariant("weird")).toBe("neutral");
+  });
+});
+
+describe("review fixes", () => {
+  test("a file input is not styled as read-only; a readonly input is", () => {
+    render(<><Input type="file" aria-label="file" /><Input readOnly aria-label="ro" /></>);
+    expect(screen.getByLabelText("file").className).not.toMatch(/(^|\s)read-only:/);
+    expect(screen.getByLabelText("ro")).toHaveClass("[&[readonly]]:bg-surface-2");
+  });
+
+  test("select menu rows are at least 44px tall (touch target)", async () => {
+    render(
+      <Select defaultValue="1">
+        <SelectTrigger aria-label="n"><SelectValue /></SelectTrigger>
+        <SelectContent><SelectItem value="1">One</SelectItem></SelectContent>
+      </Select>,
+    );
+    await userEvent.click(screen.getByLabelText("n"));
+    expect(await screen.findByRole("option", { name: "One" })).toHaveClass("min-h-11");
   });
 });
