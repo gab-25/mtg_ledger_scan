@@ -55,7 +55,7 @@ describe("Layout", () => {
   it("a server error on /api/me/ is shown, not a blank page", async () => {
     vi.mocked(account.getMe).mockRejectedValue(new ApiError("Something went wrong (500) — try again", 500, "server"));
     renderPage("/nope/");
-    expect(await screen.findByText("Something went wrong (500) — try again")).toHaveClass("message", "error");
+    expect(await screen.findByText("Something went wrong (500) — try again")).toHaveAttribute("data-variant", "error");
   });
 
   it("renders nothing until the user is known", () => {

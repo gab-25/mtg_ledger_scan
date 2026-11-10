@@ -53,7 +53,7 @@ describe("CollectionPage", () => {
     expect(within(table).getByRole("link", { name: "Thoughtseize" })).toHaveAttribute("href", "/cards/7/");
     expect(within(table).getByTitle("Near Mint")).toHaveTextContent("NM");
     expect(within(table).getByText("€12.00")).toHaveClass("num");
-    expect(within(table).getByText("In collection")).toHaveClass("badge", "badge-neutral");
+    expect(within(table).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
     expect(screen.getByText("Showing 1 of 1 entries")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", "/api/collection/export/");
     expect(screen.getByRole("link", { name: "Scan cards" })).toHaveAttribute("href", "/scan/");

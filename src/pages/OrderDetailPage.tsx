@@ -4,7 +4,8 @@ import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAction } from "../actions";
 import { getOrder, shipOrder, type OrderDetail, type OrderItem } from "../api/orders";
-import Badge from "../components/Badge";
+import { badgeVariant } from "@/api/types";
+import { Badge } from "@/components/ui/badge";
 import DataTable from "../components/DataTable";
 import PageState from "../components/PageState";
 import { dateTime, euro, pluralize } from "../format";
@@ -83,7 +84,7 @@ function Order({ order }: { order: OrderDetail }) {
           </div>
         </div>
         <div className="actions no-print">
-          <Badge badge={order.badge} />
+          <Badge variant={badgeVariant(order.badge.tone)}>{order.badge.label}</Badge>
           <button type="button" className="btn" onClick={() => window.print()}>Print packing slip</button>
         </div>
       </header>

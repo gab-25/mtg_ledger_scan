@@ -75,7 +75,7 @@ describe("ListingFormPage", () => {
     renderPage("/sale/7/");
     await userEvent.click(await screen.findByRole("button", { name: "Remove listing" }));
     expect(window.confirm).toHaveBeenCalledWith("Remove this listing?");
-    expect(await screen.findByText("Listing not removed: down")).toHaveClass("message", "error");
+    expect(await screen.findByText("Listing not removed: down")).toHaveAttribute("data-variant", "error");
     expect(screen.getByRole("heading", { name: "Counterspell" })).toBeInTheDocument();
   });
 });

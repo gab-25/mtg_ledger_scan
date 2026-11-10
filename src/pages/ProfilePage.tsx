@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocation } from "react-router-dom";
@@ -186,9 +187,9 @@ function CardTraderSection({ account }: { account: Account }) {
             </div>
           </div>
           {cardtrader.token_saved ? (
-            <span className="badge badge-ok"><span className="pill-dot" />Connected</span>
+            <Badge variant="ok"><span className="size-2 rounded-full bg-current" aria-hidden="true" />Connected</Badge>
           ) : (
-            <span className="badge badge-pending"><span className="pill-dot" />Not connected</span>
+            <Badge variant="pending"><span className="size-2 rounded-full bg-current" aria-hidden="true" />Not connected</Badge>
           )}
         </div>
 

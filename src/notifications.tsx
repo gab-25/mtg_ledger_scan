@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import type { Msg } from "./api/types";
+import { Alert } from "@/components/ui/alert";
 
 export type { Msg };
 
@@ -47,10 +48,12 @@ export function Messages() {
   const entries = useContext(EntriesContext);
   if (!entries.length) return null;
   return (
-    <ul className="messages" role="status">
+    <ul className="m-0 flex list-none flex-col gap-2 p-0 print:hidden" role="status">
       {entries.map((m) => (
-        <li key={m.id} className={`message ${m.level}`}>
-          {m.text}
+        <li key={m.id}>
+          <Alert variant={m.level} role={undefined}>
+            {m.text}
+          </Alert>
         </li>
       ))}
     </ul>

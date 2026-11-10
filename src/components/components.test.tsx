@@ -1,7 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MemoryRouter } from "react-router-dom";
-import Badge from "./Badge";
 import DataTable from "./DataTable";
 import Field from "./Field";
 import Pager from "./Pager";
@@ -62,9 +61,8 @@ describe("Field, Badge, StatTile", () => {
     expect(field.firstElementChild?.tagName).toBe("INPUT");
   });
 
-  it("badge and stat", () => {
-    render(<><Badge badge={{ label: "Sync pending", tone: "pending" }} /><StatTile label="To publish" value={3} tone="warn" /></>);
-    expect(screen.getByText("Sync pending")).toHaveClass("badge", "badge-pending");
+  it("stat", () => {
+    render(<StatTile label="To publish" value={3} tone="warn" />);
     expect(screen.getByText("3")).toHaveClass("stat-value", "warn");
   });
 });

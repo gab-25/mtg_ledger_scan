@@ -3,7 +3,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { EXPORT_URL, getChoices, getCollection, type CollectionRow } from "../api/collection";
-import Badge from "../components/Badge";
+import { badgeVariant } from "@/api/types";
+import { Badge } from "@/components/ui/badge";
 import DataTable from "../components/DataTable";
 import { SearchIcon } from "../components/icons";
 import PageState from "../components/PageState";
@@ -45,7 +46,7 @@ const columns: ColumnDef<CollectionRow>[] = [
     id: "price", header: "Price", meta: { align: "right", className: "num" },
     cell: ({ row: { original: r } }) => euro(r.price, 2),
   },
-  { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge badge={r.badge} /> },
+  { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge> },
 ];
 
 /** ledger/collection.html */

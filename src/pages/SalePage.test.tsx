@@ -73,9 +73,9 @@ describe("SalePage", () => {
       .mockRejectedValueOnce(new ApiError("Publish failed: down", 502, "service_error"));
     renderPage("/sale/");
     await userEvent.click(await screen.findByRole("button", { name: "Publish 1 change" }));
-    expect(await screen.findByText("Bolt: not found")).toHaveClass("message", "warning");
+    expect(await screen.findByText("Bolt: not found")).toHaveAttribute("data-variant", "warning");
     await userEvent.click(screen.getByRole("button", { name: "Publish 1 change" }));
-    expect(await screen.findByText("Publish failed: down")).toHaveClass("message", "error");
+    expect(await screen.findByText("Publish failed: down")).toHaveAttribute("data-variant", "error");
   });
 
   it("match market prices", async () => {

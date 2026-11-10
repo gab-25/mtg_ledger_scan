@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { useEffect, useState, type FormEvent } from "react";
 import { addManual, confirmLine, search } from "../api/scan";
 import type { Blueprint, Candidate, Line, LineResult, Setup } from "../api/types";
@@ -25,7 +26,7 @@ function Option({ bp, checked, onPick, otherCard }: OptionProps) {
       {bp.image_url ? <img src={bp.image_url} alt="" loading="lazy" /> : <span className="scan-thumb" aria-hidden="true" />}
       <span className="scan-option-text">
         <span className="scan-option-name">{bp.name}</span>
-        {otherCard && <span className="badge badge-pending">Different card · same number</span>}
+        {otherCard && <Badge variant="pending" className="min-h-[22px] self-start">Different card · same number</Badge>}
         <span className="mono sub">
           {bp.expansion.code.toUpperCase()} {bp.collector_number}
           {details && ` · ${details}`}

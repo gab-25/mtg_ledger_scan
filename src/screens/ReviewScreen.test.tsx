@@ -141,7 +141,7 @@ describe("ReviewScreen", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Save 2" }));
     expect(api.saveSession).toHaveBeenCalledWith("s1");
     expect(await screen.findByText("collection page")).toBeInTheDocument();
-    expect(screen.getByText("Saved 2 cards, 0 queued for sale.")).toHaveClass("message", "success");
+    expect(screen.getByText("Saved 2 cards, 0 queued for sale.")).toHaveAttribute("data-variant", "success");
   });
 
   it("save error is shown", async () => {

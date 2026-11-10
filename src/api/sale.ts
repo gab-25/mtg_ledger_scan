@@ -1,5 +1,5 @@
 // /api/listings/: CardTrader listings, the listing form, publishing and market prices.
-import type { BadgeData } from "../components/Badge";
+import type { BadgeData } from "./types";
 import type { Done } from "./account";
 import { request } from "./client";
 

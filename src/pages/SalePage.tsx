@@ -3,7 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAction } from "../actions";
 import { getChoices } from "../api/collection";
 import { getListings, matchPrices, publish } from "../api/sale";
-import Badge from "../components/Badge";
+import { badgeVariant } from "@/api/types";
+import { Badge } from "@/components/ui/badge";
 import PageState from "../components/PageState";
 import StatTile from "../components/StatTile";
 import { euro, pluralize } from "../format";
@@ -65,7 +66,7 @@ export default function SalePage() {
             <div className="sale-art">
               <span className="sale-art-name" aria-hidden="true">{l.name}</span>
               <span className="pip" style={{ background: l.pip }} />
-              <Badge badge={l.badge} />
+              <Badge variant={badgeVariant(l.badge.tone)}>{l.badge.label}</Badge>
             </div>
             <div className="sale-body">
               <div>

@@ -41,7 +41,7 @@ describe("useAction", () => {
     renderAction(() => Promise.resolve({ messages: [{ level: "success", text: "Published 1 listing to CardTrader." }] }));
     await vi.waitFor(() => expect(loads).toBe(1));
     await userEvent.click(screen.getByRole("button", { name: "Go" }));
-    expect(await screen.findByText("Published 1 listing to CardTrader.")).toHaveClass("message", "success");
+    expect(await screen.findByText("Published 1 listing to CardTrader.")).toHaveAttribute("data-variant", "success");
     await vi.waitFor(() => expect(loads).toBe(2));
   });
 
@@ -55,7 +55,7 @@ describe("useAction", () => {
   it("an error becomes an error message", async () => {
     renderAction(() => Promise.reject(new ApiError("Publish failed: down", 502, "service_error")));
     await userEvent.click(screen.getByRole("button", { name: "Go" }));
-    expect(await screen.findByText("Publish failed: down")).toHaveClass("message", "error");
+    expect(await screen.findByText("Publish failed: down")).toHaveAttribute("data-variant", "error");
   });
 
   it("validation errors stay with the form", async () => {

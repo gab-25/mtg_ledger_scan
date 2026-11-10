@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { useState, type FormEvent } from "react";
 import type { Choice, Line, LineChanges } from "../api/types";
 import { lineMeta } from "./LastCardToast";
@@ -34,9 +35,10 @@ export default function LineRow({ line, conditions, languages, onChange, onUndo 
         <span className="mono sub">{lineMeta(line)}</span>
         <span className="scan-line-meta">
           <span className="mono">{line.price !== null ? `€ ${line.price}` : "no price"}</span>
+          <Badge asChild variant={line.listed ? "gold" : "neutral"}>
           <button
             type="button"
-            className={`badge ${line.listed ? "badge-gold" : "badge-neutral"}`}
+            className="cursor-pointer border-0 disabled:cursor-not-allowed disabled:opacity-60"
             aria-pressed={line.listed}
             disabled={line.price === null}
             title={line.price === null ? "No market price: cannot be listed" : undefined}
@@ -44,6 +46,7 @@ export default function LineRow({ line, conditions, languages, onChange, onUndo 
           >
             {line.listed ? "For sale" : "Collection only"}
           </button>
+          </Badge>
         </span>
         <details className="scan-edit">
           <summary>Edit</summary>

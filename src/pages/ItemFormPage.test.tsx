@@ -51,7 +51,7 @@ describe("ItemFormPage", () => {
       language: "EN", foil: false, quantity: "4", price: expect.stringMatching(/^1\.50?$/), // jsdom drops the 0
     });
     expect(await screen.findByRole("heading", { name: "Collection" })).toBeInTheDocument();
-    expect(screen.getByText("Added 4× Lightning Bolt.")).toHaveClass("message", "success");
+    expect(screen.getByText("Added 4× Lightning Bolt.")).toHaveAttribute("data-variant", "success");
   });
 
   it("save and add another gives an empty form", async () => {

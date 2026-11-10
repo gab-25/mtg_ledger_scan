@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAction } from "../actions";
 import { getOrders, importOrders } from "../api/orders";
-import Badge from "../components/Badge";
+import { badgeVariant } from "@/api/types";
+import { Badge } from "@/components/ui/badge";
 import { PackageIcon, SyncIcon } from "../components/icons";
 import PageState from "../components/PageState";
 import StatTile from "../components/StatTile";
@@ -98,7 +99,7 @@ export default function ShipmentsPage() {
               </div>
             </div>
             <div className="order-right">
-              <Badge badge={o.badge} />
+              <Badge variant={badgeVariant(o.badge.tone)}>{o.badge.label}</Badge>
               <span className="order-total">{o.total !== null && euro(o.total, 2)}</span>
             </div>
           </Link>

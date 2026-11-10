@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Link } from "react-router-dom";
@@ -78,9 +79,9 @@ export default function SyncPage() {
                   <div className="hint" style={{ marginTop: 4 }}>{s.description}</div>
                 </div>
                 {waiting ? (
-                  <span className="badge badge-pending"><span className="pill-dot" />{waiting} pending</span>
+                  <Badge variant="pending"><span className="size-2 rounded-full bg-current" aria-hidden="true" />{waiting} pending</Badge>
                 ) : (
-                  <span className="badge badge-ok"><span className="pill-dot" />In sync</span>
+                  <Badge variant="ok"><span className="size-2 rounded-full bg-current" aria-hidden="true" />In sync</Badge>
                 )}
               </div>
               <dl className="facts">

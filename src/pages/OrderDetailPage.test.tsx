@@ -71,7 +71,7 @@ describe("OrderDetailPage", () => {
     expect(api.shipOrder).toHaveBeenCalledWith(5, { tracking_code: "RR2IT", save_tracking: true });
     expect(await screen.findByText("Tracking code saved on CardTrader.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Mark as shipped" }));
-    expect(await screen.findByText("Tracked orders need a tracking code before shipping.")).toHaveClass("message", "error");
+    expect(await screen.findByText("Tracked orders need a tracking code before shipping.")).toHaveAttribute("data-variant", "error");
     expect(screen.getByRole("heading", { name: "Order #c5" })).toBeInTheDocument();
   });
 

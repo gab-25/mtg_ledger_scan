@@ -36,7 +36,7 @@ describe("ProfilePage", () => {
     expect(screen.getByLabelText("Email address")).toHaveValue("gab@example.com");
     expect(screen.getByLabelText("Username")).toHaveAttribute("readonly");
     expect(screen.getByText("Your password must contain at least 8 characters.")).toBeInTheDocument();
-    expect(screen.getByText("Not connected")).toHaveClass("badge", "badge-pending");
+    expect(screen.getByText("Not connected")).toHaveAttribute("data-variant", "pending");
     expect(screen.getByText(/Never synced\./)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Connect" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Remove token" })).not.toBeInTheDocument();
@@ -57,7 +57,7 @@ describe("ProfilePage", () => {
     const error = await screen.findByText("This email is already used by another account.");
     expect(error.closest(".field")).toContainElement(email);
     await userEvent.click(screen.getByRole("button", { name: "Save details" }));
-    expect(await screen.findByText("Profile updated.")).toHaveClass("message", "success");
+    expect(await screen.findByText("Profile updated.")).toHaveAttribute("data-variant", "success");
     expect(api.updateProfile).toHaveBeenLastCalledWith({ first_name: "Gabriele", last_name: "S", email: "other@example.com" });
   });
 
@@ -99,7 +99,7 @@ describe("ProfilePage", () => {
     const confirm = vi.fn().mockReturnValue(true);
     vi.stubGlobal("confirm", confirm);
     renderPage("/account/");
-    expect(await screen.findByText("Connected")).toHaveClass("badge", "badge-ok");
+    expect(await screen.findByText("Connected")).toHaveAttribute("data-variant", "ok");
     expect(screen.getByText(/Last sync 5 minutes ago\./)).toBeInTheDocument();
     expect(screen.getByText(/also used to load the card catalog and prices for every user/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Replace token" })).toBeInTheDocument();

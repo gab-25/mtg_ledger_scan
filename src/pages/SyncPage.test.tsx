@@ -36,7 +36,7 @@ describe("SyncPage", () => {
     renderPage("/sync/");
     expect(await screen.findByRole("heading", { name: "Sync" })).toBeInTheDocument();
     const connection = screen.getByRole("article");
-    expect(within(connection).getByText("3 pending")).toHaveClass("badge", "badge-pending");
+    expect(within(connection).getByText("3 pending")).toHaveAttribute("data-variant", "pending");
     expect(within(connection).getByText("Never")).toBeInTheDocument();
     expect(within(connection).getByText(/^Today, \d\d:\d\d$/)).toHaveClass("mono");
     expect(within(connection).getByText("Configured")).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("SyncPage", () => {
       connections: [{ name: "CardTrader", description: "", direction: "", last_sync: null, orders_synced_at: null, token_ok: false, open_conflicts: 0 }],
     }));
     renderPage("/sync/");
-    expect(await screen.findByText("In sync")).toHaveClass("badge", "badge-ok");
+    expect(await screen.findByText("In sync")).toHaveAttribute("data-variant", "ok");
     expect(screen.getByRole("link", { name: "Not configured" })).toHaveAttribute("href", "/account/#cardtrader");
     expect(screen.getByRole("button", { name: "Publish changes" })).toBeDisabled();
     expect(screen.getByText("No conflicts — Ledger and connected services agree.")).toHaveClass("empty");
