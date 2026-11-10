@@ -248,8 +248,8 @@ describe("CameraScreen", () => {
     expect(await screen.findByRole("dialog", { name: "Which one is it?" })).toBeInTheDocument();
     expect(screen.getByLabelText("Search by name")).toHaveValue("");
     expect(screen.getAllByRole("radio")[0]).toBeChecked();
-    expect(screen.getByLabelText("Language")).toHaveValue("IT");
-    expect(screen.getByLabelText("Condition")).toHaveValue("EX");
+    expect(screen.getByLabelText("Language")).toHaveTextContent("Italian");
+    expect(screen.getByLabelText("Condition")).toHaveTextContent("Excellent");
   });
 
   it("search opens the add panel", async () => {

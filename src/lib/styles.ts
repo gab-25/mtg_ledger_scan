@@ -34,3 +34,21 @@ export const H2 = "m-0 font-serif text-[26px] font-semibold";
 export const DETAIL_GRID = "grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-start gap-5";
 /** An amber note box. */
 export const NOTE = "rounded-md bg-warn-bg px-3 py-2.5 text-[13px] text-warn";
+/** The page column of the scan screens (no sidebar). */
+export const APP_MAIN = "mx-auto flex w-full max-w-[1100px] min-w-0 flex-col gap-6 px-[clamp(16px,3vw,48px)] py-8";
+/** An amber warning block on the scan screens. */
+export const SCAN_WARN = "m-0 block rounded-lg bg-warn-bg p-3.5 text-sm text-warn no-underline";
+/** The form column of the scan screens. */
+export const SCAN_PANEL = "flex max-w-[560px] flex-col gap-5";
+/** A bordered box grouping fields on the scan screens. */
+export const SCAN_BOX = "m-0 flex flex-col gap-2.5 rounded-[12px] border border-line bg-card p-4";
+/** Small uppercase grey heading (page eyebrow, fieldset legend). */
+export const EYEBROW = "text-[13px] tracking-[1.5px] text-muted-foreground uppercase";
+/** A card thumbnail (40×56) in scan lists; also the empty placeholder. */
+export const THUMB = "h-14 w-10 flex-none rounded-sm border border-line-2 bg-surface-2 object-cover";
+/** One row of the review list: thumb, text, actions. */
+export const SCAN_LINE = "flex items-center gap-3 border-b border-line py-2.5";
+/** The text column of SCAN_LINE. */
+export const SCAN_LINE_TEXT = "flex min-w-0 flex-1 flex-col gap-[3px]";
+/** "Nothing here" text: centered, grey, padded. */
+export const EMPTY = "m-0 px-5 py-10 text-center text-muted-foreground";

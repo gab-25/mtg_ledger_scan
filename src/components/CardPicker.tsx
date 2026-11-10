@@ -1,4 +1,12 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EYEBROW, HINT, SCAN_PANEL, SCAN_WARN, SUB, THUMB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
+import Field, { ChoiceSelect } from "./Field";
 import { useEffect, useState, type FormEvent } from "react";
 import { addManual, confirmLine, search } from "../api/scan";
 import type { Blueprint, Candidate, Line, LineResult, Setup } from "../api/types";
@@ -16,23 +24,22 @@ type Props = {
 
 const SEARCH_DELAY_MS = 250;
 
-type OptionProps = { bp: Blueprint; checked: boolean; onPick: () => void; otherCard: boolean };
+type OptionProps = { bp: Blueprint; otherCard: boolean };
 
-function Option({ bp, checked, onPick, otherCard }: OptionProps) {
+function Option({ bp, otherCard }: OptionProps) {
   const details = [bp.version, bp.rarity].filter(Boolean).join(" · ");
   return (
-    <label className="scan-option">
-      <input type="radio" name="blueprint" value={bp.id} checked={checked} onChange={onPick} />
-      {bp.image_url ? <img src={bp.image_url} alt="" loading="lazy" /> : <span className="scan-thumb" aria-hidden="true" />}
-      <span className="scan-option-text">
-        <span className="scan-option-name">{bp.name}</span>
+    <RadioCard value={String(bp.id)}>
+      {bp.image_url ? <img className={THUMB} src={bp.image_url} alt="" loading="lazy" /> : <span className={THUMB} aria-hidden="true" />}
+      <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <span className="text-[15px] font-semibold">{bp.name}</span>
         {otherCard && <Badge variant="pending" className="min-h-[22px] self-start">Different card · same number</Badge>}
-        <span className="mono sub">
+        <span className={cn(SUB, "font-mono")}>
           {bp.expansion.code.toUpperCase()} {bp.collector_number}
           {details && ` · ${details}`}
         </span>
       </span>
-    </label>
+    </RadioCard>
   );
 }
 
@@ -101,88 +108,80 @@ export default function CardPicker({ sessionUuid, line, setup, defaultSet, onDon
   const shown = [...candidates, ...results.filter((r) => !candidates.some((c) => c.id === r.id))];
 
   return (
-    <div className="picker" role="dialog" aria-modal="true" aria-labelledby="picker-title">
-      <div className="picker-inner">
-        <header className="page-head">
+    <div className="fixed inset-0 z-20 overflow-y-auto overscroll-contain bg-background" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+      <div className="mx-auto flex max-w-[760px] flex-col gap-5 px-4 pt-6 pb-[max(24px,env(safe-area-inset-bottom))]">
+        <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="eyebrow">{confirming ? "Needs confirmation" : "Add by hand"}</div>
-            <h1 id="picker-title">{title}</h1>
+            <div className={EYEBROW}>{confirming ? "Needs confirmation" : "Add by hand"}</div>
+            <h1 id="picker-title" className="mt-1 mb-0 font-serif text-[32px] font-semibold">{title}</h1>
           </div>
-          <div className="actions">
-            <button type="button" className="btn btn-ghost" onClick={onClose}>
-              {confirming ? "Decide later" : "Back to camera"}
-            </button>
-          </div>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            {confirming ? "Decide later" : "Back to camera"}
+          </Button>
         </header>
 
-        {line?.frame_url && <img className="scan-frame" src={line.frame_url} alt="Captured photo of the card" />}
+        {line?.frame_url && <img className="w-40 rounded-lg border-2 border-warn" src={line.frame_url} alt="Captured photo of the card" />}
 
-        <div className="search" role="search">
+        <div className="flex flex-wrap items-center gap-2" role="search">
           <label htmlFor="picker-q" className="sr-only">Search by name</label>
-          <input id="picker-q" value={q} placeholder="Search by name…" onChange={(e) => setQ(e.target.value)} />
+          <Input id="picker-q" className="min-w-[200px] flex-1" value={q} placeholder="Search by name…" onChange={(e) => setQ(e.target.value)} />
           <label htmlFor="picker-set" className="sr-only">Expansion</label>
-          <select id="picker-set" className="input" value={set} onChange={(e) => setSet(e.target.value)}>
-            <option value="all">All loaded expansions</option>
-            {setup.expansions.map((x) => (
-              <option key={x.id} value={x.code}>
-                {x.code.toUpperCase()} · {x.name}
-              </option>
-            ))}
-          </select>
+          <Select value={set} onValueChange={setSet}>
+            <SelectTrigger id="picker-set" className="w-auto"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All loaded expansions</SelectItem>
+              {setup.expansions.map((x) => (
+                <SelectItem key={x.id} value={x.code}>
+                  {x.code.toUpperCase()} · {x.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {warnings.map((w) => (
-          <p className="scan-warn" key={w}>{w}</p>
+          <p className={SCAN_WARN} key={w}>{w}</p>
         ))}
 
-        <form className="scan-panel" onSubmit={submit}>
+        <form className={SCAN_PANEL} onSubmit={submit}>
           {noNameMatch && (
-            <p className="scan-warn" role="status">No candidate is named “{readName}” — pick one or search.</p>
+            <p className={SCAN_WARN} role="status">No candidate is named “{readName}” — pick one or search.</p>
           )}
           {error && (
-            <ul className="errors" role="alert">
+            <ul className="m-0 list-none p-0 text-[13px] text-danger" role="alert">
               <li>{error}</li>
             </ul>
           )}
-          <div className="scan-options">
+          <RadioGroup aria-label="Card" className="flex flex-col gap-2" value={picked === null ? "" : String(picked)}
+            onValueChange={(v) => setPicked(Number(v))}>
             {shown.map((bp) => (
               <Option
                 key={bp.id}
                 bp={bp}
-                checked={picked === bp.id}
-                onPick={() => setPicked(bp.id)}
                 otherCard={readName !== "" && "matches_name" in bp && !bp.matches_name}
               />
             ))}
             {shown.length === 0 && (
-              <p className="hint">{q.trim() ? `No cards match “${q.trim()}”.` : "Search the card by name."}</p>
+              <p className={cn(HINT, "m-0")}>{q.trim() ? `No cards match “${q.trim()}”.` : "Search the card by name."}</p>
             )}
-          </div>
-          <div className="scan-row">
-            <label className="field">
-              Language
-              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                {setup.languages.map((l) => (
-                  <option key={l.code} value={l.code}>{l.label}</option>
-                ))}
-              </select>
-            </label>
+          </RadioGroup>
+          <div className="flex flex-wrap items-end gap-2.5">
+            <Field label="Language" id="picker-language">
+              <ChoiceSelect id="picker-language" className="w-auto" value={language} onChange={setLanguage}
+                options={setup.languages.map((l) => [l.code, l.label])} />
+            </Field>
             {confirming && (
-              <label className="field">
-                Condition
-                <select className="input" value={condition} onChange={(e) => setCondition(e.target.value)}>
-                  {setup.conditions.map((c) => (
-                    <option key={c.code} value={c.code}>{c.label}</option>
-                  ))}
-                </select>
-              </label>
+              <Field label="Condition" id="picker-condition">
+                <ChoiceSelect id="picker-condition" className="w-auto" value={condition} onChange={setCondition}
+                  options={setup.conditions.map((c) => [c.code, c.label])} />
+              </Field>
             )}
-            <label className="scan-check">
-              <input type="checkbox" checked={foil} onChange={(e) => setFoil(e.target.checked)} /> Foil
-            </label>
+            <Field label="Foil" id="picker-foil" check>
+              <Checkbox id="picker-foil" checked={foil} onCheckedChange={(c) => setFoil(c === true)} />
+            </Field>
           </div>
-          <button type="submit" className="btn btn-primary btn-wide" disabled={busy}>
+          <Button type="submit" variant="primary" size="wide" disabled={busy}>
             {confirming ? "Confirm and continue" : "Add card"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

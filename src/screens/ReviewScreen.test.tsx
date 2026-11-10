@@ -1,3 +1,4 @@
+import { chooseOption } from "@/test/select";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -107,9 +108,9 @@ describe("ReviewScreen", () => {
     renderReview();
     await userEvent.click(await screen.findByText("Edit"));
     const row = screen.getByRole("group", { name: "Edit Counterspell" });
-    await userEvent.selectOptions(within(row).getByLabelText("Condition"), "EX");
-    await userEvent.selectOptions(within(row).getByLabelText("Language"), "EN");
-    await userEvent.selectOptions(within(row).getByLabelText("Foil"), "1");
+    await chooseOption(within(row).getByLabelText("Condition"), "EX");
+    await chooseOption(within(row).getByLabelText("Language"), "EN");
+    await chooseOption(within(row).getByLabelText("Foil"), "Foil");
     await userEvent.click(within(row).getByRole("button", { name: "Update" }));
     expect(api.updateLine).toHaveBeenCalledWith("l1", { condition: "EX", language: "EN", foil: true });
   });
