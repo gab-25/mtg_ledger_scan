@@ -13,6 +13,6 @@ export default function StatTile({ label, value, tone }: { label: string; value:
 }
 
 /** The row of stat tiles at the top of a page. */
-export function StatTiles({ children }: { children: ReactNode }) {
-  return <section className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">{children}</section>;
+export function StatTiles({ label, children }: { label: string; children: ReactNode }) {
+  return <section aria-label={label} className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">{children}</section>;
 }

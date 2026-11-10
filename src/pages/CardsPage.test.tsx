@@ -48,11 +48,11 @@ describe("CardsPage", () => {
     );
     const [, ugin, counter] = within(table).getAllByRole("row");
     expect(within(ugin).getByTitle("Core Set 2021")).toHaveTextContent("M21 #1");
-    expect(within(ugin).getByText("€12.75")).toHaveClass("num");
+    expect(within(ugin).getByText("€12.75")).toBeInTheDocument();
     expect(within(ugin).getAllByText("—")).toHaveLength(3); // owned, foil low, foil avg
     expect(ugin.querySelector("img")).toHaveAttribute("src", "https://img/ugin.jpg");
-    expect(within(counter).getByText("2")).toHaveClass("num");
-    expect(within(counter).getByText("Showcase")).toHaveClass("sub");
+    expect(within(counter).getByText("2")).toBeInTheDocument();
+    expect(within(counter).getByText("Showcase")).toBeInTheDocument();
     expect(within(counter).getAllByText("—")).toHaveLength(6);
     expect(counter.querySelector("img")).toBeNull();
     expect(screen.getByText("Showing 2 of 2 printings · Cardmarket price guide of 9 Nov 2026")).toBeInTheDocument();
@@ -69,6 +69,17 @@ describe("CardsPage", () => {
     await vi.waitFor(() => expect(lastParams()).toBe("q=ugin&set=m21&number=007"));
     await userEvent.click(screen.getByLabelText("In my collection"));
     await vi.waitFor(() => expect(lastParams()).toBe("q=ugin&set=m21&number=007&owned=1"));
+  });
+
+  it("clicking the In my collection pill text toggles the checkbox once", async () => {
+    vi.mocked(api.searchCards).mockResolvedValue(results());
+    renderPage("/cards/?q=ugin");
+    await screen.findByRole("table");
+    const box = screen.getByRole("checkbox", { name: "In my collection" });
+    expect(box).toHaveAttribute("aria-checked", "false");
+    await userEvent.click(screen.getByText("In my collection"));
+    await vi.waitFor(() => expect(lastParams()).toBe("q=ugin&owned=1"));
+    expect(vi.mocked(api.searchCards).mock.calls.filter(([p]) => p.toString() === "q=ugin&owned=1")).toHaveLength(1);
   });
 
   it("no results and the pager", async () => {

@@ -5,11 +5,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { EXPORT_URL, getChoices, getCollection, type CollectionRow } from "../api/collection";
 import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
-import DataTable from "../components/DataTable";
-import { SearchIcon } from "../components/icons";
+import DataTable, { TableFoot } from "../components/DataTable";
+import { ClearLink, FilterDivider, FilterSelect, Filters, PillDot } from "../components/Filters";
+import { PageHead } from "../components/Header";
+import SearchBox from "../components/SearchBox";
+import { Button } from "@/components/ui/button";
+import { DIM, NUM, SUB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import Pager from "../components/Pager";
-import StatTile from "../components/StatTile";
+import StatTile, { StatTiles } from "../components/StatTile";
 import { euro, intcomma } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useQueryParams } from "../hooks/useQueryParams";
@@ -19,35 +24,44 @@ const columns: ColumnDef<CollectionRow>[] = [
     id: "card",
     header: "Card",
     cell: ({ row: { original: r } }) => (
-      <div className="card-cell">
-        <span className="dot" style={{ background: r.pip }} />
+      <div className="flex items-center gap-3">
+        <span className="inline-block size-2.5 flex-none rounded-full" style={{ background: r.pip }} />
         <div>
-          <Link to={`/cards/${r.id}/`}>{r.name}</Link>
-          {r.foil && <span className="foil-tag">Foil</span>}
-          <div className="sub">{r.type_line}</div>
+          <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>
+            {r.name}
+          </Link>
+          {r.foil && <FoilTag />}
+          <div className={SUB}>{r.type_line}</div>
         </div>
       </div>
     ),
   },
-  { id: "set", header: "Set", accessorKey: "set_code", meta: { className: "mono dim" } },
+  { id: "set", header: "Set", accessorKey: "set_code", meta: { className: cn("font-mono", DIM) } },
   {
     id: "cond",
     header: "Cond.",
-    meta: { className: "dim" },
+    meta: { className: DIM },
     cell: ({ row: { original: r } }) => (
       <abbr title={r.condition_label} style={{ textDecoration: "none" }}>
         {r.condition}
       </abbr>
     ),
   },
-  { id: "language", header: "Language", accessorKey: "language", meta: { className: "dim" } },
-  { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: "num" } },
+  { id: "language", header: "Language", accessorKey: "language", meta: { className: DIM } },
+  { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: NUM } },
   {
-    id: "price", header: "Price", meta: { align: "right", className: "num" },
+    id: "price", header: "Price", meta: { align: "right", className: NUM },
     cell: ({ row: { original: r } }) => euro(r.price, 2),
   },
   { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge> },
 ];
+
+/** The small gold FOIL tag after a card name. */
+export function FoilTag() {
+  return (
+    <span className="ml-1.5 rounded-sm border border-[#4A4128] px-1 py-px align-[2px] text-[10px] tracking-[1px] text-gold uppercase">Foil</span>
+  );
+}
 
 /** ledger/collection.html */
 export default function CollectionPage() {
@@ -75,68 +89,53 @@ export default function CollectionPage() {
 
   return (
     <>
-      <header className="page-head">
-        <div>
-          <div className="eyebrow">Ledger</div>
-          <h1>Collection</h1>
-        </div>
-        <div className="actions">
-          <form method="get" role="search" className="search" onSubmit={submitSearch}>
-            <SearchIcon />
-            <label htmlFor="q" className="sr-only">Search cards</label>
-            <input id="q" type="search" name="q" value={search} placeholder="Search by name, set, type…"
-              onChange={(e) => setSearch(e.target.value)} />
-          </form>
-          <Link className="btn" to="/cards/import/">Import CSV</Link>
-          <a className="btn" href={EXPORT_URL}>Export CSV</a>
-          <Link className="btn" to="/scan/">Scan cards</Link>
-          <Link className="btn btn-primary" to="/cards/add/">+ Add cards</Link>
-        </div>
-      </header>
+      <PageHead
+        eyebrow="Ledger"
+        title="Collection"
+        actions={
+          <>
+            <SearchBox id="q" label="Search cards" value={search} placeholder="Search by name, set, type…"
+              onChange={setSearch} onSubmit={submitSearch} />
+            <Button asChild><Link to="/cards/import/">Import CSV</Link></Button>
+            <Button asChild><a href={EXPORT_URL}>Export CSV</a></Button>
+            <Button asChild><Link to="/scan/">Scan cards</Link></Button>
+            <Button asChild variant="primary"><Link to="/cards/add/">+ Add cards</Link></Button>
+          </>
+        }
+      />
 
-      <section className="stats" aria-label="Summary">
+      <StatTiles label="Summary">
         <StatTile label="Total cards" value={intcomma(data.stats.total)} />
         <StatTile label="Unique cards" value={intcomma(data.stats.unique)} />
         <StatTile label="Estimated value" value={euro(data.stats.value ?? 0, 0)} tone="accent" />
         <StatTile label="For sale" value={intcomma(data.stats.for_sale)} />
-      </section>
+      </StatTiles>
 
-      <form method="get" className="filters" aria-label="Filters" onSubmit={(e) => e.preventDefault()}>
-        <Link className="pill" to={hrefWith({ color: null })} {...(colorCodes.includes(color) ? {} : { "aria-current": "true" })}>
-          All
-        </Link>
+      <Filters>
+        <Button asChild variant="pill">
+          <Link to={hrefWith({ color: null })} {...(colorCodes.includes(color) ? {} : { "aria-current": "true" })}>All</Link>
+        </Button>
         {data.color_filters.map((c) => (
-          <Link key={c.code} className="pill" to={hrefWith({ color: c.code })}
-            {...(color === c.code ? { "aria-current": "true" } : {})}>
-            <span className="pill-dot" style={{ background: c.pip }} />
-            {c.label}
-          </Link>
+          <Button key={c.code} asChild variant="pill">
+            <Link to={hrefWith({ color: c.code })} {...(color === c.code ? { "aria-current": "true" } : {})}>
+              <PillDot color={c.pip} />
+              {c.label}
+            </Link>
+          </Button>
         ))}
-        <span className="divider" aria-hidden="true" />
-        <Link className="pill" to={hrefWith({ foil: foil ? null : "1" })} {...(foil ? { "aria-current": "true" } : {})}>
-          Foil only
-        </Link>
-        <label htmlFor="f-set" className="sr-only">Set</label>
-        <select id="f-set" name="set" className={`pill pill-select${setCode ? " is-set" : ""}`} value={setCode}
-          onChange={(e) => navigate(hrefWith({ set: e.target.value || null }))}>
-          <option value="">Set</option>
-          {data.sets.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-        <label htmlFor="f-cond" className="sr-only">Condition</label>
-        <select id="f-cond" name="cond" className={`pill pill-select${cond ? " is-set" : ""}`} value={cond}
-          onChange={(e) => navigate(hrefWith({ cond: e.target.value || null }))}>
-          <option value="">Condition</option>
-          {(choices.data?.conditions ?? []).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-        {data.filtered && <Link className="clear-link" to="/">Clear filters</Link>}
-      </form>
+        <FilterDivider />
+        <Button asChild variant="pill">
+          <Link to={hrefWith({ foil: foil ? null : "1" })} {...(foil ? { "aria-current": "true" } : {})}>Foil only</Link>
+        </Button>
+        <FilterSelect id="f-set" label="Set" placeholder="Set" allLabel="All sets" value={setCode}
+          options={data.sets.map((s) => [s, s])} onChange={(v) => navigate(hrefWith({ set: v }))} />
+        <FilterSelect id="f-cond" label="Condition" placeholder="Condition" allLabel="All conditions" value={cond}
+          options={choices.data?.conditions ?? []} onChange={(v) => navigate(hrefWith({ cond: v }))} />
+        {data.filtered && <ClearLink to="/">Clear filters</ClearLink>}
+      </Filters>
 
       <DataTable
-        className="table-collection"
+        className="min-w-[880px]"
         columns={columns}
         data={data.results}
         getRowId={(r) => String(r.id)}
@@ -151,12 +150,12 @@ export default function CollectionPage() {
           )
         }
       />
-      <div className="table-foot">
+      <TableFoot>
         <span>
           Showing {data.results.length} of {intcomma(data.count)} entries
         </span>
         <Pager page={data.page} numPages={data.num_pages} href={pageHref} />
-      </div>
+      </TableFoot>
     </>
   );
 }

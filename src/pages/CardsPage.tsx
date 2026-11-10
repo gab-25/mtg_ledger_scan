@@ -1,21 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { searchCards, type CardFilters, type Printing } from "../api/cards";
-import DataTable from "../components/DataTable";
-import { SearchIcon } from "../components/icons";
+import DataTable, { TableFoot } from "../components/DataTable";
+import { ClearLink, Filters } from "../components/Filters";
+import { PageHead } from "../components/Header";
+import SearchBox from "../components/SearchBox";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { DIM, HINT, NUM, SUB } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import Pager from "../components/Pager";
 import { dateLong, euro, intcomma } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+
+/** A text field shaped as a filter pill. */
+const PILL_INPUT = "min-h-9 w-auto rounded-full bg-transparent px-3 text-[13px] text-text-2";
 
 type PriceKey = keyof NonNullable<Printing["prices"]>;
 
 const price = (key: PriceKey, header: string): ColumnDef<Printing> => ({
   id: key,
   header,
-  meta: { align: "right", className: "num" },
+  meta: { align: "right", className: NUM },
   cell: ({ row: { original: p } }) => {
     const value = p.prices?.[key];
     return value !== null && value !== undefined ? euro(value, 2) : "—";
@@ -27,13 +37,13 @@ const columns: ColumnDef<Printing>[] = [
     id: "card",
     header: "Card",
     cell: ({ row: { original: p } }) => (
-      <div className="card-cell">
+      <div className="flex items-center gap-3">
         {p.image_url && (
           <img src={p.image_url} alt="" loading="lazy" width={36} height={50} style={{ borderRadius: 3, objectFit: "cover" }} />
         )}
         <div>
           {p.name}
-          {p.version && <div className="sub">{p.version}</div>}
+          {p.version && <div className={SUB}>{p.version}</div>}
         </div>
       </div>
     ),
@@ -41,7 +51,7 @@ const columns: ColumnDef<Printing>[] = [
   {
     id: "set",
     header: "Set",
-    meta: { className: "mono dim" },
+    meta: { className: cn("font-mono", DIM) },
     cell: ({ row: { original: p } }) => (
       <span title={p.expansion_name}>
         {p.expansion_code.toUpperCase()}
@@ -50,7 +60,7 @@ const columns: ColumnDef<Printing>[] = [
     ),
   },
   {
-    id: "owned", header: "Owned", meta: { align: "right", className: "num" },
+    id: "owned", header: "Owned", meta: { align: "right", className: NUM },
     cell: ({ row: { original: p } }) => p.owned_qty ?? "—",
   },
   price("trend", "Trend"),
@@ -98,39 +108,32 @@ export default function CardsPage() {
 
   return (
     <>
-      <header className="page-head">
-        <div>
-          <div className="eyebrow">Card database</div>
-          <h1>Cards</h1>
-        </div>
-        <div className="actions">
-          <form method="get" role="search" className="search" onSubmit={submit}>
-            <SearchIcon />
-            <label htmlFor="q" className="sr-only">Search cards</label>
-            <input id="q" type="search" name="q" value={form.q} placeholder="Search by name or set code…" autoFocus
-              onChange={(e) => setForm({ ...form, q: e.target.value })} />
-          </form>
-        </div>
-      </header>
+      <PageHead
+        eyebrow="Card database"
+        title="Cards"
+        actions={
+          <SearchBox id="q" label="Search cards" value={form.q} placeholder="Search by name or set code…" autoFocus
+            onChange={(q) => setForm({ ...form, q })} onSubmit={submit} />
+        }
+      />
 
-      <form method="get" className="filters" aria-label="Filters" onSubmit={submit}>
+      <Filters onSubmit={submit}>
         <label htmlFor="f-set" className="sr-only">Set code</label>
-        <input id="f-set" name="set" value={form.set} placeholder="Set (e.g. m21)" className={`pill${form.set ? " is-set" : ""}`}
+        <Input id="f-set" name="set" value={form.set} placeholder="Set (e.g. m21)" className={PILL_INPUT}
           size={10} onChange={(e) => setForm({ ...form, set: e.target.value })} />
         <label htmlFor="f-number" className="sr-only">Collector number</label>
-        <input id="f-number" name="number" value={form.number} placeholder="Number" className={`pill${form.number ? " is-set" : ""}`}
+        <Input id="f-number" name="number" value={form.number} placeholder="Number" className={PILL_INPUT}
           size={6} onChange={(e) => setForm({ ...form, number: e.target.value })} />
-        <label className="pill" {...(form.owned ? { "aria-current": "true" } : {})}>
-          <input type="checkbox" name="owned" value="1" checked={form.owned}
-            onChange={(e) => go({ ...form, owned: e.target.checked })} />{" "}
+        <label className={buttonVariants({ variant: "pill" })} {...(form.owned ? { "aria-current": "true" } : {})}>
+          <Checkbox name="owned" value="1" checked={form.owned} onCheckedChange={(c) => go({ ...form, owned: c === true })} />
           In my collection
         </label>
-        <button type="submit" className="pill">Apply</button>
-        {data.searched && <Link className="clear-link" to="/cards/">Clear</Link>}
-      </form>
+        <Button type="submit" variant="pill">Apply</Button>
+        {data.searched && <ClearLink to="/cards/">Clear</ClearLink>}
+      </Filters>
 
       {!data.searched ? (
-        <p className="hint">
+        <p className={cn("m-0", HINT)}>
           Search the card database — every Magic printing on CardTrader, with its Cardmarket prices (updated nightly) — by
           name, set code or collector number, or list the cards you own.
         </p>
@@ -138,14 +141,14 @@ export default function CardsPage() {
         <>
           <DataTable columns={columns} data={data.results} getRowId={(p) => String(p.ct_id)}
             empty="No cards match these criteria." />
-          <div className="table-foot">
+          <TableFoot>
             <span>
               Showing {data.results.length} of {intcomma(data.count)} printings
               {data.prices_date && ` · Cardmarket price guide of ${dateLong(data.prices_date)}`}
             </span>
             <Pager page={data.page} numPages={data.num_pages}
               href={(page) => `?${queryOf(data.filters)}&page=${page}`} />
-          </div>
+          </TableFoot>
         </>
       )}
     </>

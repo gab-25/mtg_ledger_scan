@@ -70,3 +70,8 @@ export default function DataTable<T>({ columns, data, empty, className, style, g
     </Table>
   );
 }
+
+/** The line under a table: "Showing n of N" on the left, the pager on the right. */
+export function TableFoot({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-muted-foreground">{children}</div>;
+}

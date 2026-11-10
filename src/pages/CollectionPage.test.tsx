@@ -1,5 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { chooseOption } from "@/test/select";
 import * as api from "../api/collection";
 import type { Collection, CollectionRow } from "../api/collection";
 import { mockMe, renderPage } from "../test/renderPage";
@@ -52,7 +53,7 @@ describe("CollectionPage", () => {
     const table = screen.getByRole("table");
     expect(within(table).getByRole("link", { name: "Thoughtseize" })).toHaveAttribute("href", "/cards/7/");
     expect(within(table).getByTitle("Near Mint")).toHaveTextContent("NM");
-    expect(within(table).getByText("€12.00")).toHaveClass("num");
+    expect(within(table).getByText("€12.00")).toBeInTheDocument();
     expect(within(table).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
     expect(screen.getByText("Showing 1 of 1 entries")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", "/api/collection/export/");
@@ -88,10 +89,19 @@ describe("CollectionPage", () => {
     renderPage("/?color=B");
     await userEvent.type(await screen.findByLabelText("Search cards"), "bolt{Enter}");
     await vi.waitFor(() => expect(lastParams()).toBe("color=B&q=bolt"));
-    await userEvent.selectOptions(screen.getByLabelText("Set"), "LTR");
+    await chooseOption(screen.getByLabelText("Set"), "LTR");
     await vi.waitFor(() => expect(lastParams()).toBe("color=B&q=bolt&set=LTR"));
-    await userEvent.selectOptions(screen.getByLabelText("Condition"), "NM");
+    await chooseOption(screen.getByLabelText("Condition"), "Near Mint");
     await vi.waitFor(() => expect(lastParams()).toBe("color=B&q=bolt&set=LTR&cond=NM"));
+  });
+
+  it("the All item of a select clears that filter", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection());
+    renderPage("/?set=LTR&cond=NM");
+    await chooseOption(await screen.findByLabelText("Set"), "All sets");
+    await vi.waitFor(() => expect(lastParams()).toBe("cond=NM"));
+    await chooseOption(screen.getByLabelText("Condition"), "All conditions");
+    await vi.waitFor(() => expect(lastParams()).toBe(""));
   });
 
   it("empty states", async () => {
