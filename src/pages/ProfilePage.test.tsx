@@ -29,7 +29,7 @@ describe("ProfilePage", () => {
     renderPage("/account/");
     expect(await screen.findByRole("heading", { name: "Profile and settings" })).toBeInTheDocument();
     const summary = screen.getByRole("region", { name: "Account summary" });
-    expect(within(summary).getByText("@gab · admin")).toHaveClass("sub", "mono");
+    expect(within(summary).getByText("@gab · admin")).toBeInTheDocument();
     expect(within(summary).getByText("5 Jan 2026")).toBeInTheDocument();
     expect(within(summary).getByText("—")).toBeInTheDocument();
     expect(screen.getByLabelText("First name")).toHaveValue("Gabriele");

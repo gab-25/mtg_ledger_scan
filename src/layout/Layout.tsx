@@ -79,7 +79,7 @@ export default function Layout() {
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{name}</div>
-            <Link className="text-xs text-muted-foreground no-underline hover:text-foreground" to="/account/" {...current(nav === "profile")}>
+            <Link className="text-xs text-muted-foreground no-underline hover:text-foreground aria-[current=page]:text-gold" to="/account/" {...current(nav === "profile")}>
               Profile and settings
             </Link>
           </div>
