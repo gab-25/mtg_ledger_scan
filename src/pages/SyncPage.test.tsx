@@ -61,7 +61,7 @@ describe("SyncPage", () => {
     expect(await screen.findByText("In sync")).toHaveAttribute("data-variant", "ok");
     expect(screen.getByRole("link", { name: "Not configured" })).toHaveAttribute("href", "/account/#cardtrader");
     expect(screen.getByRole("button", { name: "Publish changes" })).toBeDisabled();
-    expect(screen.getByText("No conflicts — Ledger and connected services agree.")).toHaveClass("empty");
+    expect(screen.getByRole("cell", { name: "No conflicts — Ledger and connected services agree." })).toBeInTheDocument();
     expect(screen.getByText("No activity yet.")).toBeInTheDocument();
     expect(screen.getByText("—")).toBeInTheDocument();
   });

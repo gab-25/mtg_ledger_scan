@@ -37,8 +37,8 @@ describe("ShipmentsPage", () => {
     expect(await screen.findByRole("heading", { name: "Shipments" })).toBeInTheDocument();
     expect(screen.getByText("Imported 2 hours ago")).toHaveClass("hint");
     const stats = screen.getByRole("region", { name: "Shipping summary" });
-    expect(within(stats).getByText("1")).toHaveClass("warn");
-    expect(within(stats).getByText("€40.00")).toHaveClass("accent");
+    expect(within(stats).getByText("1")).toHaveAttribute("data-tone", "warn");
+    expect(within(stats).getByText("€40.00")).toHaveAttribute("data-tone", "accent");
     const tabs = screen.getByRole("navigation", { name: "Order status" });
     expect(within(tabs).getByRole("link", { name: "To ship 1" })).toHaveAttribute("aria-current", "true");
     expect(within(tabs).getByRole("link", { name: "Issues 1" })).toHaveAttribute("href", "/shipments/?tab=issues");

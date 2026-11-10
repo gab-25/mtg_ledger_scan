@@ -34,8 +34,8 @@ describe("SalePage", () => {
     renderPage("/sale/");
     expect(await screen.findByRole("heading", { name: "For sale" })).toBeInTheDocument();
     const stats = screen.getByRole("region", { name: "Sales summary" });
-    expect(within(stats).getByText("€123")).toHaveClass("accent");
-    expect(within(stats).getByText("1")).toHaveClass("stat-value", "warn");
+    expect(within(stats).getByText("€123")).toHaveAttribute("data-tone", "accent");
+    expect(within(stats).getByText("1")).toHaveAttribute("data-tone", "warn");
     expect(screen.getByRole("button", { name: "Publish 1 change" })).toBeEnabled();
     const card = screen.getByRole("article");
     expect(within(card).getByText("DMR · NM · EN")).toBeInTheDocument();

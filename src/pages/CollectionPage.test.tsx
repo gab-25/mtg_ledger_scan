@@ -48,7 +48,7 @@ describe("CollectionPage", () => {
     expect(await screen.findByRole("heading", { name: "Collection" })).toBeInTheDocument();
     const stats = screen.getByRole("region", { name: "Summary" });
     expect(within(stats).getByText("1,234")).toBeInTheDocument();
-    expect(within(stats).getByText("€1,235")).toHaveClass("stat-value", "accent");
+    expect(within(stats).getByText("€1,235")).toHaveAttribute("data-tone", "accent");
     const table = screen.getByRole("table");
     expect(within(table).getByRole("link", { name: "Thoughtseize" })).toHaveAttribute("href", "/cards/7/");
     expect(within(table).getByTitle("Near Mint")).toHaveTextContent("NM");

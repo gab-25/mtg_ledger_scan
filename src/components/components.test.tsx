@@ -14,7 +14,7 @@ import StatTile from "./StatTile";
 type Row = { name: string; qty: number };
 const columns: ColumnDef<Row>[] = [
   { header: "Card", accessorKey: "name" },
-  { header: "Qty", accessorKey: "qty", meta: { align: "right", className: "num" } },
+  { header: "Qty", accessorKey: "qty", meta: { align: "right", className: "text-right font-mono" } },
 ];
 
 describe("DataTable", () => {
@@ -22,15 +22,14 @@ describe("DataTable", () => {
     render(<DataTable columns={columns} data={[{ name: "Bolt", qty: 4 }]} empty="Nothing." />);
     const [card, qty] = screen.getAllByRole("columnheader");
     expect(card).toHaveAttribute("scope", "col");
-    expect(qty).toHaveStyle({ textAlign: "right" });
-    expect(screen.getByRole("cell", { name: "4" })).toHaveClass("num");
-    expect(screen.getByRole("table").parentElement).toHaveClass("table-wrap");
+    expect(qty).toHaveClass("text-right");
+    expect(screen.getByRole("cell", { name: "4" })).toHaveClass("text-right", "font-mono");
+    expect(screen.getByRole("table").parentElement).toHaveAttribute("data-slot", "table-container");
   });
 
   it("shows the empty message across all columns", () => {
     render(<DataTable columns={columns} data={[]} empty="No cards match these filters." />);
     const cell = screen.getByRole("cell", { name: "No cards match these filters." });
-    expect(cell).toHaveClass("empty");
     expect(cell).toHaveAttribute("colspan", "2");
   });
 });
@@ -86,6 +85,6 @@ describe("Field, Badge, StatTile", () => {
 
   it("stat", () => {
     render(<StatTile label="To publish" value={3} tone="warn" />);
-    expect(screen.getByText("3")).toHaveClass("stat-value", "warn");
+    expect(screen.getByText("3")).toHaveAttribute("data-tone", "warn");
   });
 });
