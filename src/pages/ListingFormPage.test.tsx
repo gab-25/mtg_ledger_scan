@@ -65,7 +65,7 @@ describe("ListingFormPage", () => {
     renderPage("/sale/7/");
     await userEvent.click(await screen.findByRole("button", { name: "Save listing" }));
     const error = await screen.findByText("You only own 3 copies.");
-    expect(error.closest(".field")).toContainElement(screen.getByLabelText("Quantity"));
+    expect(error.closest('[data-slot="field"]')).toContainElement(screen.getByLabelText("Quantity"));
   });
 
   it("removes the listing after confirming; an error keeps the page", async () => {

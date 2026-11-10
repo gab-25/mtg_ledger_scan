@@ -55,7 +55,7 @@ describe("ProfilePage", () => {
     await userEvent.type(email, "other@example.com");
     await userEvent.click(screen.getByRole("button", { name: "Save details" }));
     const error = await screen.findByText("This email is already used by another account.");
-    expect(error.closest(".field")).toContainElement(email);
+    expect(error.closest('[data-slot="field"]')).toContainElement(email);
     await userEvent.click(screen.getByRole("button", { name: "Save details" }));
     expect(await screen.findByText("Profile updated.")).toHaveAttribute("data-variant", "success");
     expect(api.updateProfile).toHaveBeenLastCalledWith({ first_name: "Gabriele", last_name: "S", email: "other@example.com" });

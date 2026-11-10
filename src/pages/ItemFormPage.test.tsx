@@ -77,7 +77,7 @@ describe("ItemFormPage", () => {
     await fillBolt();
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     const error = await screen.findByText("This field is required.");
-    expect(error.closest(".field")).toContainElement(screen.getByLabelText("Name"));
+    expect(error.closest('[data-slot="field"]')).toContainElement(screen.getByLabelText("Name"));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
