@@ -1,18 +1,12 @@
 /* MTG Ledger's look on Tailwind v4 + shadcn/ui. */
 
-/* The legacy CSS sits below components and utilities, so Tailwind classes always win over it while pages move
-   off it. Preflight (Tailwind's base reset) is left out until the legacy CSS is gone. */
-@layer theme, base, legacy, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss";
 @import "tw-animate-css";
-@import "./app.css" layer(legacy);
-@import "./scan.css" layer(legacy);
 
 /* The app is dark only: shadcn's `dark:` variants always apply. */
 @custom-variant dark (&);
 
-/* Colors are defined straight as --color-* tokens: the legacy :root uses --accent and --muted with other meanings. */
+/* Colors are defined straight as --color-* tokens, with shadcn's names and MTG Ledger's own. */
 @theme {
   /* shadcn names */
   --color-background: #121318;
@@ -60,8 +54,56 @@
   --font-sans: Inter, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
+  /* Line heights as before Tailwind: the browser's "normal" (Tailwind's text-* sizes would add ~20% height). */
+  --text-xs--line-height: normal;
+  --text-sm--line-height: normal;
+  --text-base--line-height: normal;
+  --text-lg--line-height: normal;
+  --text-xl--line-height: normal;
+  --text-2xl--line-height: normal;
+
   --radius-sm: 4px;
   --radius-md: 8px;  /* buttons, inputs, nav links */
   --radius-lg: 10px; /* user card, small panels */
   --radius-xl: 14px; /* boxes, cards, tables */
+}
+
+@layer base {
+  html {
+    line-height: normal;
+  }
+  body {
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  a {
+    color: var(--color-gold);
+    text-decoration-line: underline;
+  }
+  a:hover {
+    color: var(--color-gold-hi);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+  ::placeholder {
+    color: var(--color-placeholder);
+  }
+
+  /* Printing a packing slip: black on white. */
+  @media print {
+    :root {
+      --color-background: #fff;
+      --color-foreground: #000;
+      --color-text-2: #111;
+      --color-text-3: #333;
+      --color-muted-foreground: #444;
+      --color-gold: #000;
+      --color-gold-hi: #000;
+      --color-primary: #000;
+    }
+  }
 }

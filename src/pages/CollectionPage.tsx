@@ -43,7 +43,7 @@ const columns: ColumnDef<CollectionRow>[] = [
     header: "Cond.",
     meta: { className: DIM },
     cell: ({ row: { original: r } }) => (
-      <abbr title={r.condition_label} style={{ textDecoration: "none" }}>
+      <abbr title={r.condition_label} className="no-underline">
         {r.condition}
       </abbr>
     ),

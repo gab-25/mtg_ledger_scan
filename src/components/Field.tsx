@@ -28,7 +28,7 @@ export default function Field({ label, id, help, errors, wide, check, children }
           {children}
         </>
       )}
-      {help && <div className="text-xs text-muted-foreground [&_ul]:mt-0.5 [&_ul]:mb-0 [&_ul]:pl-[18px]">{help}</div>}
+      {help && <div className="text-xs text-muted-foreground [&_ul]:mt-0.5 [&_ul]:mb-0 [&_ul]:list-disc [&_ul]:pl-[18px]">{help}</div>}
       <Errors errors={errors} />
     </div>
   );
