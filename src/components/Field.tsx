@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -41,5 +42,31 @@ export function Errors({ errors }: { errors?: string[] }) {
         <li key={e}>{e}</li>
       ))}
     </ul>
+  );
+}
+
+type ChoiceSelectProps = {
+  id?: string;
+  name?: string;
+  value: string;
+  options: [value: string, label: string][];
+  onChange: (value: string) => void;
+  className?: string;
+  "aria-label"?: string;
+};
+
+/** A shadcn Select over a list of [value, label] choices (the server's choice lists). */
+export function ChoiceSelect({ id, name, value, options, onChange, className, "aria-label": ariaLabel }: ChoiceSelectProps) {
+  return (
+    <Select name={name} value={value} onValueChange={onChange}>
+      <SelectTrigger id={id} className={className} aria-label={ariaLabel}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(([v, l]) => (
+          <SelectItem key={v} value={v}>{l}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

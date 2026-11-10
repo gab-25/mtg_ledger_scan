@@ -35,7 +35,7 @@ describe("ListingFormPage", () => {
     renderPage("/sale/7/");
     expect(await screen.findByRole("heading", { name: "Counterspell" })).toBeInTheDocument();
     expect(screen.getByText("DMR · NM · EN · 3 owned")).toBeInTheDocument();
-    expect(screen.getByLabelText("Status")).toHaveValue("to_publish");
+    expect(screen.getByLabelText("Status")).toHaveTextContent("To publish");
     expect(document.title).toBe("Listing · Counterspell · MTG Ledger");
     await userEvent.click(screen.getByRole("button", { name: "Use" }));
     expect(screen.getByLabelText("Price")).toHaveValue(0.95);

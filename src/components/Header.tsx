@@ -1,13 +1,16 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { META } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 
 /** A page's title: eyebrow, h1 and the page actions on the right. */
-export function PageHead({ eyebrow, title, actions }: { eyebrow?: ReactNode; title: ReactNode; actions?: ReactNode }) {
+export function PageHead({ eyebrow, title, meta, actions }: { eyebrow?: ReactNode; title: ReactNode; meta?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
         {eyebrow && <div className="text-[13px] tracking-[1.5px] text-muted-foreground uppercase print:text-[#444]">{eyebrow}</div>}
         <h1 className="mt-1 mb-0 font-serif text-[40px] font-semibold">{title}</h1>
+        {meta && <div className={cn(META, "mt-1.5")}>{meta}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3 [&_form]:m-0">{actions}</div>}
     </header>

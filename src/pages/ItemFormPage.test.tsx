@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import { chooseOption } from "@/test/select";
 import userEvent from "@testing-library/user-event";
 import { ApiError } from "../api/client";
 import * as api from "../api/collection";
@@ -29,7 +30,7 @@ beforeEach(() => {
 async function fillBolt() {
   await userEvent.type(await screen.findByLabelText("Name"), "Lightning Bolt");
   await userEvent.type(screen.getByLabelText("Set"), "m10");
-  await userEvent.selectOptions(screen.getByLabelText("Color"), "R");
+  await chooseOption(screen.getByLabelText("Color"), "Red");
   await userEvent.clear(screen.getByLabelText("Quantity"));
   await userEvent.type(screen.getByLabelText("Quantity"), "4");
   await userEvent.clear(screen.getByLabelText("Unit price"));
@@ -41,9 +42,9 @@ describe("ItemFormPage", () => {
     vi.mocked(api.createItem).mockResolvedValue({ id: 9, messages: [{ level: "success", text: "Added 4× Lightning Bolt." }] });
     renderPage("/cards/add/");
     expect(await screen.findByRole("heading", { name: "Add cards" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Condition")).toHaveValue("NM");
-    expect(screen.getByLabelText("Language")).toHaveValue("EN");
-    expect(screen.getByLabelText("Color")).toHaveValue("C");
+    expect(screen.getByLabelText("Condition")).toHaveTextContent("Near Mint");
+    expect(screen.getByLabelText("Language")).toHaveTextContent("English");
+    expect(screen.getByLabelText("Color")).toHaveTextContent("Colorless");
     await fillBolt();
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(api.createItem).toHaveBeenCalledWith({
