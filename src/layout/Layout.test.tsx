@@ -13,11 +13,11 @@ describe("Layout", () => {
     const nav = await screen.findByRole("navigation", { name: "Main navigation" });
     const shipments = within(nav).getByRole("link", { name: /Shipments/ });
     expect(shipments).toHaveAttribute("href", "/shipments/");
-    expect(within(shipments).getByText("2")).toHaveClass("nav-count", "nav-count-gold");
+    expect(within(shipments).getByText("2")).toHaveAttribute("data-variant", "gold");
     expect(shipments).toHaveTextContent("Shipments2 orders to ship");
     expect(within(nav).getByRole("link", { name: /Sync/ })).toHaveTextContent("Sync3 changes to publish");
     expect(within(nav).getByText("Gabriele S")).toBeInTheDocument();
-    expect(within(nav).getByText("G")).toHaveClass("avatar");
+    expect(within(nav).getByText("G")).toHaveAttribute("aria-hidden", "true");
     expect(within(nav).getByRole("link", { name: "Profile and settings" })).toHaveAttribute("href", "/account/");
     for (const [name, href] of [["Collection", "/"], ["For sale", "/sale/"], ["Cards", "/cards/"]]) {
       expect(within(nav).getByRole("link", { name })).toHaveAttribute("href", href);
@@ -30,7 +30,8 @@ describe("Layout", () => {
     const nav = await screen.findByRole("navigation", { name: "Main navigation" });
     expect(within(nav).getByRole("link", { name: "Sync" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Collection" })).not.toHaveAttribute("aria-current");
-    expect(nav.querySelector(".nav-count")).toBeNull();
+    expect(within(nav).queryByText(/changes to publish/)).toBeNull();
+    expect(within(nav).queryByText(/orders to ship/)).toBeNull();
   });
 
   it("an unknown page is Not found, inside the layout", async () => {
