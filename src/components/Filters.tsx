@@ -4,9 +4,18 @@ import { ALL, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } fr
 import { cn } from "@/lib/utils";
 
 /** The filter bar above a table: pills, selects and a "clear" link on one wrapping line. */
-export function Filters({ children, onSubmit }: { children: ReactNode; onSubmit?: (e: React.FormEvent) => void }) {
+/** `scroll`: on a phone the line does not wrap but scrolls sideways (inside a TablePanel's toolbar). */
+export function Filters({ children, onSubmit, scroll }: { children: ReactNode; onSubmit?: (e: React.FormEvent) => void; scroll?: boolean }) {
   return (
-    <form method="get" aria-label="Filters" className="m-0 flex flex-wrap items-center gap-2" onSubmit={onSubmit ?? ((e) => e.preventDefault())}>
+    <form
+      method="get"
+      aria-label="Filters"
+      className={cn(
+        "m-0 flex flex-wrap items-center gap-2",
+        scroll && "max-[839px]:-mx-[clamp(16px,3vw,48px)] max-[839px]:flex-nowrap max-[839px]:overflow-x-auto max-[839px]:px-[clamp(16px,3vw,48px)] max-[839px]:[scrollbar-width:none] max-[839px]:[&>*]:flex-none",
+      )}
+      onSubmit={onSubmit ?? ((e) => e.preventDefault())}
+    >
       {children}
     </form>
   );

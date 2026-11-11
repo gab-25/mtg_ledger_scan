@@ -66,3 +66,28 @@ export const SearchIcon = () => (
     <path d="M21 21l-5-5" />
   </Icon>
 );
+
+export const ScanIcon = ({ size = 18 }: { size?: number }) => (
+  <Icon size={size}>
+    <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" />
+    <rect x="8" y="7" width="8" height="10" rx="1" />
+  </Icon>
+);
+
+export const PlusIcon = () => (
+  <Icon size={16}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const UploadIcon = () => (
+  <Icon size={16}>
+    <path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+  </Icon>
+);
+
+export const DownloadIcon = () => (
+  <Icon size={16}>
+    <path d="M12 3v12M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+  </Icon>
+);

@@ -57,6 +57,10 @@ release `vX.Y.Z` builds and attaches `mtg-ledger-ui.tar.gz`, which the core's Do
 - Use shadcn controls, not native `<select>`/checkbox/radio. App-level composites live in `src/components/`
   (`DataTable` + `TableFoot`, `Field` + `ChoiceSelect`, `PageHead`/`Header`, `Filters`, `SearchBox`, `StatTile`…);
   repeated class sets are constants in `src/lib/styles.ts` (`NUM`, `SUB`, `HINT`, `PANEL`, `FORM_GRID`…).
+- Phone layout under 840px (`min-[840px]:` / `max-[839px]:`): the sidebar becomes a bottom tab bar, "Scan cards"
+  floats over the collection. Prefer CSS for responsive changes; when the markup differs (Collection's card list
+  instead of the table) use `useIsMobile()` from `hooks/useMediaQuery.ts`, which is false in jsdom (stub
+  `matchMedia` to test the phone branch).
 - Print (order packing slip) uses `print:` variants; keep interactive-only parts `print:hidden`.
 
 ## Tests

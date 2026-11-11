@@ -9,7 +9,7 @@ export function PageHead({ eyebrow, title, meta, actions }: { eyebrow?: ReactNod
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
         {eyebrow && <div className="text-[13px] tracking-[1.5px] text-muted-foreground uppercase print:text-[#444]">{eyebrow}</div>}
-        <h1 className="mt-1 mb-0 font-serif text-[40px] font-semibold">{title}</h1>
+        <h1 className="mt-1 mb-0 font-serif text-[30px] font-semibold min-[840px]:text-[40px]">{title}</h1>
         {meta && <div className={cn(META, "mt-1.5")}>{meta}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3 [&_form]:m-0">{actions}</div>}

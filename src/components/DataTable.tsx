@@ -19,13 +19,15 @@ type Props<T> = {
   className?: string;
   style?: CSSProperties;
   getRowId?: (row: T) => string;
+  /** false inside a TablePanel, which draws the frame. */
+  framed?: boolean;
 };
 
 /**
  * The tables of the app, on TanStack Table. Filtering and pagination happen on the server (manual mode); sorting
  * is not enabled yet.
  */
-export default function DataTable<T>({ columns, data, empty, className, style, getRowId }: Props<T>) {
+export default function DataTable<T>({ columns, data, empty, className, style, getRowId, framed = true }: Props<T>) {
   const table = useReactTable({
     data,
     columns,
@@ -37,7 +39,7 @@ export default function DataTable<T>({ columns, data, empty, className, style, g
     enableSorting: false,
   });
   return (
-    <Table className={className} style={style}>
+    <Table className={className} style={style} framed={framed}>
       <TableHeader>
         {table.getHeaderGroups().map((group) => (
           <TableRow key={group.id}>
@@ -74,4 +76,25 @@ export default function DataTable<T>({ columns, data, empty, className, style, g
 /** The line under a table: "Showing n of N" on the left, the pager on the right. */
 export function TableFoot({ children }: { children: ReactNode }) {
   return <div className="flex flex-wrap items-center justify-between gap-3 text-[13px] text-muted-foreground">{children}</div>;
+}
+
+/**
+ * One box holding a table and what goes with it: the search and filters on top, the table (or, on a phone, its
+ * list), "Showing n of N" and the pager below. On a phone the box drops its frame and the list runs full width.
+ */
+export function TablePanel({ label, toolbar, footer, children }: { label: string; toolbar?: ReactNode; footer?: ReactNode; children: ReactNode }) {
+  return (
+    <section
+      aria-label={label}
+      className="flex flex-col gap-3 min-[840px]:gap-0 min-[840px]:overflow-hidden min-[840px]:rounded-xl min-[840px]:border min-[840px]:border-line min-[840px]:bg-card print:border-0"
+    >
+      {toolbar && (
+        <div className="flex flex-col gap-3 min-[840px]:flex-row min-[840px]:flex-wrap min-[840px]:items-center min-[840px]:border-b min-[840px]:border-line min-[840px]:px-4 min-[840px]:py-3 print:hidden">
+          {toolbar}
+        </div>
+      )}
+      {children}
+      {footer && <div className="min-[840px]:border-t min-[840px]:border-line min-[840px]:px-4 min-[840px]:py-3">{footer}</div>}
+    </section>
+  );
 }

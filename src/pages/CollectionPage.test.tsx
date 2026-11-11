@@ -58,7 +58,7 @@ describe("CollectionPage", () => {
     expect(screen.getByText("Showing 1 of 1 entries")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", "/api/collection/export/");
     expect(screen.getByRole("link", { name: "Scan cards" })).toHaveAttribute("href", "/scan/");
-    expect(screen.getByRole("link", { name: "+ Add cards" })).toHaveAttribute("href", "/cards/add/");
+    expect(screen.getByRole("link", { name: "Add cards" })).toHaveAttribute("href", "/cards/add/");
     expect(document.title).toBe("Collection · MTG Ledger");
   });
 
@@ -114,6 +114,28 @@ describe("CollectionPage", () => {
   });
 
   it("empty filtered result", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [], count: 0, filtered: true }));
+    renderPage("/?q=zzz");
+    expect(await screen.findByText("No cards match these filters.")).toBeInTheDocument();
+  });
+
+  it("on a phone the cards are a list, not a table", async () => {
+    const matchMedia = (query: string) =>
+      ({ matches: query === "(max-width: 839px)", addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
+    vi.stubGlobal("matchMedia", matchMedia);
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ foil: true })] }));
+    renderPage("/");
+    const card = await screen.findByRole("link", { name: /Thoughtseize/ });
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(card).toHaveAttribute("href", "/cards/7/");
+    expect(card).toHaveTextContent("2XM · NM · EN · ×3");
+    expect(within(card).getByText("Foil")).toBeInTheDocument();
+    expect(within(card).getByText("€12.00")).toBeInTheDocument();
+    expect(within(card).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
+  });
+
+  it("an empty collection on a phone says so", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [], count: 0, filtered: true }));
     renderPage("/?q=zzz");
     expect(await screen.findByText("No cards match these filters.")).toBeInTheDocument();
