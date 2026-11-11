@@ -23,7 +23,7 @@ beforeEach(() => {
   });
   vi.mocked(api.getCollection).mockResolvedValue({
     results: [], count: 0, page: 1, num_pages: 1, stats: { total: 0, unique: 0, value: null, for_sale: 0 },
-    sets: [], color_filters: [], filtered: false,
+    sets: [], categories: [], filtered: false,
   });
 });
 

@@ -1,6 +1,7 @@
 // /api/collection/ and /api/choices/: the collection, its cards, CSV import/export.
 import type { BadgeData } from "./types";
 import type { Done } from "./account";
+import type { Category } from "./catalog";
 import { request } from "./client";
 
 export type Choice = [string, string];
@@ -11,22 +12,25 @@ export type Page<T> = { results: T[]; count: number; page: number; num_pages: nu
 export type CollectionRow = {
   id: number;
   name: string;
-  type_line: string;
   set_code: string;
+  /** A sealed product or accessory: it has no condition and no foil. */
+  is_product: boolean;
+  category_id: number | null;
+  category_name: string | null;
   foil: boolean;
   condition: string;
   condition_label: string;
   language: string;
   quantity: number;
   price: string;
-  pip: string;
   badge: BadgeData;
 };
 
 export type Collection = Page<CollectionRow> & {
   stats: { total: number | null; unique: number; value: string | null; for_sale: number };
   sets: string[];
-  color_filters: { code: string; label: string; pip: string }[];
+  /** The categories present in the collection, for the filter. */
+  categories: Category[];
   filtered: boolean;
 };
 

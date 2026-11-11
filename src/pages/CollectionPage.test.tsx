@@ -10,8 +10,8 @@ vi.mock("../api/collection");
 
 export function row(over: Partial<CollectionRow> = {}): CollectionRow {
   return {
-    id: 7, name: "Thoughtseize", type_line: "Sorcery", set_code: "2XM", foil: false, condition: "NM",
-    condition_label: "Near Mint", language: "EN", quantity: 3, price: "12.00", pip: "#8B8197",
+    id: 7, name: "Thoughtseize", set_code: "2XM", is_product: false, category_id: 1, category_name: "Magic Single Card",
+    foil: false, condition: "NM", condition_label: "Near Mint", language: "EN", quantity: 3, price: "12.00",
     badge: { label: "In collection", tone: "neutral" }, ...over,
   };
 }
@@ -21,11 +21,7 @@ function collection(over: Partial<Collection> = {}): Collection {
     results: [row()], count: 1, page: 1, num_pages: 1,
     stats: { total: 1234, unique: 12, value: "1234.50", for_sale: 3 },
     sets: ["2XM", "LTR"], filtered: false,
-    color_filters: [
-      { code: "W", label: "White", pip: "#F3EBD3" }, { code: "U", label: "Blue", pip: "#6FA8DC" },
-      { code: "B", label: "Black", pip: "#8B8197" }, { code: "R", label: "Red", pip: "#E07A5F" },
-      { code: "G", label: "Green", pip: "#6BAF7B" },
-    ],
+    categories: [{ id: 1, name: "Magic Single Card" }, { id: 5, name: "Sealed Product" }],
     ...over,
   };
 }
@@ -58,41 +54,77 @@ describe("CollectionPage", () => {
     expect(screen.getByText("Showing 1 of 1 entries")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", "/api/collection/export/");
     expect(screen.getByRole("link", { name: "Scan cards" })).toHaveAttribute("href", "/scan/");
-    expect(screen.getByRole("link", { name: "Add cards" })).toHaveAttribute("href", "/cards/add/");
+    expect(screen.getByRole("link", { name: "Add cards" })).toHaveAttribute("href", "/catalog/");
     expect(document.title).toBe("Collection · MTG Ledger");
   });
 
   it("a cold link with filters asks the server for them", async () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection({ filtered: true, page: 2, num_pages: 3 }));
-    renderPage("/?color=B&q=seize&page=2");
+    renderPage("/?category=5&q=seize&page=2");
     await screen.findByRole("table");
-    expect(lastParams()).toBe("color=B&q=seize&page=2");
+    expect(lastParams()).toBe("category=5&q=seize&page=2");
     expect(screen.getByLabelText("Search cards")).toHaveValue("seize");
-    expect(screen.getByRole("link", { name: "Black" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByLabelText("Category")).toHaveTextContent("Sealed Product");
     const pager = screen.getByRole("navigation", { name: "Pagination" });
-    expect(within(pager).getByRole("link", { name: "Next" })).toHaveAttribute("href", "/?color=B&q=seize&page=3");
+    expect(within(pager).getByRole("link", { name: "Next" })).toHaveAttribute("href", "/?category=5&q=seize&page=3");
     expect(screen.getByRole("link", { name: "Clear filters" })).toHaveAttribute("href", "/");
   });
 
-  it("filter pills keep the other filters and drop the page", async () => {
+  it("the foil pill keeps the other filters and drops the page", async () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection({ filtered: true }));
-    renderPage("/?color=B&foil=1&page=2");
+    renderPage("/?category=1&foil=1&page=2");
     await screen.findByRole("table");
-    expect(screen.getByRole("link", { name: "All" })).toHaveAttribute("href", "/?foil=1");
-    expect(screen.getByRole("link", { name: "Red" })).toHaveAttribute("href", "/?color=R&foil=1");
-    expect(screen.getByRole("link", { name: "Foil only" })).toHaveAttribute("href", "/?color=B");
+    expect(screen.getByRole("link", { name: "Foil only" })).toHaveAttribute("href", "/?category=1");
     expect(screen.getByRole("link", { name: "Foil only" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("has no color filters, pips or type line", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection());
+    renderPage("/");
+    await screen.findByRole("table");
+    expect(screen.queryByRole("link", { name: "All" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Black" })).toBeNull();
+    expect(screen.queryByText("Sorcery")).toBeNull();
+    expect(screen.getByPlaceholderText("Search by name or set…")).toBeInTheDocument();
+  });
+
+  it("filters by category", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection());
+    renderPage("/?q=bolt");
+    await chooseOption(await screen.findByLabelText("Category"), "Sealed Product");
+    await vi.waitFor(() => expect(lastParams()).toBe("q=bolt&category=5"));
+    await chooseOption(screen.getByLabelText("Category"), "All categories");
+    await vi.waitFor(() => expect(lastParams()).toBe("q=bolt"));
+  });
+
+  it("shows products without condition or foil", async () => {
+    const booster = row({ id: 9, name: "Play Booster", is_product: true, category_id: 5, category_name: "Sealed Product", quantity: 1 });
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [booster] }));
+    renderPage("/");
+    const table = await screen.findByRole("table");
+    const [, product] = within(table).getAllByRole("row");
+    expect(within(product).queryByText("NM")).toBeNull();
+    expect(within(product).getByText("—")).toBeInTheDocument();
+  });
+
+  it("on a phone products have no condition", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    const booster = row({ id: 9, name: "Play Booster", set_code: "BLB", is_product: true, quantity: 1 });
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [booster] }));
+    renderPage("/");
+    const card = await screen.findByRole("link", { name: /Play Booster/ });
+    expect(card).toHaveTextContent("BLB · EN · ×1");
   });
 
   it("search and selects reload with the filters", async () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection());
-    renderPage("/?color=B");
+    renderPage("/?foil=1");
     await userEvent.type(await screen.findByLabelText("Search cards"), "bolt{Enter}");
-    await vi.waitFor(() => expect(lastParams()).toBe("color=B&q=bolt"));
+    await vi.waitFor(() => expect(lastParams()).toBe("foil=1&q=bolt"));
     await chooseOption(screen.getByLabelText("Set"), "LTR");
-    await vi.waitFor(() => expect(lastParams()).toBe("color=B&q=bolt&set=LTR"));
+    await vi.waitFor(() => expect(lastParams()).toBe("foil=1&q=bolt&set=LTR"));
     await chooseOption(screen.getByLabelText("Condition"), "Near Mint");
-    await vi.waitFor(() => expect(lastParams()).toBe("color=B&q=bolt&set=LTR&cond=NM"));
+    await vi.waitFor(() => expect(lastParams()).toBe("foil=1&q=bolt&set=LTR&cond=NM"));
   });
 
   it("the All item of a select clears that filter", async () => {
@@ -108,7 +140,7 @@ describe("CollectionPage", () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [], count: 0 }));
     renderPage("/");
     const empty = await screen.findByText(/Your collection is empty/);
-    expect(within(empty).getByRole("link", { name: "Add cards" })).toHaveAttribute("href", "/cards/add/");
+    expect(within(empty).getByRole("link", { name: "Add cards from the catalog" })).toHaveAttribute("href", "/catalog/");
     expect(within(empty).getByRole("link", { name: "import a CSV" })).toHaveAttribute("href", "/cards/import/");
     expect(screen.queryByRole("link", { name: "Clear filters" })).not.toBeInTheDocument();
   });
