@@ -13,8 +13,8 @@ Django CSRF are shared with it. The scan API contract is gab-25/mtg_ledger_core#
 
 ```bash
 npm test                                   # Vitest (jsdom), all tests
-npx vitest run src/pages/CardsPage.test.tsx           # one file
-npx vitest run src/pages/CardsPage.test.tsx -t "pager" # one test by name
+npx vitest run src/pages/CatalogPage.test.tsx           # one file
+npx vitest run src/pages/CatalogPage.test.tsx -t "pager" # one test by name
 npm run typecheck                          # tsc -b --noEmit
 npm run build                              # tsc + vite build into dist/ (base /static/ui/)
 npm run dev                                # Vite on :5173, proxies /api /admin /static to Django on :8000
@@ -37,6 +37,9 @@ release `vX.Y.Z` builds the app and publishes it as the scratch image
 - **Writes** go through `useAction` (`src/actions.ts`): runs the mutation, shows its messages via
   `src/notifications.tsx` (Django-messages semantics: on this page, or on the next one after a navigating action),
   invalidates every query (so sidebar counters refresh), and exposes field errors via `fieldErrors(error, name)`.
+- **Catalog** (`/catalog/`, `/api/catalog/`): every CardTrader product (cards, sealed, accessories). It is the only
+  way to add by hand: a row's "Add" opens `AddFromCatalog` (price prefilled with the Cardmarket trend). `/cards/<pk>/`
+  edits only the copies (condition, language, foil, quantity, price); products have no condition or foil.
 - `src/format.ts` reproduces Django's humanize/floatformat output (en-us, Europe/Rome) — use it for numbers/dates.
 - **Scan** (`src/screens/`, `src/autoscan/`, `src/camera/`, `/scan/…`): Start (a modal from "Scan cards", `ScanStartDialog`; `/scan/` still works as a page) → Camera (desktop gets a QR hand-off,
   `PhoneOnly`) → Review, all without reloads. `autoscan/machine.ts` decides when to shoot from metrics computed in

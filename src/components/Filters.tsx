@@ -21,16 +21,6 @@ export function Filters({ children, onSubmit, scroll }: { children: ReactNode; o
   );
 }
 
-/** A small round colour swatch inside a pill or badge. */
-export function PillDot({ color, className }: { color?: string; className?: string }) {
-  return <span aria-hidden="true" className={cn("size-3 flex-none rounded-full", className)} style={color ? { background: color } : undefined} />;
-}
-
-/** The thin vertical line between groups of pills. */
-export function FilterDivider() {
-  return <span aria-hidden="true" className="mx-1 h-6 w-px bg-line-2" />;
-}
-
 /** "Clear filters" after the pills. */
 export function ClearLink({ to, children }: { to: string; children: ReactNode }) {
   return (
