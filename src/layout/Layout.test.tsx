@@ -5,6 +5,7 @@ import * as scan from "../api/scan";
 import { setup } from "../test/fixtures";
 import { ApiError } from "../api/client";
 import { me, mockMe, renderPage } from "../test/renderPage";
+import { section } from "./Layout";
 
 vi.mock("../api/account");
 vi.mock("../api/scan");
@@ -24,7 +25,7 @@ describe("Layout", () => {
     expect(within(nav).getByRole("link", { name: "Profile and settings" })).toHaveAttribute("href", "/account/");
     expect(__APP_VERSION__).toMatch(/^\d+\.\d+\.\d+/);
     expect(within(nav).getByText(`v${__APP_VERSION__}`)).toBeInTheDocument();
-    for (const [name, href] of [["Collection", "/"], ["For sale", "/sale/"], ["Cards", "/cards/"]]) {
+    for (const [name, href] of [["Collection", "/"], ["For sale", "/sale/"], ["Catalog", "/catalog/"]]) {
       expect(within(nav).getByRole("link", { name })).toHaveAttribute("href", href);
     }
   });
@@ -37,6 +38,16 @@ describe("Layout", () => {
     expect(within(nav).getByRole("link", { name: "Collection" })).not.toHaveAttribute("aria-current");
     expect(within(nav).queryByText(/changes to publish/)).toBeNull();
     expect(within(nav).queryByText(/orders to ship/)).toBeNull();
+  });
+
+  it("the catalog and the item pages mark their section", async () => {
+    mockMe();
+    renderPage("/catalog/?q=x");
+    const nav = await screen.findByRole("navigation", { name: "Main navigation" });
+    expect(within(nav).getByRole("link", { name: "Catalog" })).toHaveAttribute("aria-current", "page");
+    expect(section("/cards/12/")).toBe("collection");
+    expect(section("/cards/import/")).toBe("collection");
+    expect(section("/catalog/")).toBe("catalog");
   });
 
   it("an unknown page is Not found, inside the layout", async () => {

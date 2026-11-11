@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { searchCards, type CardFilters, type Printing } from "../api/cards";
+import { getCategories, searchCatalog, type CatalogFilters, type Printing } from "../api/catalog";
 import DataTable, { TableFoot, TablePanel } from "../components/DataTable";
-import { ClearLink, Filters } from "../components/Filters";
+import { ClearLink, FilterSelect, Filters } from "../components/Filters";
 import { PageHead } from "../components/Header";
 import SearchBox from "../components/SearchBox";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -36,8 +36,8 @@ const price = (key: PriceKey, header: string): ColumnDef<Printing> => ({
 
 const columns: ColumnDef<Printing>[] = [
   {
-    id: "card",
-    header: "Card",
+    id: "product",
+    header: "Product",
     cell: ({ row: { original: p } }) => (
       <div className="flex items-center gap-3">
         {p.image_url && (
@@ -73,25 +73,30 @@ const columns: ColumnDef<Printing>[] = [
   price("avg_foil", "Foil avg"),
 ];
 
-/** The query string of a search, in the order of the Django view: q, set, number, owned. */
-function queryOf(f: CardFilters) {
+/** The form state: the filters, with the category as the select's string value ("" for none). */
+type Form = Omit<CatalogFilters, "category"> & { category: string };
+
+/** The query string of a search, in the order of the API: q, set, number, category, owned. */
+function queryOf(f: Form) {
   const params = new URLSearchParams();
   if (f.q) params.set("q", f.q);
   if (f.set) params.set("set", f.set);
   if (f.number) params.set("number", f.number);
+  if (f.category) params.set("category", f.category);
   if (f.owned) params.set("owned", "1");
   return params;
 }
 
-/** ledger/cards.html */
-export default function CardsPage() {
-  useDocumentTitle("Cards");
+/** The catalog: every CardTrader product (formerly ledger/cards.html). */
+export default function CatalogPage() {
+  useDocumentTitle("Catalog");
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const query = useQuery({ queryKey: ["cards", params.toString()], queryFn: () => searchCards(params) });
-  const fromUrl: CardFilters = {
+  const query = useQuery({ queryKey: ["catalog", params.toString()], queryFn: () => searchCatalog(params) });
+  const categories = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+  const fromUrl: Form = {
     q: params.get("q") ?? "", set: params.get("set") ?? "", number: params.get("number") ?? "",
-    owned: params.get("owned") === "1",
+    category: params.get("category") ?? "", owned: params.get("owned") === "1",
   };
   const [form, setForm] = useState(fromUrl);
   const mobile = useIsMobile();
@@ -100,7 +105,7 @@ export default function CardsPage() {
   if (!query.data) return <PageState error={query.error} />;
   const data = query.data;
 
-  const go = (f: CardFilters) => {
+  const go = (f: Form) => {
     const q = queryOf({ ...f, q: f.q.trim(), set: f.set.trim(), number: f.number.trim() }).toString();
     navigate(q ? `?${q}` : "?");
   };
@@ -111,13 +116,13 @@ export default function CardsPage() {
 
   return (
     <>
-      <PageHead eyebrow="Card database" title="Cards" />
+      <PageHead eyebrow="CardTrader catalog" title="Catalog" />
 
       <TablePanel
-        label="Printings"
+        label="Products"
         toolbar={
           <>
-            <SearchBox id="q" label="Search cards" value={form.q} placeholder="Search by name or set code…" autoFocus
+            <SearchBox id="q" label="Search the catalog" value={form.q} placeholder="Search by name or set code…" autoFocus
               className="min-[840px]:min-h-10 min-[840px]:flex-[1_1_260px] min-[840px]:bg-background"
               onChange={(q) => setForm({ ...form, q })} onSubmit={submit} />
             <Filters onSubmit={submit} scroll>
@@ -127,12 +132,15 @@ export default function CardsPage() {
               <label htmlFor="f-number" className="sr-only">Collector number</label>
               <Input id="f-number" name="number" value={form.number} placeholder="Number" className={PILL_INPUT}
                 size={6} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+              <FilterSelect id="f-category" label="Category" placeholder="Category" allLabel="All categories"
+                value={form.category} options={(categories.data ?? []).map((c) => [String(c.id), c.name])}
+                onChange={(v) => go({ ...form, category: v ?? "" })} />
               <label className={buttonVariants({ variant: "pill" })} {...(form.owned ? { "aria-current": "true" } : {})}>
                 <Checkbox name="owned" value="1" checked={form.owned} onCheckedChange={(c) => go({ ...form, owned: c === true })} />
                 In my collection
               </label>
               <Button type="submit" variant="pill">Apply</Button>
-              {data.searched && <ClearLink to="/cards/">Clear</ClearLink>}
+              {data.searched && <ClearLink to="/catalog/">Clear</ClearLink>}
             </Filters>
           </>
         }
@@ -140,34 +148,34 @@ export default function CardsPage() {
           data.searched && (
             <TableFoot>
               <span>
-                Showing {data.results.length} of {intcomma(data.count)} printings
+                Showing {data.results.length} of {intcomma(data.count)} products
                 {data.prices_date && ` · Cardmarket price guide of ${dateLong(data.prices_date)}`}
               </span>
               <Pager page={data.page} numPages={data.num_pages}
-                href={(page) => `?${queryOf(data.filters)}&page=${page}`} />
+                href={(page) => `?${queryOf({ ...data.filters, category: data.filters.category?.toString() ?? "" })}&page=${page}`} />
             </TableFoot>
           )
         }
       >
         {!data.searched ? (
           <p className={cn("m-0 min-[840px]:px-5 min-[840px]:py-6", HINT)}>
-            Search the card database — every Magic printing on CardTrader, with its Cardmarket prices (updated nightly) — by
-            name, set code or collector number, or list the cards you own.
+            Search the catalog — every Magic product on CardTrader, cards, sealed products and accessories, with its
+            Cardmarket prices (updated nightly) — by name, set code or collector number, or list what you own.
           </p>
         ) : mobile ? (
           <PrintingList rows={data.results} />
         ) : (
           <DataTable columns={columns} data={data.results} getRowId={(p) => String(p.ct_id)} framed={false}
-            empty="No cards match these criteria." />
+            empty="Nothing matches these criteria." />
         )}
       </TablePanel>
     </>
   );
 }
 
-/** The printings as a list on a phone, in place of the table: image, name, set and number, owned copies, trend prices. */
+/** The products as a list on a phone, in place of the table: image, name, set and number, owned copies, trend prices. */
 function PrintingList({ rows }: { rows: Printing[] }) {
-  if (rows.length === 0) return <p className={EMPTY}>No cards match these criteria.</p>;
+  if (rows.length === 0) return <p className={EMPTY}>Nothing matches these criteria.</p>;
   const trend = (value: string | null | undefined) => (value !== null && value !== undefined ? euro(value, 2) : "—");
   return (
     <ul className="m-0 flex list-none flex-col p-0">
