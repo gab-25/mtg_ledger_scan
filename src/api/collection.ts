@@ -44,6 +44,17 @@ export type ItemFields = {
   price: string;
 };
 
+/** The body of an addition from the catalog (CatalogItemForm): condition and foil for cards only, language when the
+ * product takes one. */
+export type CatalogItemFields = {
+  blueprint: number;
+  condition?: string;
+  language?: string;
+  foil?: boolean;
+  quantity: string;
+  price: string;
+};
+
 export type Item = Omit<ItemFields, "quantity" | "price"> & {
   id: number;
   quantity: number;
@@ -60,6 +71,8 @@ export const getCollection = (params: URLSearchParams) => {
 };
 export const getItem = (pk: number) => request<Item>("GET", `collection/${pk}/`);
 export const createItem = (data: ItemFields) => request<Done & { id: number }>("POST", "collection/", data);
+export const addToCollection = (data: CatalogItemFields) =>
+  request<Done & { id: number }>("POST", "collection/", data);
 export const updateItem = (pk: number, data: ItemFields) => request<Done>("PUT", `collection/${pk}/`, data);
 export const deleteItem = (pk: number) => request<Done>("DELETE", `collection/${pk}/`);
 export const getImportColumns = () => request<{ columns: string[] }>("GET", "collection/import/");

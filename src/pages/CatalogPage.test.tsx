@@ -2,11 +2,14 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { chooseOption } from "@/test/select";
 import * as api from "../api/catalog";
+import * as collection from "../api/collection";
+import { ApiError } from "../api/client";
 import type { CatalogSearch, Printing } from "../api/catalog";
 import { mockMe, renderPage } from "../test/renderPage";
 
 vi.mock("../api/account");
 vi.mock("../api/catalog");
+vi.mock("../api/collection");
 
 function printing(over: Partial<Printing> = {}): Printing {
   return {
@@ -31,7 +34,28 @@ const lastParams = () => vi.mocked(api.searchCatalog).mock.lastCall![0].toString
 beforeEach(() => {
   mockMe();
   vi.mocked(api.getCategories).mockResolvedValue([{ id: 1, name: "Magic Single Card" }, { id: 5, name: "Sealed Product" }]);
+  vi.mocked(collection.getChoices).mockResolvedValue({
+    conditions: [["NM", "Near Mint"], ["EX", "Excellent"]], languages: [["EN", "English"], ["IT", "Italian"]],
+    listing_statuses: [],
+  } as unknown as collection.Choices);
+  vi.mocked(collection.addToCollection).mockResolvedValue({
+    messages: [{ level: "success", text: "Added 1× Ugin, the Spirit Dragon." }], id: 3,
+  });
 });
+
+const BOOSTER = printing({
+  ct_id: 7001, name: "Bloomburrow Play Booster", image_url: "", expansion_code: "blb", expansion_name: "Bloomburrow",
+  collector_number: "", category_id: 5, category_name: "Sealed Product", is_product: true, accepts_language: true,
+  prices: { trend: "4.20", low: null, avg: null, trend_foil: null, low_foil: null, avg_foil: null },
+});
+
+/** Opens the Add dialog of the table row showing `name`. */
+async function openAdd(name: string) {
+  const table = await screen.findByRole("table");
+  const row = within(table).getByText(name).closest("tr")!;
+  await userEvent.click(within(row).getByRole("button", { name: "Add" }));
+  return screen.findByRole("dialog", { name });
+}
 
 describe("CatalogPage", () => {
   it("before searching shows the hint and no table", async () => {
@@ -49,7 +73,7 @@ describe("CatalogPage", () => {
     renderPage("/catalog/?q=ugin");
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(
-      ["Product", "Set", "Owned", "Trend", "Low", "Avg", "Foil trend", "Foil low", "Foil avg"],
+      ["Product", "Set", "Owned", "Trend", "Low", "Avg", "Foil trend", "Foil low", "Foil avg", ""],
     );
     const [, ugin, counter] = within(table).getAllByRole("row");
     expect(within(ugin).getByTitle("Core Set 2021")).toHaveTextContent("M21 #1");
@@ -140,5 +164,108 @@ describe("CatalogPage", () => {
     expect(within(counterspell).getByText("×2 owned")).toHaveAttribute("data-variant", "gold");
     expect(within(counterspell).getByText("Foil —")).toBeInTheDocument();
     expect(screen.getByText(/Showing 2 of 2 products/)).toBeInTheDocument();
+  });
+
+  it("on a phone each product has an Add button", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    const [ugin] = within(await screen.findByRole("list")).getAllByRole("listitem");
+    await userEvent.click(within(ugin).getByRole("button", { name: "Add" }));
+    expect(await screen.findByRole("dialog", { name: "Ugin, the Spirit Dragon" })).toBeInTheDocument();
+  });
+});
+
+describe("Adding from the catalog", () => {
+  it("adds a card from its row", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    const dialog = await openAdd("Ugin, the Spirit Dragon");
+    expect(dialog).toHaveTextContent("M21 #1");
+    expect(within(dialog).getByLabelText("Condition")).toHaveTextContent("Near Mint");
+    expect(within(dialog).getByLabelText("Language")).toHaveTextContent("English");
+    expect(within(dialog).getByLabelText("Quantity")).toHaveValue(1);
+    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(12.75);
+    expect(within(dialog).getByText("Cardmarket trend")).toBeInTheDocument();
+    await chooseOption(within(dialog).getByLabelText("Condition"), "Excellent");
+    await chooseOption(within(dialog).getByLabelText("Language"), "Italian");
+    await userEvent.click(within(dialog).getByLabelText("Foil"));
+    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(14.34);
+    await userEvent.clear(within(dialog).getByLabelText("Quantity"));
+    await userEvent.type(within(dialog).getByLabelText("Quantity"), "2");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
+    expect(collection.addToCollection).toHaveBeenCalledWith(
+      { blueprint: 9001, condition: "EX", language: "IT", foil: true, quantity: "2", price: "14.34" },
+    );
+    expect(await screen.findByText("Added 1× Ugin, the Spirit Dragon.")).toBeInTheDocument();
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    const search = screen.getByLabelText("Search the catalog");
+    await vi.waitFor(() => expect(search).toHaveFocus());
+    expect(search).toHaveValue("ugin");
+  });
+
+  it("keeps a price the user typed when foil changes", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    const dialog = await openAdd("Ugin, the Spirit Dragon");
+    const price = within(dialog).getByLabelText("Unit price");
+    await userEvent.clear(price);
+    await userEvent.type(price, "9.00");
+    await userEvent.click(within(dialog).getByLabelText("Foil"));
+    expect(price).toHaveValue(9);
+  });
+
+  it("prefills 0.00 without a Cardmarket price", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    const dialog = await openAdd("Counterspell");
+    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(0);
+    await userEvent.click(within(dialog).getByLabelText("Foil"));
+    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(0);
+  });
+
+  it("adds a product that takes a language", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results({ results: [BOOSTER] }));
+    renderPage("/catalog/?q=bloomburrow");
+    const dialog = await openAdd("Bloomburrow Play Booster");
+    expect(within(dialog).queryByLabelText("Condition")).toBeNull();
+    expect(within(dialog).queryByLabelText("Foil")).toBeNull();
+    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(4.2);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
+    expect(collection.addToCollection).toHaveBeenCalledWith({ blueprint: 7001, language: "EN", quantity: "1", price: "4.20" });
+  });
+
+  it("adds a product without language", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results({ results: [{ ...BOOSTER, accepts_language: false }] }));
+    renderPage("/catalog/?q=bloomburrow");
+    const dialog = await openAdd("Bloomburrow Play Booster");
+    expect(within(dialog).queryByLabelText("Language")).toBeNull();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
+    expect(collection.addToCollection).toHaveBeenCalledWith({ blueprint: 7001, quantity: "1", price: "4.20" });
+  });
+
+  it("shows field errors in the dialog", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    vi.mocked(collection.addToCollection).mockRejectedValue(
+      new ApiError("x", 400, "invalid", undefined, { quantity: ["Ensure this value is greater than or equal to 1."] }),
+    );
+    renderPage("/catalog/?q=ugin");
+    const dialog = await openAdd("Ugin, the Spirit Dragon");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
+    expect(await within(dialog).findByText("Ensure this value is greater than or equal to 1.")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("starts from the defaults on every opening", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    let dialog = await openAdd("Ugin, the Spirit Dragon");
+    await chooseOption(within(dialog).getByLabelText("Language"), "Italian");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    dialog = await openAdd("Counterspell");
+    expect(within(dialog).getByLabelText("Language")).toHaveTextContent("English");
+    expect(within(dialog).getByLabelText("Quantity")).toHaveValue(1);
+    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(0);
   });
 });

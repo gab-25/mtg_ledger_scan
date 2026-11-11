@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import Pager from "../components/Pager";
 import { dateLong, euro, intcomma } from "../format";
+import AddFromCatalog from "./AddFromCatalog";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useIsMobile } from "../hooks/useMediaQuery";
 
@@ -33,6 +34,13 @@ const price = (key: PriceKey, header: string): ColumnDef<Printing> => ({
     return value !== null && value !== undefined ? euro(value, 2) : "—";
   },
 });
+
+/** After an add the next search starts at once: focus on the search box, its text selected. */
+function focusSearch() {
+  const input = document.getElementById("q") as HTMLInputElement | null;
+  input?.focus();
+  input?.select();
+}
 
 const columns: ColumnDef<Printing>[] = [
   {
@@ -71,6 +79,10 @@ const columns: ColumnDef<Printing>[] = [
   price("trend_foil", "Foil trend"),
   price("low_foil", "Foil low"),
   price("avg_foil", "Foil avg"),
+  {
+    id: "add", header: "", meta: { align: "right" },
+    cell: ({ row: { original: p } }) => <AddFromCatalog printing={p} onAdded={focusSearch} />,
+  },
 ];
 
 /** The form state: the filters, with the category as the select's string value ("" for none). */
@@ -201,6 +213,9 @@ function PrintingList({ rows }: { rows: Printing[] }) {
             <span className={PRICE_LABEL}>Trend</span>
             <span className="font-mono text-[15px]">{trend(p.prices?.trend)}</span>
             <span className="font-mono text-xs text-muted-foreground">Foil {trend(p.prices?.trend_foil)}</span>
+          </div>
+          <div className="flex-none">
+            <AddFromCatalog printing={p} onAdded={focusSearch} />
           </div>
         </li>
       ))}
