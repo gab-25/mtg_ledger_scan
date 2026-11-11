@@ -1,7 +1,7 @@
 name: Release
 
-# Publishing a release attaches mtg-ledger-ui.tar.gz (the contents of dist/). The name carries no version, so
-# mtg_ledger_core's Dockerfile downloads it from releases/latest/download/mtg-ledger-ui.tar.gz.
+# Publishing a release builds dist/ and publishes it as the scratch image ghcr.io/gab-25/mtg_ledger_ui:X.Y.Z (just
+# the files of dist/), which mtg_ledger_core's Dockerfile copies the UI from.
 on:
   release:
     types: [published]
@@ -16,7 +16,8 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v5
 
@@ -28,10 +29,27 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Upload the build to the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: |
-          tar -czf mtg-ledger-ui.tar.gz -C dist .
-          gh release upload "$TAG" mtg-ledger-ui.tar.gz --clobber
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
+
+      - name: Publish the build as an image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
