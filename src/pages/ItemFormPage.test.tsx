@@ -9,14 +9,14 @@ vi.mock("../api/account");
 vi.mock("../api/collection");
 
 const ITEM: api.Item = {
-  id: 7, name: "Thoughtseize", set_code: "2XM", collector_number: "", type_line: "Sorcery", color: "B",
-  condition: "NM", language: "EN", foil: false, quantity: 3, price: "12.00", has_listing: false,
+  id: 7, name: "Thoughtseize", set_code: "2XM", collector_number: "107", is_product: false, category_id: 1,
+  category_name: "Magic Single Card", condition: "NM", language: "EN", foil: false, quantity: 3, price: "12.00",
+  has_listing: false,
 };
 
 beforeEach(() => {
   mockMe();
   vi.mocked(api.getChoices).mockResolvedValue({
-    colors: [["B", "Black"], ["R", "Red"], ["C", "Colorless"]],
     conditions: [["NM", "Near Mint"], ["EX", "Excellent"]],
     languages: [["EN", "English"], ["IT", "Italian"]],
     listing_statuses: [],
@@ -27,59 +27,49 @@ beforeEach(() => {
   });
 });
 
-async function fillBolt() {
-  await userEvent.type(await screen.findByLabelText("Name"), "Lightning Bolt");
-  await userEvent.type(screen.getByLabelText("Set"), "m10");
-  await chooseOption(screen.getByLabelText("Color"), "Red");
-  await userEvent.clear(screen.getByLabelText("Quantity"));
-  await userEvent.type(screen.getByLabelText("Quantity"), "4");
-  await userEvent.clear(screen.getByLabelText("Unit price"));
-  await userEvent.type(screen.getByLabelText("Unit price"), "1.50");
-}
-
 describe("ItemFormPage", () => {
-  it("adds cards and shows the message on the collection", async () => {
-    vi.mocked(api.createItem).mockResolvedValue({ id: 9, messages: [{ level: "success", text: "Added 4× Lightning Bolt." }] });
-    renderPage("/cards/add/");
-    expect(await screen.findByRole("heading", { name: "Add cards" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Condition")).toHaveTextContent("Near Mint");
-    expect(screen.getByLabelText("Language")).toHaveTextContent("English");
-    expect(screen.getByLabelText("Color")).toHaveTextContent("Colorless");
-    await fillBolt();
+  it("edits only the copies of a card", async () => {
+    vi.mocked(api.getItem).mockResolvedValue(ITEM);
+    vi.mocked(api.updateItem).mockResolvedValue({ messages: [{ level: "success", text: "Saved Thoughtseize." }] });
+    renderPage("/cards/7/");
+    expect(await screen.findByRole("heading", { name: "Thoughtseize" })).toBeInTheDocument();
+    expect(screen.getByText("2XM #107 · Magic Single Card")).toBeInTheDocument();
+    for (const gone of ["Name", "Set", "Collector number", "Type", "Color"]) expect(screen.queryByLabelText(gone)).toBeNull();
+    await chooseOption(screen.getByLabelText("Condition"), "Excellent");
+    await userEvent.clear(screen.getByLabelText("Quantity"));
+    await userEvent.type(screen.getByLabelText("Quantity"), "4");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(api.createItem).toHaveBeenCalledWith({
-      name: "Lightning Bolt", set_code: "m10", collector_number: "", type_line: "", color: "R", condition: "NM",
-      language: "EN", foil: false, quantity: "4", price: expect.stringMatching(/^1\.50?$/), // jsdom drops the 0
+    expect(api.updateItem).toHaveBeenCalledWith(7, { condition: "EX", language: "EN", foil: false, quantity: "4", price: "12.00" });
+  });
+
+  it("edits a product without condition or foil", async () => {
+    vi.mocked(api.getItem).mockResolvedValue({
+      ...ITEM, name: "Play Booster", set_code: "BLB", collector_number: "CT12345", is_product: true, category_id: 5,
+      category_name: "Sealed Product",
     });
-    expect(await screen.findByRole("heading", { name: "Collection" })).toBeInTheDocument();
-    expect(screen.getByText("Added 4× Lightning Bolt.")).toHaveAttribute("data-variant", "success");
+    vi.mocked(api.updateItem).mockResolvedValue({ messages: [] });
+    renderPage("/cards/7/");
+    expect(await screen.findByText("BLB · Sealed Product")).toBeInTheDocument();
+    expect(screen.queryByText(/CT12345/)).toBeNull();
+    expect(screen.queryByLabelText("Condition")).toBeNull();
+    expect(screen.queryByLabelText("Foil")).toBeNull();
+    await chooseOption(screen.getByLabelText("Language"), "Italian");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(api.updateItem).toHaveBeenCalledWith(7, { condition: "NM", language: "IT", foil: false, quantity: "3", price: "12.00" });
   });
 
-  it("save and add another gives an empty form", async () => {
-    vi.mocked(api.createItem).mockResolvedValue({ id: 9, messages: [{ level: "success", text: "Added 4× Lightning Bolt." }] });
+  it("has no add page", async () => {
     renderPage("/cards/add/");
-    await fillBolt();
-    await userEvent.click(screen.getByRole("button", { name: "Save and add another" }));
-    expect(await screen.findByText("Added 4× Lightning Bolt.")).toBeInTheDocument();
-    await vi.waitFor(() => expect(screen.getByLabelText("Name")).toHaveValue("")); // the navigation is a transition
-    expect(screen.getByRole("heading", { name: "Add cards" })).toBeInTheDocument();
-  });
-
-  it("the browser checks required fields first, as on the Django form", async () => {
-    renderPage("/cards/add/");
-    await userEvent.click(await screen.findByRole("button", { name: "Save" }));
-    expect(api.createItem).not.toHaveBeenCalled();
-    expect(screen.getByLabelText("Name")).toBeRequired();
+    expect(await screen.findByRole("heading", { name: "Not found" })).toBeInTheDocument();
   });
 
   it("shows validation errors under their fields", async () => {
-    vi.mocked(api.createItem).mockRejectedValue(new ApiError("x", 400, "invalid", undefined, { name: ["This field is required."] }));
-    renderPage("/cards/add/");
-    await fillBolt();
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-    const error = await screen.findByText("This field is required.");
-    expect(error.closest('[data-slot="field"]')).toContainElement(screen.getByLabelText("Name"));
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    vi.mocked(api.getItem).mockResolvedValue(ITEM);
+    vi.mocked(api.updateItem).mockRejectedValue(new ApiError("x", 400, "invalid", undefined, { quantity: ["Ensure this value is greater than or equal to 0."] }));
+    renderPage("/cards/7/");
+    await userEvent.click(await screen.findByRole("button", { name: "Save" }));
+    const error = await screen.findByText("Ensure this value is greater than or equal to 0.");
+    expect(error.closest('[data-slot="field"]')).toContainElement(screen.getByLabelText("Quantity"));
   });
 
   it("edits a card", async () => {

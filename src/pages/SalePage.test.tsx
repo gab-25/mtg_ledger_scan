@@ -25,7 +25,7 @@ function listings(over: Partial<Listings> = {}): Listings {
 
 beforeEach(() => {
   mockMe();
-  vi.mocked(collection.getChoices).mockResolvedValue({ colors: [], conditions: [], languages: [], listing_statuses: STATUSES });
+  vi.mocked(collection.getChoices).mockResolvedValue({ conditions: [], languages: [], listing_statuses: STATUSES });
 });
 
 describe("SalePage", () => {

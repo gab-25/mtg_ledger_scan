@@ -31,7 +31,6 @@ const lastParams = () => vi.mocked(api.getCollection).mock.lastCall![0].toString
 beforeEach(() => {
   mockMe();
   vi.mocked(api.getChoices).mockResolvedValue({
-    colors: [["W", "White"], ["B", "Black"], ["R", "Red"], ["C", "Colorless"]],
     conditions: [["NM", "Near Mint"], ["EX", "Excellent"]],
     languages: [["EN", "English"], ["IT", "Italian"]],
     listing_statuses: [["published", "Published"], ["to_publish", "To publish"], ["sold", "Sold"]],

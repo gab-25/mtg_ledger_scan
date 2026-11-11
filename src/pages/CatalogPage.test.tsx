@@ -37,7 +37,7 @@ beforeEach(() => {
   vi.mocked(collection.getChoices).mockResolvedValue({
     conditions: [["NM", "Near Mint"], ["EX", "Excellent"]], languages: [["EN", "English"], ["IT", "Italian"]],
     listing_statuses: [],
-  } as unknown as collection.Choices);
+  });
   vi.mocked(collection.addToCollection).mockResolvedValue({
     messages: [{ level: "success", text: "Added 1× Ugin, the Spirit Dragon." }], id: 3,
   });

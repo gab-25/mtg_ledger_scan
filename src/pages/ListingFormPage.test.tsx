@@ -22,7 +22,7 @@ function detail(over: Partial<ListingDetail> = {}): ListingDetail {
 beforeEach(() => {
   mockMe();
   vi.mocked(collection.getChoices).mockResolvedValue({
-    colors: [], conditions: [], languages: [],
+    conditions: [], languages: [],
     listing_statuses: [["published", "Published"], ["to_publish", "To publish"], ["sold", "Sold"]],
   });
   vi.mocked(api.getListings).mockResolvedValue({ stats: { active: 0, value: "0", sold_month: 0, to_publish: 0 }, status: "", results: [] });

@@ -5,7 +5,7 @@ import type { Category } from "./catalog";
 import { request } from "./client";
 
 export type Choice = [string, string];
-export type Choices = { colors: Choice[]; conditions: Choice[]; languages: Choice[]; listing_statuses: Choice[] };
+export type Choices = { conditions: Choice[]; languages: Choice[]; listing_statuses: Choice[] };
 
 export type Page<T> = { results: T[]; count: number; page: number; num_pages: number };
 
@@ -34,13 +34,8 @@ export type Collection = Page<CollectionRow> & {
   filtered: boolean;
 };
 
-/** The fields of the add/edit card form (CardItemForm). */
+/** The fields of the edit form (ItemForm): the copies only, the product never changes. */
 export type ItemFields = {
-  name: string;
-  set_code: string;
-  collector_number: string;
-  type_line: string;
-  color: string;
   condition: string;
   language: string;
   foil: boolean;
@@ -61,6 +56,12 @@ export type CatalogItemFields = {
 
 export type Item = Omit<ItemFields, "quantity" | "price"> & {
   id: number;
+  name: string;
+  set_code: string;
+  collector_number: string;
+  is_product: boolean;
+  category_id: number | null;
+  category_name: string | null;
   quantity: number;
   price: string;
   has_listing: boolean;
@@ -74,7 +75,6 @@ export const getCollection = (params: URLSearchParams) => {
   return request<Collection>("GET", `collection/${query ? `?${query}` : ""}`);
 };
 export const getItem = (pk: number) => request<Item>("GET", `collection/${pk}/`);
-export const createItem = (data: ItemFields) => request<Done & { id: number }>("POST", "collection/", data);
 export const addToCollection = (data: CatalogItemFields) =>
   request<Done & { id: number }>("POST", "collection/", data);
 export const updateItem = (pk: number, data: ItemFields) => request<Done>("PUT", `collection/${pk}/`, data);

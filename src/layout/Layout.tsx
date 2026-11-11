@@ -14,7 +14,7 @@ type Section = "collection" | "sale" | "catalog" | "shipments" | "sync" | "profi
 
 /** Which sidebar link a page belongs to (base.html's "nav"). */
 export function section(pathname: string): Section {
-  if (pathname === "/" || /^\/cards\/(add|import|\d+)\/?$/.test(pathname)) return "collection";
+  if (pathname === "/" || /^\/cards\/(import|\d+)\/?$/.test(pathname)) return "collection";
   if (pathname.startsWith("/catalog")) return "catalog";
   if (pathname.startsWith("/sale")) return "sale";
   if (pathname.startsWith("/shipments")) return "shipments";
