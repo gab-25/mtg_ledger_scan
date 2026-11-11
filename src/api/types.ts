@@ -42,6 +42,8 @@ export type Session = {
   phone_url: string;
   phone_secure: boolean;
 };
+/** A session in the list of open ones (GET /api/scan/sessions/): updated_at is the last activity, its cards included. */
+export type OpenSession = Session & { created_at: string; updated_at: string };
 export type Missing = { message: string; url: string };
 export type Setup = {
   expansions: Expansion[];

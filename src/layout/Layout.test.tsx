@@ -73,6 +73,7 @@ describe("Layout", () => {
   it("Scan cards opens the start form in a modal, over the page", async () => {
     mockMe();
     vi.mocked(scan.getSetup).mockResolvedValue(setup());
+    vi.mocked(scan.listSessions).mockResolvedValue({ results: [] });
     renderPage("/nope/");
     const link = await screen.findByRole("link", { name: "Scan cards" });
     expect(link).toHaveAttribute("href", "/scan/");
