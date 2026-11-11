@@ -23,7 +23,8 @@ npm run dev:phone                          # same, published over HTTPS on the t
 
 `npm run dev` needs mtg_ledger_core running (`uv run python manage.py runserver` in its checkout). Ports come from
 `.env` (`DJANGO_PORT`, `VITE_PORT`). CI (`.github/workflows/tests.yml`) runs `npm ci`, `typecheck`, `test`; a GitHub
-release `vX.Y.Z` builds and attaches `mtg-ledger-ui.tar.gz`, which the core's Docker image downloads.
+release `vX.Y.Z` builds the app, attaches `mtg-ledger-ui.tar.gz` and publishes the scratch image
+`ghcr.io/gab-25/mtg_ledger_ui:X.Y.Z` (`Dockerfile`: only `dist/`), which the core's Docker image copies the UI from.
 
 ## Architecture
 
