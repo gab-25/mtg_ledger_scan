@@ -6,7 +6,7 @@ import { EXPORT_URL, getChoices, getCollection, type CollectionRow } from "../ap
 import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import DataTable, { TableFoot, TablePanel } from "../components/DataTable";
-import { ClearLink, FilterDivider, FilterSelect, Filters, PillDot } from "../components/Filters";
+import { ClearLink, FilterSelect, Filters } from "../components/Filters";
 import FoilTag from "../components/FoilTag";
 import { DownloadIcon, PlusIcon, UploadIcon } from "../components/icons";
 import { PageHead } from "../components/Header";
@@ -27,15 +27,12 @@ const columns: ColumnDef<CollectionRow>[] = [
     id: "card",
     header: "Card",
     cell: ({ row: { original: r } }) => (
-      <div className="flex items-center gap-3">
-        <span className="inline-block size-2.5 flex-none rounded-full" style={{ background: r.pip }} />
-        <div>
-          <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>
-            {r.name}
-          </Link>
-          {r.foil && <FoilTag />}
-          <div className={SUB}>{r.type_line}</div>
-        </div>
+      <div>
+        <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>
+          {r.name}
+        </Link>
+        {r.foil && <FoilTag />}
+        {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
       </div>
     ),
   },
@@ -44,11 +41,12 @@ const columns: ColumnDef<CollectionRow>[] = [
     id: "cond",
     header: "Cond.",
     meta: { className: DIM },
-    cell: ({ row: { original: r } }) => (
-      <abbr title={r.condition_label} className="no-underline">
-        {r.condition}
-      </abbr>
-    ),
+    cell: ({ row: { original: r } }) =>
+      r.is_product ? "—" : (
+        <abbr title={r.condition_label} className="no-underline">
+          {r.condition}
+        </abbr>
+      ),
   },
   { id: "language", header: "Language", accessorKey: "language", meta: { className: DIM } },
   { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: NUM } },
@@ -69,15 +67,14 @@ export default function CollectionPage() {
   const q = params.get("q") ?? "";
   const [search, setSearch] = useState(q);
   useEffect(() => setSearch(q), [q]);
-  const color = params.get("color") ?? "";
   const foil = params.get("foil") === "1";
   const setCode = params.get("set") ?? "";
   const cond = params.get("cond") ?? "";
+  const category = params.get("category") ?? "";
   const mobile = useIsMobile();
 
   if (!query.data) return <PageState error={query.error} />;
   const data = query.data;
-  const colorCodes = data.color_filters.map((c) => c.code);
 
   function submitSearch(e: FormEvent) {
     e.preventDefault();
@@ -88,7 +85,7 @@ export default function CollectionPage() {
     "No cards match these filters."
   ) : (
     <>
-      Your collection is empty. <Link to="/cards/add/">Add cards</Link> or{" "}
+      Your collection is empty. <Link to="/catalog/">Add cards from the catalog</Link> or{" "}
       <Link to="/cards/import/">import a CSV</Link>.
     </>
   );
@@ -105,7 +102,7 @@ export default function CollectionPage() {
               <Button asChild><a href={EXPORT_URL} title="Export CSV"><DownloadIcon /><span className="max-[839px]:sr-only">Export CSV</span></a></Button>
             </div>
             <Button asChild variant="primary">
-              <Link to="/cards/add/"><PlusIcon />Add cards</Link>
+              <Link to="/catalog/"><PlusIcon />Add cards</Link>
             </Button>
           </>
         }
@@ -122,21 +119,9 @@ export default function CollectionPage() {
         label="Cards"
         toolbar={
           <>
-            <SearchBox id="q" label="Search cards" value={search} placeholder="Search by name, set, type…" className="min-[840px]:min-h-10 min-[840px]:flex-[1_1_260px] min-[840px]:bg-background"
+            <SearchBox id="q" label="Search cards" value={search} placeholder="Search by name or set…" className="min-[840px]:min-h-10 min-[840px]:flex-[1_1_260px] min-[840px]:bg-background"
               onChange={setSearch} onSubmit={submitSearch} />
             <Filters scroll>
-              <Button asChild variant="pill">
-                <Link to={hrefWith({ color: null })} {...(colorCodes.includes(color) ? {} : { "aria-current": "true" })}>All</Link>
-              </Button>
-              {data.color_filters.map((c) => (
-                <Button key={c.code} asChild variant="pill">
-                  <Link to={hrefWith({ color: c.code })} {...(color === c.code ? { "aria-current": "true" } : {})}>
-                    <PillDot color={c.pip} />
-                    {c.label}
-                  </Link>
-                </Button>
-              ))}
-              <FilterDivider />
               <Button asChild variant="pill">
                 <Link to={hrefWith({ foil: foil ? null : "1" })} {...(foil ? { "aria-current": "true" } : {})}>Foil only</Link>
               </Button>
@@ -144,6 +129,8 @@ export default function CollectionPage() {
                 options={data.sets.map((s) => [s, s])} onChange={(v) => navigate(hrefWith({ set: v }))} />
               <FilterSelect id="f-cond" label="Condition" placeholder="Condition" allLabel="All conditions" value={cond}
                 options={choices.data?.conditions ?? []} onChange={(v) => navigate(hrefWith({ cond: v }))} />
+              <FilterSelect id="f-category" label="Category" placeholder="Category" allLabel="All categories" value={category}
+                options={data.categories.map((c) => [String(c.id), c.name])} onChange={(v) => navigate(hrefWith({ category: v }))} />
               {data.filtered && <ClearLink to="/">Clear filters</ClearLink>}
             </Filters>
           </>
@@ -167,7 +154,8 @@ export default function CollectionPage() {
   );
 }
 
-/** The cards as a list on a phone, in place of the table: thumb, name, set · condition · language · quantity, price, status. */
+/** The cards as a list on a phone, in place of the table: thumb, name, set · condition · language · quantity, price, status
+ * (products have no condition). */
 function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) {
   if (rows.length === 0) return <p className={EMPTY}>{empty}</p>;
   return (
@@ -175,18 +163,16 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
       {rows.map((r) => (
         <li key={r.id} className="border-b border-line">
           <Link className="flex min-h-16 items-center gap-3 py-2 text-foreground no-underline hover:text-foreground" to={`/cards/${r.id}/`}>
-            <span
-              aria-hidden="true"
-              className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2"
-              style={{ background: `linear-gradient(160deg, ${r.pip} 0 14%, var(--color-surface-2) 14%)` }}
-            />
+            <span aria-hidden="true" className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2 bg-surface-2" />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex items-center gap-1.5">
                 <span className="truncate font-medium">{r.name}</span>
                 {r.foil && <FoilTag />}
               </span>
               <span className={META}>
-                {r.set_code} · <abbr title={r.condition_label} className="no-underline">{r.condition}</abbr> · {r.language} · ×{r.quantity}
+                {r.set_code} ·{" "}
+                {!r.is_product && <><abbr title={r.condition_label} className="no-underline">{r.condition}</abbr> · </>}
+                {r.language} · ×{r.quantity}
               </span>
             </span>
             <span className="flex flex-none flex-col items-end gap-1">

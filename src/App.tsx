@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import Layout from "./layout/Layout";
 import ScrollToTop from "./ScrollToTop";
-import CardsPage from "./pages/CardsPage";
+import CatalogPage from "./pages/CatalogPage";
 import CollectionPage from "./pages/CollectionPage";
 import ImportPage from "./pages/ImportPage";
 import ItemFormPage from "./pages/ItemFormPage";
@@ -30,9 +30,8 @@ export default function App() {
         <Route path="/scan/:uuid/review" element={<ReviewScreen />} />
         <Route element={<Layout />}>
           <Route path="/" element={<CollectionPage />} />
-          <Route path="/cards/add" element={<ItemFormPage />} />
           <Route path="/cards/import" element={<ImportPage />} />
-          <Route path="/cards" element={<CardsPage />} />
+          <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/cards/:pk" element={<ItemFormPage />} />
           <Route path="/sale" element={<SalePage />} />
           <Route path="/sale/:itemPk" element={<ListingFormPage />} />

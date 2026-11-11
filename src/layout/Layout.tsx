@@ -10,12 +10,12 @@ import { useMe } from "../hooks/useMe";
 import { Messages } from "../notifications";
 import { ScanStartDialog } from "../screens/StartScreen";
 
-type Section = "collection" | "sale" | "cards" | "shipments" | "sync" | "profile" | null;
+type Section = "collection" | "sale" | "catalog" | "shipments" | "sync" | "profile" | null;
 
 /** Which sidebar link a page belongs to (base.html's "nav"). */
 export function section(pathname: string): Section {
-  if (pathname === "/" || /^\/cards\/(add|import|\d+)\/?$/.test(pathname)) return "collection";
-  if (pathname.startsWith("/cards")) return "cards";
+  if (pathname === "/" || /^\/cards\/(import|\d+)\/?$/.test(pathname)) return "collection";
+  if (pathname.startsWith("/catalog")) return "catalog";
   if (pathname.startsWith("/sale")) return "sale";
   if (pathname.startsWith("/shipments")) return "shipments";
   if (pathname.startsWith("/sync")) return "sync";
@@ -95,9 +95,9 @@ export default function Layout() {
               <NavCollection />
               Collection
             </NavLink>
-            <NavLink to="/cards/" active={nav === "cards"}>
+            <NavLink to="/catalog/" active={nav === "catalog"}>
               <NavCards />
-              Cards
+              Catalog
             </NavLink>
           </NavGroup>
           <NavGroup label="CardTrader">

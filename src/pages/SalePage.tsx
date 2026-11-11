@@ -7,7 +7,6 @@ import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import PageState from "../components/PageState";
 import StatTile, { StatTiles } from "../components/StatTile";
-import { PillDot } from "../components/Filters";
 import { PageHead } from "../components/Header";
 import { Button } from "@/components/ui/button";
 import { META, PRICE_LABEL } from "@/lib/styles";
@@ -69,7 +68,6 @@ export default function SalePage() {
           <article key={l.item_id} className="flex flex-col overflow-hidden rounded-xl border border-line bg-card">
             <div className="relative flex aspect-[5/3] items-center justify-center border-b border-line bg-surface-2 px-4 text-center">
               <span className="font-serif text-xl font-semibold text-[#6C6960]" aria-hidden="true">{l.name}</span>
-              <PillDot color={l.pip} className="absolute top-2.5 left-2.5" />
               <Badge variant={badgeVariant(l.badge.tone)} className="absolute top-2 right-2 min-h-6 px-[9px] text-[11px]">
                 {l.badge.label}
               </Badge>

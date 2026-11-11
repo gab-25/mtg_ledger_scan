@@ -15,7 +15,7 @@ const STATUSES: [string, string][] = [["published", "Published"], ["to_publish",
 function sale(over: Partial<SaleRow> = {}): SaleRow {
   return {
     item_id: 7, name: "Counterspell", set_code: "DMR", condition: "NM", language: "EN", foil: false, quantity: 1,
-    price: "0.80", market_price: null, pip: "#6FA8DC", badge: { label: "To publish", tone: "pending" }, ...over,
+    price: "0.80", market_price: null, badge: { label: "To publish", tone: "pending" }, ...over,
   };
 }
 
@@ -25,7 +25,7 @@ function listings(over: Partial<Listings> = {}): Listings {
 
 beforeEach(() => {
   mockMe();
-  vi.mocked(collection.getChoices).mockResolvedValue({ colors: [], conditions: [], languages: [], listing_statuses: STATUSES });
+  vi.mocked(collection.getChoices).mockResolvedValue({ conditions: [], languages: [], listing_statuses: STATUSES });
 });
 
 describe("SalePage", () => {

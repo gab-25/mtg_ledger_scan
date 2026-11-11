@@ -13,7 +13,6 @@ export type SaleRow = {
   quantity: number;
   price: string;
   market_price: string | null;
-  pip: string;
   badge: BadgeData;
 };
 
