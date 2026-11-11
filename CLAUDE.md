@@ -37,7 +37,7 @@ release `vX.Y.Z` builds and attaches `mtg-ledger-ui.tar.gz`, which the core's Do
   `src/notifications.tsx` (Django-messages semantics: on this page, or on the next one after a navigating action),
   invalidates every query (so sidebar counters refresh), and exposes field errors via `fieldErrors(error, name)`.
 - `src/format.ts` reproduces Django's humanize/floatformat output (en-us, Europe/Rome) — use it for numbers/dates.
-- **Scan** (`src/screens/`, `src/autoscan/`, `src/camera/`, `/scan/…`): Start → Camera (desktop gets a QR hand-off,
+- **Scan** (`src/screens/`, `src/autoscan/`, `src/camera/`, `/scan/…`): Start (a modal from "Scan cards", `ScanStartDialog`; `/scan/` still works as a page) → Camera (desktop gets a QR hand-off,
   `PhoneOnly`) → Review, all without reloads. `autoscan/machine.ts` decides when to shoot from metrics computed in
   `autoscan/analyze.ts`; thresholds in `autoscan/config.ts`; `?debug=1` on the camera shows live metrics.
   `CardPicker` is a custom full-screen `role="dialog"` used to confirm uncertain cards or add one by hand.

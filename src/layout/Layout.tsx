@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { signOut } from "../signOut";
 import { LogoutIcon, Logo, NavCards, NavCollection, NavSale, PackageIcon, ScanIcon, SyncIcon } from "../components/icons";
 import { useMe } from "../hooks/useMe";
 import { Messages } from "../notifications";
+import { ScanStartDialog } from "../screens/StartScreen";
 
 type Section = "collection" | "sale" | "cards" | "shipments" | "sync" | "profile" | null;
 
@@ -31,6 +32,7 @@ const current = (active: boolean) => (active ? ({ "aria-current": "page" } as co
 export default function Layout() {
   const { data: me, error } = useMe();
   const nav = section(useLocation().pathname);
+  const [scanOpen, setScanOpen] = useState(false);
   if (!me) {
     // Not logged in: the client is already on its way to /login/. Any other failure is shown.
     if (error instanceof ApiError && error.code === "not_authenticated") return null;
@@ -81,7 +83,7 @@ export default function Layout() {
             nav !== "collection" && "max-[839px]:hidden",
           )}
         >
-          <Link to="/scan/">
+          <Link to="/scan/" onClick={(e) => openUnlessNewTab(e, () => setScanOpen(true))}>
             <ScanIcon size={20} />
             Scan cards
           </Link>
@@ -139,8 +141,16 @@ export default function Layout() {
         <Messages />
         <Outlet />
       </main>
+      <ScanStartDialog open={scanOpen} onOpenChange={setScanOpen} />
     </div>
   );
+}
+
+/** A plain click opens the modal; ctrl/cmd/shift/middle click keeps the link's own behaviour (/scan/ as a page). */
+function openUnlessNewTab(e: MouseEvent, open: () => void) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  open();
 }
 
 /** A labelled group of sidebar links; on a phone its links join the tab bar and the label is hidden. */

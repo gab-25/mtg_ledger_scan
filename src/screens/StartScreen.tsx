@@ -4,6 +4,7 @@ import { getSetup, startSession } from "../api/scan";
 import type { Setup } from "../api/types";
 import Field from "../components/Field";
 import Header from "../components/Header";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioChip, RadioGroup } from "@/components/ui/radio-group";
 import { ALL, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,7 +12,27 @@ import { APP_MAIN, EYEBROW, HINT, SCAN_BOX, SCAN_PANEL, SCAN_WARN } from "@/lib/
 import { cn } from "@/lib/utils";
 import { isPhone } from "../device";
 
+/** /scan/ as a page (direct links, reloads): the start form under the scan header. */
 export default function StartScreen() {
+  return (
+    <main className={APP_MAIN}>
+      <Header eyebrow="Collection" title="Scan cards" />
+      <ScanStartForm />
+    </main>
+  );
+}
+
+/** "Scan cards" from the app: the same start form in a modal, over the page the user is on. */
+export function ScanStartDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent title="Scan cards">{open && <ScanStartForm />}</DialogContent>
+    </Dialog>
+  );
+}
+
+/** Setup warnings, expansion and default condition, then start a session and go to the camera. */
+function ScanStartForm() {
   const navigate = useNavigate();
   const [setup, setSetup] = useState<Setup | null>(null);
   const [expansion, setExpansion] = useState("");
@@ -43,8 +64,7 @@ export default function StartScreen() {
   }
 
   return (
-    <main className={APP_MAIN}>
-      <Header eyebrow="Collection" title="Scan cards" />
+    <>
       {error && <p className={SCAN_WARN} role="alert">{error}</p>}
       {setup && (setup.missing.length > 0 || setup.warnings.length > 0) && (
         <div className="flex max-w-[760px] flex-col gap-2">
@@ -100,6 +120,6 @@ export default function StartScreen() {
           </form>
         </div>
       )}
-    </main>
+    </>
   );
 }

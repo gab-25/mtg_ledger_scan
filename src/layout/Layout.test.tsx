@@ -1,10 +1,13 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as account from "../api/account";
+import * as scan from "../api/scan";
+import { setup } from "../test/fixtures";
 import { ApiError } from "../api/client";
 import { me, mockMe, renderPage } from "../test/renderPage";
 
 vi.mock("../api/account");
+vi.mock("../api/scan");
 
 describe("Layout", () => {
   it("shows the sidebar with the counters", async () => {
@@ -65,5 +68,19 @@ describe("Layout", () => {
     vi.mocked(account.getMe).mockReturnValue(new Promise(() => {}));
     renderPage("/nope/");
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("Scan cards opens the start form in a modal, over the page", async () => {
+    mockMe();
+    vi.mocked(scan.getSetup).mockResolvedValue(setup());
+    renderPage("/nope/");
+    const link = await screen.findByRole("link", { name: "Scan cards" });
+    expect(link).toHaveAttribute("href", "/scan/");
+    await userEvent.click(link);
+    const dialog = await screen.findByRole("dialog", { name: "Scan cards" });
+    expect(await within(dialog).findByLabelText("Expansion")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Not found", hidden: true })).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
