@@ -44,7 +44,10 @@ export default function Layout() {
       >
         <Link className="flex items-center gap-3 px-2 text-foreground no-underline hover:text-foreground" to="/">
           <Logo />
-          <span className="font-serif text-[22px] font-bold tracking-[.2px]">MTG Ledger</span>
+          <span className="flex flex-col">
+            <span className="font-serif text-[22px] font-bold tracking-[.2px]">MTG Ledger</span>
+            <span className="font-mono text-[11px] text-placeholder">v{__APP_VERSION__}</span>
+          </span>
         </Link>
         <div className="flex flex-col gap-1">
           <NavLink to="/" active={nav === "collection"}>
@@ -87,7 +90,6 @@ export default function Layout() {
             <LogoutIcon />
           </Button>
         </div>
-        <div className="-mt-5 px-3 font-mono text-[11px] text-placeholder">v{__APP_VERSION__}</div>
       </nav>
 
       <main className="flex min-w-0 flex-[999_1_560px] flex-col gap-7 px-[clamp(16px,3vw,48px)] py-8 print:p-0">
