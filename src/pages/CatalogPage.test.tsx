@@ -254,6 +254,16 @@ describe("Adding from the catalog", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
     expect(await within(dialog).findByText("Ensure this value is greater than or equal to 1.")).toBeInTheDocument();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.queryByText("x")).toBeNull(); // no message banner
+  });
+
+  it("shows other errors inside the dialog", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    vi.mocked(collection.addToCollection).mockRejectedValue(new ApiError("CardTrader is unreachable.", 502, "error"));
+    renderPage("/catalog/?q=ugin");
+    const dialog = await openAdd("Ugin, the Spirit Dragon");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
+    expect(await within(dialog).findByText("CardTrader is unreachable.")).toBeInTheDocument();
   });
 
   it("starts from the defaults on every opening", async () => {

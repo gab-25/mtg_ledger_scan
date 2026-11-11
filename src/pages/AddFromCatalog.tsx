@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { fieldErrors, useAction } from "../actions";
 import type { Printing } from "../api/catalog";
+import { ApiError } from "../api/client";
 import { addToCollection, getChoices, type CatalogItemFields, type Choices } from "../api/collection";
 import Field, { ChoiceSelect, Errors } from "../components/Field";
 import { PlusIcon } from "../components/icons";
@@ -55,6 +56,8 @@ function AddForm({ printing, onDone }: { printing: Printing; onDone: () => void 
   const priceTouched = useRef(false); // a price the user typed is never replaced by the trend
   const save = useAction(addToCollection);
   const errors = (name: string) => fieldErrors(save.error, name);
+  // Any other failure also goes to the page banner, hidden behind the dialog: repeat it here.
+  const failure = save.error && !(save.error instanceof ApiError && save.error.fields) ? [save.error.message] : undefined;
 
   const set = (patch: Partial<typeof fields>) => setFields((f) => ({ ...f, ...patch }));
   const setFoil = (foil: boolean) => set(priceTouched.current ? { foil } : { foil, price: trend(foil) });
@@ -79,7 +82,7 @@ function AddForm({ printing, onDone }: { printing: Printing; onDone: () => void 
 
   return (
     <form method="post" className="flex flex-col gap-5" onSubmit={submit}>
-      <Errors errors={errors("non_field_errors") ?? errors("blueprint")} />
+      <Errors errors={failure ?? errors("non_field_errors") ?? errors("blueprint")} />
       <div className={FORM_GRID}>
         {card && select("condition", "Condition", choices.data?.conditions ?? [])}
         {withLanguage && select("language", "Language", choices.data?.languages ?? [])}
