@@ -1,8 +1,7 @@
 name: Release
 
-# Publishing a release builds dist/ once and ships it twice: as mtg-ledger-ui.tar.gz attached to the release, and as
-# the scratch image ghcr.io/gab-25/mtg_ledger_ui:X.Y.Z (just the files of dist/), which mtg_ledger_core's Dockerfile
-# copies the UI from.
+# Publishing a release builds dist/ and publishes it as the scratch image ghcr.io/gab-25/mtg_ledger_ui:X.Y.Z (just
+# the files of dist/), which mtg_ledger_core's Dockerfile copies the UI from.
 on:
   release:
     types: [published]
@@ -17,7 +16,7 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
     steps:
       - uses: actions/checkout@v5
@@ -29,14 +28,6 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-
-      - name: Upload the build to the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: |
-          tar -czf mtg-ledger-ui.tar.gz -C dist .
-          gh release upload "$TAG" mtg-ledger-ui.tar.gz --clobber
 
       - uses: docker/setup-buildx-action@v3
 
