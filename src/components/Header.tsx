@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { META } from "@/lib/styles";
+import { Logo } from "./icons";
 import { cn } from "@/lib/utils";
 
 /** A page's title: eyebrow, h1 and the page actions on the right. */
@@ -23,10 +24,16 @@ export default function Header({ eyebrow, title, actions }: { eyebrow?: ReactNod
     <>
       <nav className="flex items-center justify-between gap-3" aria-label="Main navigation">
         <a className="flex items-center gap-3 text-foreground no-underline hover:text-foreground" href="/">
+          <Logo />
           <span className="font-serif text-[22px] font-bold tracking-[.2px]">MTG Ledger</span>
         </a>
         <Button asChild variant="ghost" size="sm">
-          <a href="/">Collection</a>
+          <a href="/">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Collection
+          </a>
         </Button>
       </nav>
       <PageHead eyebrow={eyebrow} title={title} actions={actions} />
