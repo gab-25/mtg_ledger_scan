@@ -3,19 +3,21 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { searchCards, type CardFilters, type Printing } from "../api/cards";
-import DataTable, { TableFoot } from "../components/DataTable";
+import DataTable, { TableFoot, TablePanel } from "../components/DataTable";
 import { ClearLink, Filters } from "../components/Filters";
 import { PageHead } from "../components/Header";
 import SearchBox from "../components/SearchBox";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { DIM, HINT, NUM, SUB } from "@/lib/styles";
+import { DIM, EMPTY, HINT, META, NUM, PRICE_LABEL, SUB } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import Pager from "../components/Pager";
 import { dateLong, euro, intcomma } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useIsMobile } from "../hooks/useMediaQuery";
 
 /** A text field shaped as a filter pill. */
 const PILL_INPUT = "min-h-9 w-auto rounded-full bg-transparent px-3 text-[13px] text-text-2";
@@ -92,6 +94,7 @@ export default function CardsPage() {
     owned: params.get("owned") === "1",
   };
   const [form, setForm] = useState(fromUrl);
+  const mobile = useIsMobile();
   useEffect(() => setForm(fromUrl), [params]); // eslint-disable-line react-hooks/exhaustive-deps -- reset on navigation
 
   if (!query.data) return <PageState error={query.error} />;
@@ -108,49 +111,91 @@ export default function CardsPage() {
 
   return (
     <>
-      <PageHead
-        eyebrow="Card database"
-        title="Cards"
-        actions={
-          <SearchBox id="q" label="Search cards" value={form.q} placeholder="Search by name or set code…" autoFocus
-            onChange={(q) => setForm({ ...form, q })} onSubmit={submit} />
+      <PageHead eyebrow="Card database" title="Cards" />
+
+      <TablePanel
+        label="Printings"
+        toolbar={
+          <>
+            <SearchBox id="q" label="Search cards" value={form.q} placeholder="Search by name or set code…" autoFocus
+              className="min-[840px]:min-h-10 min-[840px]:flex-[1_1_260px] min-[840px]:bg-background"
+              onChange={(q) => setForm({ ...form, q })} onSubmit={submit} />
+            <Filters onSubmit={submit} scroll>
+              <label htmlFor="f-set" className="sr-only">Set code</label>
+              <Input id="f-set" name="set" value={form.set} placeholder="Set (e.g. m21)" className={PILL_INPUT}
+                size={10} onChange={(e) => setForm({ ...form, set: e.target.value })} />
+              <label htmlFor="f-number" className="sr-only">Collector number</label>
+              <Input id="f-number" name="number" value={form.number} placeholder="Number" className={PILL_INPUT}
+                size={6} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+              <label className={buttonVariants({ variant: "pill" })} {...(form.owned ? { "aria-current": "true" } : {})}>
+                <Checkbox name="owned" value="1" checked={form.owned} onCheckedChange={(c) => go({ ...form, owned: c === true })} />
+                In my collection
+              </label>
+              <Button type="submit" variant="pill">Apply</Button>
+              {data.searched && <ClearLink to="/cards/">Clear</ClearLink>}
+            </Filters>
+          </>
         }
-      />
-
-      <Filters onSubmit={submit}>
-        <label htmlFor="f-set" className="sr-only">Set code</label>
-        <Input id="f-set" name="set" value={form.set} placeholder="Set (e.g. m21)" className={PILL_INPUT}
-          size={10} onChange={(e) => setForm({ ...form, set: e.target.value })} />
-        <label htmlFor="f-number" className="sr-only">Collector number</label>
-        <Input id="f-number" name="number" value={form.number} placeholder="Number" className={PILL_INPUT}
-          size={6} onChange={(e) => setForm({ ...form, number: e.target.value })} />
-        <label className={buttonVariants({ variant: "pill" })} {...(form.owned ? { "aria-current": "true" } : {})}>
-          <Checkbox name="owned" value="1" checked={form.owned} onCheckedChange={(c) => go({ ...form, owned: c === true })} />
-          In my collection
-        </label>
-        <Button type="submit" variant="pill">Apply</Button>
-        {data.searched && <ClearLink to="/cards/">Clear</ClearLink>}
-      </Filters>
-
-      {!data.searched ? (
-        <p className={cn("m-0", HINT)}>
-          Search the card database — every Magic printing on CardTrader, with its Cardmarket prices (updated nightly) — by
-          name, set code or collector number, or list the cards you own.
-        </p>
-      ) : (
-        <>
-          <DataTable columns={columns} data={data.results} getRowId={(p) => String(p.ct_id)}
+        footer={
+          data.searched && (
+            <TableFoot>
+              <span>
+                Showing {data.results.length} of {intcomma(data.count)} printings
+                {data.prices_date && ` · Cardmarket price guide of ${dateLong(data.prices_date)}`}
+              </span>
+              <Pager page={data.page} numPages={data.num_pages}
+                href={(page) => `?${queryOf(data.filters)}&page=${page}`} />
+            </TableFoot>
+          )
+        }
+      >
+        {!data.searched ? (
+          <p className={cn("m-0 min-[840px]:px-5 min-[840px]:py-6", HINT)}>
+            Search the card database — every Magic printing on CardTrader, with its Cardmarket prices (updated nightly) — by
+            name, set code or collector number, or list the cards you own.
+          </p>
+        ) : mobile ? (
+          <PrintingList rows={data.results} />
+        ) : (
+          <DataTable columns={columns} data={data.results} getRowId={(p) => String(p.ct_id)} framed={false}
             empty="No cards match these criteria." />
-          <TableFoot>
-            <span>
-              Showing {data.results.length} of {intcomma(data.count)} printings
-              {data.prices_date && ` · Cardmarket price guide of ${dateLong(data.prices_date)}`}
-            </span>
-            <Pager page={data.page} numPages={data.num_pages}
-              href={(page) => `?${queryOf(data.filters)}&page=${page}`} />
-          </TableFoot>
-        </>
-      )}
+        )}
+      </TablePanel>
     </>
+  );
+}
+
+/** The printings as a list on a phone, in place of the table: image, name, set and number, owned copies, trend prices. */
+function PrintingList({ rows }: { rows: Printing[] }) {
+  if (rows.length === 0) return <p className={EMPTY}>No cards match these criteria.</p>;
+  const trend = (value: string | null | undefined) => (value !== null && value !== undefined ? euro(value, 2) : "—");
+  return (
+    <ul className="m-0 flex list-none flex-col p-0">
+      {rows.map((p) => (
+        <li key={p.ct_id} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
+          {p.image_url ? (
+            <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="h-[50px] w-9 flex-none rounded-[3px] object-cover" />
+          ) : (
+            <span aria-hidden="true" className="h-[50px] w-9 flex-none rounded-[3px] border border-line-2 bg-surface-2" />
+          )}
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate font-medium">{p.name}</span>
+            <span className={cn(META, "mt-0")} title={p.expansion_name}>
+              {p.expansion_code.toUpperCase()}
+              {p.collector_number && ` #${p.collector_number}`}
+              {p.version && ` · ${p.version}`}
+            </span>
+            {!!p.owned_qty && (
+              <Badge variant="gold" className="mt-0.5 min-h-5 px-2 text-[11px]">×{p.owned_qty} owned</Badge>
+            )}
+          </div>
+          <div className="flex flex-none flex-col items-end gap-0.5">
+            <span className={PRICE_LABEL}>Trend</span>
+            <span className="font-mono text-[15px]">{trend(p.prices?.trend)}</span>
+            <span className="font-mono text-xs text-muted-foreground">Foil {trend(p.prices?.trend_foil)}</span>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

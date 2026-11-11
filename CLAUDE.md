@@ -38,7 +38,7 @@ release `vX.Y.Z` builds the app and publishes it as the scratch image
   `src/notifications.tsx` (Django-messages semantics: on this page, or on the next one after a navigating action),
   invalidates every query (so sidebar counters refresh), and exposes field errors via `fieldErrors(error, name)`.
 - `src/format.ts` reproduces Django's humanize/floatformat output (en-us, Europe/Rome) — use it for numbers/dates.
-- **Scan** (`src/screens/`, `src/autoscan/`, `src/camera/`, `/scan/…`): Start → Camera (desktop gets a QR hand-off,
+- **Scan** (`src/screens/`, `src/autoscan/`, `src/camera/`, `/scan/…`): Start (a modal from "Scan cards", `ScanStartDialog`; `/scan/` still works as a page) → Camera (desktop gets a QR hand-off,
   `PhoneOnly`) → Review, all without reloads. `autoscan/machine.ts` decides when to shoot from metrics computed in
   `autoscan/analyze.ts`; thresholds in `autoscan/config.ts`; `?debug=1` on the camera shows live metrics.
   `CardPicker` is a custom full-screen `role="dialog"` used to confirm uncertain cards or add one by hand.
@@ -58,6 +58,10 @@ release `vX.Y.Z` builds the app and publishes it as the scratch image
 - Use shadcn controls, not native `<select>`/checkbox/radio. App-level composites live in `src/components/`
   (`DataTable` + `TableFoot`, `Field` + `ChoiceSelect`, `PageHead`/`Header`, `Filters`, `SearchBox`, `StatTile`…);
   repeated class sets are constants in `src/lib/styles.ts` (`NUM`, `SUB`, `HINT`, `PANEL`, `FORM_GRID`…).
+- Phone layout under 840px (`min-[840px]:` / `max-[839px]:`): the sidebar becomes a bottom tab bar, "Scan cards"
+  floats over the collection. Prefer CSS for responsive changes; when the markup differs (Collection's card list
+  instead of the table) use `useIsMobile()` from `hooks/useMediaQuery.ts`, which is false in jsdom (stub
+  `matchMedia` to test the phone branch).
 - Print (order packing slip) uses `print:` variants; keep interactive-only parts `print:hidden`.
 
 ## Tests

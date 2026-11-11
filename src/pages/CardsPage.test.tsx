@@ -99,4 +99,22 @@ describe("CardsPage", () => {
     const pager = await screen.findByRole("navigation", { name: "Pagination" });
     expect(within(pager).getByRole("link", { name: "Next" })).toHaveAttribute("href", "/cards/?set=tm21&owned=1&page=2");
   });
+
+  it("on a phone the printings are a list, not a table", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.searchCards).mockResolvedValue(results());
+    renderPage("/cards/?q=ugin");
+    const list = await screen.findByRole("list");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    const [ugin, counterspell] = within(list).getAllByRole("listitem");
+    expect(ugin).toHaveTextContent("Ugin, the Spirit Dragon");
+    expect(within(ugin).getByText("M21 #1")).toHaveAttribute("title", "Core Set 2021");
+    expect(within(ugin).getByText("€12.75")).toBeInTheDocument();
+    expect(within(ugin).getByText("Foil €14.34")).toBeInTheDocument();
+    expect(within(ugin).queryByText(/owned/)).not.toBeInTheDocument();
+    expect(within(counterspell).getByText("DMR #45 · Showcase")).toBeInTheDocument();
+    expect(within(counterspell).getByText("×2 owned")).toHaveAttribute("data-variant", "gold");
+    expect(within(counterspell).getByText("Foil —")).toBeInTheDocument();
+    expect(screen.getByText(/Showing 2 of 2 printings/)).toBeInTheDocument();
+  });
 });

@@ -1,6 +1,6 @@
 import { request as apiRequest } from "./client";
 import type {
-  CaptureResult, LineChanges, LineResult, Review, SaveResult, SearchResult, Session, Setup,
+  CaptureResult, LineChanges, LineResult, OpenSession, Review, SaveResult, SearchResult, Session, Setup,
 } from "./types";
 
 /** The scan endpoints live under /api/scan/. */
@@ -11,6 +11,12 @@ export const getSetup = () => request<Setup>("GET", "setup/");
 
 export const startSession = (expansionId: number | null, condition: string) =>
   request<{ session: Session; warnings: string[] }>("POST", "sessions/", { expansion_id: expansionId, condition });
+
+/** The user's open sessions, most recent activity first (at most 10). */
+export const listSessions = () => request<{ results: OpenSession[] }>("GET", "sessions/");
+
+/** Discard an open session with its cards (204); a saved one answers 409 "closed". */
+export const discardSession = (uuid: string) => request<void>("DELETE", `sessions/${uuid}/`);
 
 export const getSession = (uuid: string) => request<{ session: Session }>("GET", `sessions/${uuid}/`);
 
