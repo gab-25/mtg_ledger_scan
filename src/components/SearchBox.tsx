@@ -60,7 +60,7 @@ export default function SearchBox({ id, label, value, placeholder, autoFocus, cl
     <form
       method="get"
       role="search"
-      className={cn("m-0 flex min-h-11 min-w-[260px] items-center gap-2 rounded-md border border-line-2 bg-card px-3.5 focus-within:border-primary", className)}
+      className={cn("m-0 flex min-h-11 min-w-[260px] items-center gap-1.5 rounded-md border border-line-2 bg-card px-3.5 focus-within:border-primary", className)}
       onSubmit={submit}
     >
       <SearchIcon />
@@ -75,7 +75,7 @@ export default function SearchBox({ id, label, value, placeholder, autoFocus, cl
         autoFocus={autoFocus}
         autoComplete="off"
         spellCheck={false}
-        className="min-h-0 flex-1 border-0 bg-transparent px-0 focus:border-0 [&::-webkit-search-cancel-button]:appearance-none"
+        className="min-h-0 flex-1 border-0 bg-transparent pr-0 pl-0.5 focus:border-0 [&::-webkit-search-cancel-button]:appearance-none"
         onChange={(e) => change(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape" && value) {
