@@ -11,7 +11,9 @@ import { defineConfig, loadEnv } from "vite";
 // `npm run dev:phone` (scripts/dev-phone.sh) publishes it on the tailnet over HTTPS for the phone.
 export default defineConfig(({ command, mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
-  const django = `http://127.0.0.1:${env.DJANGO_PORT || "8000"}`;
+  // The backend: the local runserver by default, or another one (e.g. production).
+  const django = (env.DJANGO_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+  const remote = !["localhost", "127.0.0.1", "[::1]"].includes(new URL(django).hostname);
   const phone = env.DEV_PHONE === "1";
   const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string };
   return {
@@ -25,7 +27,18 @@ export default defineConfig(({ command, mode }) => {
       strictPort: true,
       // Django's URLs; every other one is a page of this app. Host and X-Forwarded-Proto pass through
       // untouched, so behind Tailscale Django sees the https://<pc>.ts.net address.
-      proxy: { "^/(api|admin|static)(/|$)|^/favicon\\.ico$": { target: django } },
+      proxy: {
+        "^/(api|admin|static)(/|$)|^/favicon\\.ico$": {
+          target: django,
+          // A remote Django checks Host, Origin and Referer (CSRF): make them its own, and keep its
+          // cookies (session, csrftoken) on the Vite address.
+          ...(remote && {
+            changeOrigin: true,
+            cookieDomainRewrite: "",
+            headers: { Origin: django, Referer: `${django}/` },
+          }),
+        },
+      },
       // Behind `tailscale serve`: accept the tailnet name and connect the live reload through port 443.
       ...(phone && { allowedHosts: [".ts.net"], hmr: { clientPort: 443 } }),
     },
