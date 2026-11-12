@@ -4,9 +4,9 @@
 #   npm run dev:phone
 #
 # Needs: Tailscale running on this computer and on the phone (same account), MagicDNS and HTTPS Certificates
-# enabled in the Tailscale admin console, and mtg_ledger_core's `manage.py runserver` already running on DJANGO_PORT
-# with the tailnet name allowed in its .env (the script tells you the exact lines).
-# Options (environment or .env): DJANGO_PORT (default 8000), VITE_PORT (default 5173).
+# enabled in the Tailscale admin console, and the backend at DJANGO_URL: a local `manage.py runserver` must already be
+# running with the tailnet name allowed in its .env (the script tells you the exact lines).
+# Options (environment or .env): DJANGO_URL (default http://127.0.0.1:8000), VITE_PORT (default 5173).
 # Ctrl+C stops Vite and removes the Tailscale serve rule.
 set -euo pipefail
 
@@ -18,7 +18,8 @@ if [[ -f .env ]]; then
   source .env
   set +a
 fi
-DJANGO_PORT="${DJANGO_PORT:-8000}"
+DJANGO_URL="${DJANGO_URL:-http://127.0.0.1:8000}"
+DJANGO_URL="${DJANGO_URL%/}"
 VITE_PORT="${VITE_PORT:-5173}"
 
 die() { echo "error: $*" >&2; exit 1; }
@@ -41,13 +42,20 @@ if ! python3 -c 'import socket, sys; s = socket.socket(); s.bind(("127.0.0.1", i
   die "port $VITE_PORT is already in use: stop what is listening there, or set VITE_PORT."
 fi
 
-# Django must be up and accept requests for the tailnet name, as they arrive through Tailscale.
-code="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: ${dns}" -H "X-Forwarded-Proto: https" \
-  "http://127.0.0.1:${DJANGO_PORT}/api/auth/csrf/" || true)"
-if [[ "$code" == "000" ]]; then
-  die "mtg_ledger_core is not running on port ${DJANGO_PORT}: start it with 'uv run python manage.py runserver ${DJANGO_PORT}'."
+# A local Django must be up and accept requests for the tailnet name, as they arrive through Tailscale
+# (a remote one gets its own name from the Vite proxy).
+if [[ "$DJANGO_URL" =~ ^https?://(localhost|127\.0\.0\.1|\[::1\])(:([0-9]+))?$ ]]; then
+  port="${BASH_REMATCH[3]:-80}"
+  code="$(curl -s -o /dev/null -w '%{http_code}' -H "Host: ${dns}" -H "X-Forwarded-Proto: https" \
+    "${DJANGO_URL}/api/auth/csrf/" || true)"
+else
+  code="$(curl -s -o /dev/null -w '%{http_code}' "${DJANGO_URL}/api/auth/csrf/" || true)"
 fi
-if [[ "$code" == "400" ]]; then
+if [[ "$code" == "000" ]]; then
+  [[ -n "${port:-}" ]] || die "${DJANGO_URL} is not reachable."
+  die "mtg_ledger_core is not running on port ${port}: start it with 'uv run python manage.py runserver ${port}'."
+fi
+if [[ -n "${port:-}" && "$code" == "400" ]]; then
   die "mtg_ledger_core refuses the tailnet address. Put these lines in mtg_ledger_core's .env and restart runserver:
   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,${dns}
   DJANGO_CSRF_TRUSTED_ORIGINS=https://${dns}
@@ -70,4 +78,4 @@ cat <<INFO
 
 INFO
 
-DEV_PHONE=1 DJANGO_PORT="$DJANGO_PORT" VITE_PORT="$VITE_PORT" npx vite
+DEV_PHONE=1 DJANGO_URL="$DJANGO_URL" VITE_PORT="$VITE_PORT" npx vite

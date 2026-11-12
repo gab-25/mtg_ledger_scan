@@ -49,7 +49,8 @@ npm test            # Vitest
 npm run typecheck
 ```
 
-Copy `.env.example` to `.env` if you need other ports (`DJANGO_PORT`, default 8000; `VITE_PORT`, default 5173).
+Copy `.env.example` to `.env` if you need another backend (`DJANGO_URL`, default `http://127.0.0.1:8000`; e.g. production) or port
+(`VITE_PORT`, default 5173).
 
 Run mtg_ledger_core (`uv run python manage.py runserver` in its checkout), then:
 
