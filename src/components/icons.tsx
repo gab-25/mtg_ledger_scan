@@ -67,6 +67,12 @@ export const SearchIcon = () => (
   </Icon>
 );
 
+export const ClearIcon = () => (
+  <Icon size={14}>
+    <path d="M18 6L6 18M6 6l12 12" />
+  </Icon>
+);
+
 export const ScanIcon = ({ size = 18 }: { size?: number }) => (
   <Icon size={size}>
     <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" />

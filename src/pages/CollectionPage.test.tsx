@@ -126,6 +126,37 @@ describe("CollectionPage", () => {
     await vi.waitFor(() => expect(lastParams()).toBe("foil=1&q=bolt&set=LTR&cond=NM"));
   });
 
+  it("searches as you type from the third character, and again when cleared", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection());
+    renderPage("/?foil=1");
+    const box = await screen.findByLabelText("Search cards");
+    await userEvent.type(box, "bo");
+    await new Promise((r) => setTimeout(r, 400));
+    expect(lastParams()).toBe("foil=1");
+    await userEvent.type(box, "lt");
+    await vi.waitFor(() => expect(lastParams()).toBe("foil=1&q=bolt"));
+    expect(vi.mocked(api.getCollection).mock.calls.filter(([p]) => p.toString().includes("q="))).toHaveLength(1); // debounced
+    expect(box).toHaveFocus();
+    await userEvent.clear(box);
+    await vi.waitFor(() => expect(lastParams()).toBe("foil=1"));
+  });
+
+  it("the search box has no browser autocomplete and clears with its button or Escape", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection());
+    renderPage("/?q=bolt");
+    const box = await screen.findByLabelText("Search cards");
+    expect(box).toHaveAttribute("autocomplete", "off");
+    await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(box).toHaveValue("");
+    expect(box).toHaveFocus();
+    await vi.waitFor(() => expect(lastParams()).toBe(""));
+    expect(screen.queryByRole("button", { name: "Clear search" })).not.toBeInTheDocument();
+    await userEvent.type(box, "bolt{Enter}");
+    await vi.waitFor(() => expect(lastParams()).toBe("q=bolt"));
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => expect(lastParams()).toBe(""));
+  });
+
   it("the All item of a select clears that filter", async () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection());
     renderPage("/?set=LTR&cond=NM");
