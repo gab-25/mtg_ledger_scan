@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -62,11 +62,15 @@ export default function CollectionPage() {
   useDocumentTitle("Collection");
   const { params, hrefWith, pageHref } = useQueryParams();
   const navigate = useNavigate();
-  const query = useQuery({ queryKey: ["collection", params.toString()], queryFn: () => getCollection(params) });
+  // The previous page stays on screen while the next loads, so the search box keeps focus while typing.
+  const query = useQuery({
+    queryKey: ["collection", params.toString()], queryFn: () => getCollection(params), placeholderData: keepPreviousData,
+  });
   const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
   const q = params.get("q") ?? "";
   const [search, setSearch] = useState(q);
-  useEffect(() => setSearch(q), [q]);
+  // Keep what is being typed (e.g. a trailing space) when it is the search just run.
+  useEffect(() => setSearch((s) => (s.trim() === q ? s : q)), [q]);
   const foil = params.get("foil") === "1";
   const setCode = params.get("set") ?? "";
   const cond = params.get("cond") ?? "";
@@ -79,6 +83,11 @@ export default function CollectionPage() {
   function submitSearch(e: FormEvent) {
     e.preventDefault();
     navigate(hrefWith({ q: search.trim() ? search : null }));
+  }
+
+  /** Search as you type: the first search is a new history entry, refinements replace it. */
+  function autoSearch(text: string) {
+    if (text !== q) navigate(hrefWith({ q: text || null }), { replace: q !== "" });
   }
 
   const empty = data.filtered ? (
@@ -120,7 +129,7 @@ export default function CollectionPage() {
         toolbar={
           <>
             <SearchBox id="q" label="Search cards" value={search} placeholder="Search by name or set…" className="min-[840px]:min-h-10 min-[840px]:flex-[1_1_260px] min-[840px]:bg-background"
-              onChange={setSearch} onSubmit={submitSearch} />
+              onChange={setSearch} onSubmit={submitSearch} onSearch={autoSearch} />
             <Filters scroll>
               <Button asChild variant="pill">
                 <Link to={hrefWith({ foil: foil ? null : "1" })} {...(foil ? { "aria-current": "true" } : {})}>Foil only</Link>

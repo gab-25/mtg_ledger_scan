@@ -22,9 +22,16 @@ export type Printing = {
 
 export type CatalogFilters = { q: string; set: string; number: string; category: number | null; owned: boolean };
 
+/** A page of products, with the date of the Cardmarket price guide. */
+export type CatalogPage = Page<Printing> & { prices_date: string | null };
+
+/**
+ * A search (`searched: true`), or, with no filters, the latest releases: products of the newest sets first
+ * (gab-25/mtg_ledger_core#30). A backend without that sends only `searched` and `filters`.
+ */
 export type CatalogSearch =
-  | { searched: false; filters: CatalogFilters }
-  | (Page<Printing> & { searched: true; filters: CatalogFilters; prices_date: string | null });
+  | ({ searched: false; filters: CatalogFilters } & (CatalogPage | { results?: undefined }))
+  | (CatalogPage & { searched: true; filters: CatalogFilters });
 
 /** A CardTrader category (e.g. "Magic Single Card", "Sealed Product"). */
 export type Category = { id: number; name: string };

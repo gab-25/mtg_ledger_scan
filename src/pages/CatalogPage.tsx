@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -104,7 +104,10 @@ export default function CatalogPage() {
   useDocumentTitle("Catalog");
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const query = useQuery({ queryKey: ["catalog", params.toString()], queryFn: () => searchCatalog(params) });
+  // The previous results stay on screen while the next load, so the search box keeps focus while typing.
+  const query = useQuery({
+    queryKey: ["catalog", params.toString()], queryFn: () => searchCatalog(params), placeholderData: keepPreviousData,
+  });
   const categories = useQuery({ queryKey: ["categories"], queryFn: getCategories });
   const fromUrl: Form = {
     q: params.get("q") ?? "", set: params.get("set") ?? "", number: params.get("number") ?? "",
@@ -112,14 +115,21 @@ export default function CatalogPage() {
   };
   const [form, setForm] = useState(fromUrl);
   const mobile = useIsMobile();
-  useEffect(() => setForm(fromUrl), [params]); // eslint-disable-line react-hooks/exhaustive-deps -- reset on navigation
+  // Reset on navigation, keeping what is being typed (e.g. a trailing space) when it is the search just run.
+  useEffect(() => setForm((f) => ({ ...fromUrl, q: f.q.trim() === fromUrl.q ? f.q : fromUrl.q })), [params]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!query.data) return <PageState error={query.error} />;
   const data = query.data;
+  /** The rows shown: the search results, or before searching the latest releases (if the backend sends them). */
+  const listed = data.searched || data.results ? data : null;
 
-  const go = (f: Form) => {
+  const go = (f: Form, options?: { replace?: boolean }) => {
     const q = queryOf({ ...f, q: f.q.trim(), set: f.set.trim(), number: f.number.trim() }).toString();
-    navigate(q ? `?${q}` : "?");
+    navigate(q ? `?${q}` : "?", options);
+  };
+  /** Search as you type: the first search is a new history entry, refinements replace it. */
+  const autoSearch = (q: string) => {
+    if (q !== fromUrl.q) go({ ...form, q }, { replace: fromUrl.q !== "" });
   };
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -136,7 +146,7 @@ export default function CatalogPage() {
           <>
             <SearchBox id="q" label="Search the catalog" value={form.q} placeholder="Search by name or set code…" autoFocus
               className="min-[840px]:min-h-10 min-[840px]:flex-[1_1_260px] min-[840px]:bg-background"
-              onChange={(q) => setForm({ ...form, q })} onSubmit={submit} />
+              onChange={(q) => setForm({ ...form, q })} onSubmit={submit} onSearch={autoSearch} />
             <Filters onSubmit={submit} scroll>
               <label htmlFor="f-set" className="sr-only">Set code</label>
               <Input id="f-set" name="set" value={form.set} placeholder="Set (e.g. m21)" className={PILL_INPUT}
@@ -157,29 +167,35 @@ export default function CatalogPage() {
           </>
         }
         footer={
-          data.searched && (
+          listed && (
             <TableFoot>
               <span>
-                Showing {data.results.length} of {intcomma(data.count)} products
-                {data.prices_date && ` · Cardmarket price guide of ${dateLong(data.prices_date)}`}
+                Showing {listed.results.length} of {intcomma(listed.count)} products
+                {listed.prices_date && ` · Cardmarket price guide of ${dateLong(listed.prices_date)}`}
               </span>
-              <Pager page={data.page} numPages={data.num_pages}
-                href={(page) => `?${queryOf({ ...data.filters, category: data.filters.category?.toString() ?? "" })}&page=${page}`} />
+              <Pager page={listed.page} numPages={listed.num_pages}
+                href={(page) => {
+                  const next = queryOf({ ...data.filters, category: data.filters.category?.toString() ?? "" });
+                  next.set("page", String(page));
+                  return `?${next}`;
+                }} />
             </TableFoot>
           )
         }
       >
-        {!data.searched ? (
-          <p className={cn("m-0 min-[840px]:px-5 min-[840px]:py-6", HINT)}>
+        {!data.searched && (
+          <p className={cn("m-0 min-[840px]:px-5", listed ? "min-[840px]:border-b min-[840px]:border-line min-[840px]:py-3" : "min-[840px]:py-6", HINT)}>
+            {listed && <><strong className="font-medium text-foreground">Latest releases</strong>, newest sets first. </>}
             Search the catalog — every Magic product on CardTrader, cards, sealed products and accessories, with its
             Cardmarket prices (updated nightly) — by name, set code or collector number, or list what you own.
           </p>
-        ) : mobile ? (
-          <PrintingList rows={data.results} />
-        ) : (
-          <DataTable columns={columns} data={data.results} getRowId={(p) => String(p.ct_id)} framed={false}
-            empty="Nothing matches these criteria." />
         )}
+        {listed && (mobile ? (
+          <PrintingList rows={listed.results} />
+        ) : (
+          <DataTable columns={columns} data={listed.results} getRowId={(p) => String(p.ct_id)} framed={false}
+            empty="Nothing matches these criteria." />
+        ))}
       </TablePanel>
     </>
   );

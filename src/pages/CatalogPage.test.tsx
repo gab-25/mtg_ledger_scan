@@ -68,6 +68,20 @@ describe("CatalogPage", () => {
     expect(document.title).toBe("Catalog · MTG Ledger");
   });
 
+  it("before searching lists the latest releases", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue({
+      ...results({ count: 120, num_pages: 3 }), searched: false,
+      filters: { q: "", set: "", number: "", category: null, owned: false },
+    });
+    renderPage("/catalog/");
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText("Ugin, the Spirit Dragon")).toBeInTheDocument();
+    expect(screen.getByText("Latest releases")).toBeInTheDocument();
+    expect(screen.getByText(/Showing 2 of 120 products/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/catalog/?page=2");
+    expect(screen.queryByRole("link", { name: "Clear" })).not.toBeInTheDocument();
+  });
+
   it("shows the printings with prices", async () => {
     vi.mocked(api.searchCatalog).mockResolvedValue(results());
     renderPage("/catalog/?q=ugin");
@@ -87,6 +101,20 @@ describe("CatalogPage", () => {
     expect(counter.querySelector("img")).toBeNull();
     expect(screen.getByText("Showing 2 of 2 products · Cardmarket price guide of 9 Nov 2026")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Clear" })).toHaveAttribute("href", "/catalog/");
+  });
+
+  it("searches as you type from the third character, keeping the box focused", async () => {
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    const box = await screen.findByLabelText("Search the catalog");
+    await userEvent.clear(box);
+    await userEvent.type(box, "co");
+    await new Promise((r) => setTimeout(r, 400));
+    expect(lastParams()).toBe("q=ugin");
+    await userEvent.type(box, "unter ");
+    await vi.waitFor(() => expect(lastParams()).toBe("q=counter"));
+    expect(box).toHaveFocus();
+    expect(box).toHaveValue("counter "); // the trailing space being typed is kept
   });
 
   it("filters: set, number and owned keep the search", async () => {

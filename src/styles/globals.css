@@ -92,6 +92,14 @@
   ::placeholder {
     color: var(--color-placeholder);
   }
+  /* Browser autofill keeps the dark field: no light background, the app's text color. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-foreground);
+    caret-color: var(--color-foreground);
+    transition: background-color 9999s ease-in-out 0s;
+  }
 
   /* Printing a packing slip: black on white. */
   @media print {
