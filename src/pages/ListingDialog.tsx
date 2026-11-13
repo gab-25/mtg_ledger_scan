@@ -119,12 +119,14 @@ function ListingForm({ detail, statuses, close }: FormProps) {
         )}
       </p>
       <p className={cn(HINT, "m-0")}>
-        Changes to a published listing are queued as “To publish” until you publish them to CardTrader.
+        {listing.exists
+          ? "Changes to a published listing are queued as “To publish” until you publish them to CardTrader."
+          : "The listing is queued as “To publish”: it goes to CardTrader when you press “Publish” on the For sale page."}
       </p>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className={BUTTON_GROUP}>
           <Button type="submit" variant="primary" disabled={save.isPending}>
-            {listing.exists ? "Save listing" : "Create listing"}
+            {listing.exists ? "Save listing" : "Add to sale"}
           </Button>
           <Button type="button" variant="ghost" onClick={close}>Cancel</Button>
         </div>

@@ -61,6 +61,7 @@ describe("ListingDialog", () => {
     expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(3);
     expect(within(dialog).getByRole("spinbutton", { name: "Market price" })).toHaveValue(2.8);
     expect(within(dialog).getByRole("combobox", { name: "Status" })).toHaveTextContent("Published");
+    expect(within(dialog).getByText(/Changes to a published listing are queued/)).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Save listing" }));
     expect(api.saveListing).toHaveBeenCalledWith(7, { quantity: "2", price: "3.00", market_price: "2.80", status: "published" });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -74,7 +75,11 @@ describe("ListingDialog", () => {
     expect(within(dialog).getByText("Cardmarket trend")).toBeInTheDocument();
     expect(within(dialog).getByText("€1.20")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Use" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Create listing" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Add to sale" })).toBeInTheDocument();
+    expect(within(dialog).getByText(
+      "The listing is queued as “To publish”: it goes to CardTrader when you press “Publish” on the For sale page.",
+    )).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Changes to a published listing/)).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: "Remove listing" })).not.toBeInTheDocument();
   });
 
