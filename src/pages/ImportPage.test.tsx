@@ -25,6 +25,7 @@ describe("ImportPage", () => {
     expect(await screen.findByRole("heading", { name: "Import CSV" })).toBeInTheDocument();
     expect(screen.getAllByText("name")[0].tagName).toBe("CODE");
     expect(screen.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", "/api/collection/export/");
+    expect(screen.getByText(/update its quantity; the others are added/)).toBeInTheDocument();
   });
 
   it("imports a file and goes to the collection", async () => {

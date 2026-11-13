@@ -13,7 +13,7 @@ import { useDialogParam } from "../hooks/useDialogParam";
 import { failureOf, LoadError } from "./ListingDialog";
 
 const fieldsOf = (item: Item): ItemFields => ({
-  condition: item.condition, language: item.language, foil: item.foil, quantity: String(item.quantity), price: item.price,
+  condition: item.condition, language: item.language, foil: item.foil, quantity: String(item.quantity),
 });
 
 /** What the copies are of: "2XM #107 · Magic Single Card" (a product's stand-in number "CT<id>" is not shown). */
@@ -54,7 +54,7 @@ function ItemContent({ pk, close }: ContentProps) {
 
 type FormProps = { item: Item; choices: Choices; close: () => void };
 
-/** ledger/item_form.html, copies only: condition and foil for cards, language, quantity, price. */
+/** ledger/item_form.html, copies only: condition and foil for cards, language, quantity (the price is the trend). */
 function ItemForm({ item, choices, close }: FormProps) {
   const [fields, setFields] = useState<ItemFields>(fieldsOf(item));
   // A product's condition and foil are hidden but still sent: the server's form needs them and keeps NM/non-foil.
@@ -89,9 +89,6 @@ function ItemForm({ item, choices, close }: FormProps) {
         <Field label="Quantity" id="edit_quantity" errors={errors("quantity")}>
           <Input type="number" name="quantity" id="edit_quantity" min={0} required value={fields.quantity}
             onChange={set("quantity")} />
-        </Field>
-        <Field label="Unit price" id="edit_price" errors={errors("price")}>
-          <Input type="number" name="price" id="edit_price" step="0.01" required value={fields.price} onChange={set("price")} />
         </Field>
         {!item.is_product && (
           <Field label="Foil" id="edit_foil" errors={errors("foil")} check>

@@ -231,17 +231,15 @@ describe("Adding from the catalog", () => {
     expect(within(dialog).getByLabelText("Condition")).toHaveTextContent("Near Mint");
     expect(within(dialog).getByLabelText("Language")).toHaveTextContent("English");
     expect(within(dialog).getByLabelText("Quantity")).toHaveValue(1);
-    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(12.75);
-    expect(within(dialog).getByText("Cardmarket trend")).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("Unit price")).toBeNull();
     await chooseOption(within(dialog).getByLabelText("Condition"), "Excellent");
     await chooseOption(within(dialog).getByLabelText("Language"), "Italian");
     await userEvent.click(within(dialog).getByLabelText("Foil"));
-    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(14.34);
     await userEvent.clear(within(dialog).getByLabelText("Quantity"));
     await userEvent.type(within(dialog).getByLabelText("Quantity"), "2");
     await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
     expect(collection.addToCollection).toHaveBeenCalledWith(
-      { blueprint: 9001, condition: "EX", language: "IT", foil: true, quantity: "2", price: "14.34" },
+      { blueprint: 9001, condition: "EX", language: "IT", foil: true, quantity: "2" },
     );
     expect(await screen.findByText("Added 1× Ugin, the Spirit Dragon.")).toBeInTheDocument();
     await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -250,35 +248,14 @@ describe("Adding from the catalog", () => {
     expect(search).toHaveValue("ugin");
   });
 
-  it("keeps a price the user typed when foil changes", async () => {
-    vi.mocked(api.searchCatalog).mockResolvedValue(results());
-    renderPage("/catalog/?q=ugin");
-    const dialog = await openAdd("Ugin, the Spirit Dragon");
-    const price = within(dialog).getByLabelText("Unit price");
-    await userEvent.clear(price);
-    await userEvent.type(price, "9.00");
-    await userEvent.click(within(dialog).getByLabelText("Foil"));
-    expect(price).toHaveValue(9);
-  });
-
-  it("prefills 0.00 without a Cardmarket price", async () => {
-    vi.mocked(api.searchCatalog).mockResolvedValue(results());
-    renderPage("/catalog/?q=ugin");
-    const dialog = await openAdd("Counterspell");
-    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(0);
-    await userEvent.click(within(dialog).getByLabelText("Foil"));
-    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(0);
-  });
-
   it("adds a product that takes a language", async () => {
     vi.mocked(api.searchCatalog).mockResolvedValue(results({ results: [BOOSTER] }));
     renderPage("/catalog/?q=bloomburrow");
     const dialog = await openAdd("Bloomburrow Play Booster");
     expect(within(dialog).queryByLabelText("Condition")).toBeNull();
     expect(within(dialog).queryByLabelText("Foil")).toBeNull();
-    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(4.2);
     await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
-    expect(collection.addToCollection).toHaveBeenCalledWith({ blueprint: 7001, language: "EN", quantity: "1", price: "4.20" });
+    expect(collection.addToCollection).toHaveBeenCalledWith({ blueprint: 7001, language: "EN", quantity: "1" });
   });
 
   it("adds a product without language", async () => {
@@ -287,7 +264,7 @@ describe("Adding from the catalog", () => {
     const dialog = await openAdd("Bloomburrow Play Booster");
     expect(within(dialog).queryByLabelText("Language")).toBeNull();
     await userEvent.click(within(dialog).getByRole("button", { name: "Add to collection" }));
-    expect(collection.addToCollection).toHaveBeenCalledWith({ blueprint: 7001, quantity: "1", price: "4.20" });
+    expect(collection.addToCollection).toHaveBeenCalledWith({ blueprint: 7001, quantity: "1" });
   });
 
   it("shows field errors in the dialog", async () => {
@@ -322,6 +299,5 @@ describe("Adding from the catalog", () => {
     dialog = await openAdd("Counterspell");
     expect(within(dialog).getByLabelText("Language")).toHaveTextContent("English");
     expect(within(dialog).getByLabelText("Quantity")).toHaveValue(1);
-    expect(within(dialog).getByLabelText("Unit price")).toHaveValue(0);
   });
 });

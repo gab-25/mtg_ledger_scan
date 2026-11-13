@@ -26,6 +26,9 @@ import CardPreview from "../components/CardPreview";
 import ItemDialog from "./ItemDialog";
 import ListingDialog from "./ListingDialog";
 
+/** The Cardmarket trend of a row, or a dash when the printing has none. */
+const trend = (price: string | null) => (price === null ? "—" : euro(price, 2));
+
 /** The product thumbnail, the same size as in the catalog. */
 const THUMB = "h-[50px] w-9 flex-none rounded-[3px] object-cover";
 
@@ -62,8 +65,8 @@ const columns: ColumnDef<CollectionRow>[] = [
   { id: "language", header: "Language", accessorKey: "language", meta: { className: DIM } },
   { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: NUM } },
   {
-    id: "price", header: "Price", meta: { align: "right", className: NUM },
-    cell: ({ row: { original: r } }) => euro(r.price, 2),
+    id: "price", header: "Trend", meta: { align: "right", className: NUM },
+    cell: ({ row: { original: r } }) => trend(r.price),
   },
   { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge> },
   {
@@ -231,7 +234,7 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
               </span>
             </span>
             <span className="flex flex-none flex-col items-end gap-1">
-              <span className="font-mono">{euro(r.price, 2)}</span>
+              <span className="font-mono">{trend(r.price)}</span>
               <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge>
             </span>
             <RowActions row={r} />

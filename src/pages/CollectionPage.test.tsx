@@ -55,6 +55,7 @@ describe("CollectionPage", () => {
     expect(within(table).getByRole("link", { name: "Edit Thoughtseize" })).toHaveTextContent("Edit");
     expect(within(table).getByRole("link", { name: "Sell Thoughtseize" })).toHaveTextContent("Sell");
     expect(within(table).getByTitle("Near Mint")).toHaveTextContent("NM");
+    expect(within(table).getByRole("columnheader", { name: "Trend" })).toBeInTheDocument();
     expect(within(table).getByText("€12.00")).toBeInTheDocument();
     expect(within(table).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
     expect(screen.getByText("Showing 1 of 1 entries")).toBeInTheDocument();
@@ -235,6 +236,22 @@ describe("CollectionPage", () => {
     renderPage("/");
     const card = (await screen.findByText("Thoughtseize")).closest("li")!;
     expect(card.querySelector("img")).toBeNull();
+  });
+
+  it("shows a dash without a trend", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ price: null })] }));
+    renderPage("/");
+    const cells = within(await screen.findByRole("table")).getAllByRole("cell");
+    const header = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(cells[header.indexOf("Trend")]).toHaveTextContent(/^—$/);
+  });
+
+  it("on a phone a card without a trend shows a dash", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ price: null })] }));
+    renderPage("/");
+    const card = (await screen.findByText("Thoughtseize")).closest("li")!;
+    expect(within(card).getByText("—")).toBeInTheDocument();
   });
 
   it("an empty collection on a phone says so", async () => {

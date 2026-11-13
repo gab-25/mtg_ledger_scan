@@ -40,7 +40,7 @@ export default function ImportPage() {
             </span>
           ))}
           . Only <code className={CODE}>name</code> and <code className={CODE}>set</code> are required. Rows matching an existing card, condition, language
-          and foil update its quantity and price; the others are added. The same format is produced by{" "}
+          and foil update its quantity; the others are added. The same format is produced by{" "}
           <a href={EXPORT_URL}>Export CSV</a>.
         </p>
         <div className={FORM_GRID}>
