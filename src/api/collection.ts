@@ -24,7 +24,8 @@ export type CollectionRow = {
   condition_label: string;
   language: string;
   quantity: number;
-  price: string;
+  /** Cardmarket trend of the printing (foil trend for foil copies), null when unknown. */
+  price: string | null;
   badge: BadgeData;
 };
 
@@ -42,7 +43,6 @@ export type ItemFields = {
   language: string;
   foil: boolean;
   quantity: string;
-  price: string;
 };
 
 /** The body of an addition from the catalog (CatalogItemForm): condition and foil for cards only, language when the
@@ -53,10 +53,9 @@ export type CatalogItemFields = {
   language?: string;
   foil?: boolean;
   quantity: string;
-  price: string;
 };
 
-export type Item = Omit<ItemFields, "quantity" | "price"> & {
+export type Item = Omit<ItemFields, "quantity"> & {
   id: number;
   name: string;
   set_code: string;
@@ -65,7 +64,8 @@ export type Item = Omit<ItemFields, "quantity" | "price"> & {
   category_id: number | null;
   category_name: string | null;
   quantity: number;
-  price: string;
+  /** Cardmarket trend, as on the collection rows. */
+  price: string | null;
   has_listing: boolean;
 };
 

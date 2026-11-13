@@ -51,16 +51,13 @@ function AddForm({ printing, onDone }: { printing: Printing; onDone: () => void 
   const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
   const card = !printing.is_product;
   const withLanguage = card || printing.accepts_language;
-  const trend = (foil: boolean) => (foil ? printing.prices?.trend_foil : printing.prices?.trend) ?? "0.00";
-  const [fields, setFields] = useState({ condition: "NM", language: "EN", foil: false, quantity: "1", price: trend(false) });
-  const priceTouched = useRef(false); // a price the user typed is never replaced by the trend
+  const [fields, setFields] = useState({ condition: "NM", language: "EN", foil: false, quantity: "1" });
   const save = useAction(addToCollection);
   const errors = (name: string) => fieldErrors(save.error, name);
   // Any other failure also goes to the page banner, hidden behind the dialog: repeat it here.
   const failure = save.error && !(save.error instanceof ApiError && save.error.fields) ? [save.error.message] : undefined;
 
   const set = (patch: Partial<typeof fields>) => setFields((f) => ({ ...f, ...patch }));
-  const setFoil = (foil: boolean) => set(priceTouched.current ? { foil } : { foil, price: trend(foil) });
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -69,7 +66,6 @@ function AddForm({ printing, onDone }: { printing: Printing; onDone: () => void 
       ...(card && { condition: fields.condition, foil: fields.foil }),
       ...(withLanguage && { language: fields.language }),
       quantity: fields.quantity,
-      price: fields.price,
     };
     save.mutate(body, { onSuccess: onDone });
   }
@@ -90,13 +86,9 @@ function AddForm({ printing, onDone }: { printing: Printing; onDone: () => void 
           <Input type="number" name="quantity" id="add_quantity" min={1} required value={fields.quantity}
             onChange={(e) => set({ quantity: e.target.value })} />
         </Field>
-        <Field label="Unit price" id="add_price" errors={errors("price")} help="Cardmarket trend">
-          <Input type="number" name="price" id="add_price" step="0.01" min={0} required value={fields.price}
-            onChange={(e) => { priceTouched.current = true; set({ price: e.target.value }); }} />
-        </Field>
         {card && (
           <Field label="Foil" id="add_foil" errors={errors("foil")} check>
-            <Checkbox name="foil" id="add_foil" checked={fields.foil} onCheckedChange={(c) => setFoil(c === true)} />
+            <Checkbox name="foil" id="add_foil" checked={fields.foil} onCheckedChange={(c) => set({ foil: c === true })} />
           </Field>
         )}
       </div>

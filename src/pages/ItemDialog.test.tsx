@@ -43,12 +43,13 @@ describe("ItemDialog", () => {
     expect(within(dialog).getByText("2XM #107 · Magic Single Card")).toBeInTheDocument();
     for (const gone of ["Name", "Set", "Collector number", "Type", "Color"]) expect(within(dialog).queryByLabelText(gone)).toBeNull();
     expect(within(dialog).getByLabelText("Quantity")).toHaveValue(3);
+    expect(within(dialog).queryByLabelText("Unit price")).toBeNull();
     await chooseOption(within(dialog).getByLabelText("Condition"), "Excellent");
     await userEvent.clear(within(dialog).getByLabelText("Quantity"));
     await userEvent.type(within(dialog).getByLabelText("Quantity"), "4");
     await userEvent.click(within(dialog).getByLabelText("Foil"));
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(api.updateItem).toHaveBeenCalledWith(7, { condition: "EX", language: "EN", foil: true, quantity: "4", price: "12.00" });
+    expect(api.updateItem).toHaveBeenCalledWith(7, { condition: "EX", language: "EN", foil: true, quantity: "4" });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByText("Saved Thoughtseize.")).toBeInTheDocument();
   });
@@ -66,7 +67,7 @@ describe("ItemDialog", () => {
     expect(within(dialog).queryByLabelText("Foil")).toBeNull();
     await chooseOption(within(dialog).getByLabelText("Language"), "Italian");
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    expect(api.updateItem).toHaveBeenCalledWith(7, { condition: "NM", language: "IT", foil: false, quantity: "3", price: "12.00" });
+    expect(api.updateItem).toHaveBeenCalledWith(7, { condition: "NM", language: "IT", foil: false, quantity: "3" });
   });
 
   it("has no add page", async () => {
