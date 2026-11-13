@@ -129,7 +129,7 @@ export default function SyncPage() {
             {log.map((l, i) => (
               <li key={i} className="flex flex-wrap items-center gap-4 border-b border-line px-5 py-3.5 last:border-b-0">
                 <time className="min-w-[130px] font-mono text-[13px] text-muted-foreground" dateTime={l.created_at}>
-                  {capfirst(naturalday(l.created_at, "M j"))} {time(l.created_at)}
+                  {capfirst(naturalday(l.created_at, "M j"))} {time(l.created_at, true)}
                 </time>
                 <span data-slot="log-dot" data-tone={l.level === "warn" ? "warn" : "ok"}
                   className={cn("size-2 rounded-full", l.level === "warn" ? "bg-warn" : "bg-ok")}>
