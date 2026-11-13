@@ -91,6 +91,5 @@ Open the camera with `?debug=1` (e.g. `/scan/<session>/?debug=1`) to see the liv
 
 ## Release
 
-Publish a GitHub release `vX.Y.Z`: the Release workflow runs the tests, builds the app and publishes
-`dist/` as the scratch image `ghcr.io/gab-25/mtg_ledger_ui:X.Y.Z` (also tagged `X.Y` and `latest`). The mtg_ledger_core Docker image copies the UI
-from a pinned version of that image: to ship the new release, bump `UI_VERSION` in its `Dockerfile` and rebuild.
+mtg_ledger_core includes this repo as a git submodule and builds the UI itself. To ship a version, tag it here
+(`vX.Y.Z`) and point the submodule in mtg_ledger_core at that commit.

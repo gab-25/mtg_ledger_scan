@@ -22,9 +22,8 @@ npm run dev:phone                          # same, published over HTTPS on the t
 ```
 
 `npm run dev` needs mtg_ledger_core running (`uv run python manage.py runserver` in its checkout), or `DJANGO_URL` in
-`.env` pointing at another backend (default `http://127.0.0.1:8000`; e.g. production); `VITE_PORT` sets Vite's. CI (`.github/workflows/tests.yml`) runs `npm ci`, `typecheck`, `test`; a GitHub
-release `vX.Y.Z` builds the app and publishes it as the scratch image
-`ghcr.io/gab-25/mtg_ledger_ui:X.Y.Z` (`Dockerfile`: only `dist/`), which the core's Docker image copies the UI from.
+`.env` pointing at another backend (default `http://127.0.0.1:8000`; e.g. production); `VITE_PORT` sets Vite's. CI (`.github/workflows/tests.yml`) runs `npm ci`, `typecheck`, `test`; mtg_ledger_core
+includes this repo as a git submodule and builds the UI itself.
 
 ## Architecture
 
