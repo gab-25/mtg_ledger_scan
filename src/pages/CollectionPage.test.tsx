@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { chooseOption } from "@/test/select";
 import * as api from "../api/collection";
@@ -64,8 +64,12 @@ describe("CollectionPage", () => {
     const [, card, loose] = within(await screen.findByRole("table")).getAllByRole("row");
     expect(card.querySelector("img")).toHaveAttribute("src", "https://img/thoughtseize.jpg");
     expect(loose.querySelector("img")).toBeNull();
-    within(card).getByRole("link", { name: "Thoughtseize" }).focus();
+    await userEvent.hover(card.querySelector("img")!);
     expect(await screen.findByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    await userEvent.unhover(card.querySelector("img")!);
+    await waitFor(() => expect(screen.queryByRole("img", { name: "Thoughtseize" })).not.toBeInTheDocument());
+    within(card).getByRole("link", { name: "Thoughtseize" }).focus();
+    expect(await screen.findByRole("img", { name: "Thoughtseize" })).toBeInTheDocument();
   });
 
   it("a card without image has no preview", async () => {

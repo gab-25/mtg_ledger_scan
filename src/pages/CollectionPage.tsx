@@ -31,18 +31,18 @@ const columns: ColumnDef<CollectionRow>[] = [
     id: "card",
     header: "Card",
     cell: ({ row: { original: r } }) => (
-      <div className="flex items-center gap-3">
-        {r.image_url && <img src={r.image_url} alt="" loading="lazy" width={36} height={50} className={THUMB} />}
-        <div>
-          <CardPreview image={r.image_url} name={r.name}>
+      <CardPreview image={r.image_url} name={r.name}>
+        <div className="flex items-center gap-3">
+          {r.image_url && <img src={r.image_url} alt="" loading="lazy" width={36} height={50} className={THUMB} />}
+          <div>
             <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>
               {r.name}
             </Link>
-          </CardPreview>
-          {r.foil && <FoilTag />}
-          {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
+            {r.foil && <FoilTag />}
+            {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
+          </div>
         </div>
-      </div>
+      </CardPreview>
     ),
   },
   { id: "set", header: "Set", accessorKey: "set_code", meta: { className: cn("font-mono", DIM) } },
