@@ -52,6 +52,8 @@ describe("CollectionPage", () => {
     expect(within(table).getByRole("link", { name: "Edit Thoughtseize" })).toHaveAttribute("href", "/?edit=7");
     expect(within(table).getByRole("link", { name: "Sell Thoughtseize" })).toHaveAttribute("href", "/?sell=7");
     expect(within(table).getByRole("columnheader", { name: "Actions" })).toBeInTheDocument();
+    expect(within(table).getByRole("link", { name: "Edit Thoughtseize" })).toHaveTextContent("Edit");
+    expect(within(table).getByRole("link", { name: "Sell Thoughtseize" })).toHaveTextContent("Sell");
     expect(within(table).getByTitle("Near Mint")).toHaveTextContent("NM");
     expect(within(table).getByText("€12.00")).toBeInTheDocument();
     expect(within(table).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
@@ -218,7 +220,8 @@ describe("CollectionPage", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(within(card).getAllByRole("link").map((l) => l.getAttribute("href"))).toEqual(["/?edit=7", "/?sell=7"]);
     expect(within(card).getByRole("link", { name: "Edit Thoughtseize" })).toBeInTheDocument();
-    expect(within(card).getByRole("link", { name: "Sell Thoughtseize" })).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Edit Thoughtseize" })).toHaveTextContent("Edit");
+    expect(within(card).getByRole("link", { name: "Sell Thoughtseize" })).toHaveTextContent("Sell");
     expect(card).toHaveTextContent("2XM · NM · EN · ×3");
     expect(within(card).getByText("Foil")).toBeInTheDocument();
     expect(within(card).getByText("€12.00")).toBeInTheDocument();

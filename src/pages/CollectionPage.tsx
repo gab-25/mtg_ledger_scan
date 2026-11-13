@@ -72,17 +72,17 @@ const columns: ColumnDef<CollectionRow>[] = [
   },
 ];
 
-/** The Edit (pencil) and Sell (tag) buttons of a row: they open the dialogs over the list, keeping its query. */
+/** The "Edit" (pencil) and "Sell" (tag) buttons of a row: they open the dialogs over the list, keeping its query. */
 function RowActions({ row }: { row: CollectionRow }) {
   const edit = useDialogParam("edit");
   const sell = useDialogParam("sell");
   return (
     <span className="inline-flex flex-none gap-1">
-      <Button asChild variant="ghost" size="icon">
-        <Link to={edit.openHref(row.id)} state={DIALOG_STATE} aria-label={`Edit ${row.name}`} title="Edit"><PencilIcon /></Link>
+      <Button asChild size="sm">
+        <Link to={edit.openHref(row.id)} state={DIALOG_STATE} aria-label={`Edit ${row.name}`}><PencilIcon />Edit</Link>
       </Button>
-      <Button asChild variant="ghost" size="icon">
-        <Link to={sell.openHref(row.id)} state={DIALOG_STATE} aria-label={`Sell ${row.name}`} title="Sell"><TagIcon /></Link>
+      <Button asChild size="sm">
+        <Link to={sell.openHref(row.id)} state={DIALOG_STATE} aria-label={`Sell ${row.name}`}><TagIcon />Sell</Link>
       </Button>
     </span>
   );
