@@ -62,8 +62,7 @@ describe("SalePage", () => {
     vi.mocked(api.getListings).mockResolvedValue(listings({ stats: { active: 0, value: "0", sold_month: 0, to_publish: 0 }, results: [] }));
     renderPage("/sale/");
     expect(await screen.findByRole("button", { name: "Publish 0 changes" })).toBeDisabled();
-    const empty = screen.getByText(/No listings yet/);
-    expect(within(empty).getByRole("link", { name: "collection" })).toHaveAttribute("href", "/");
+    expect(screen.getByText("No listings yet. Use “List cards” to put cards from your collection on sale.")).toBeInTheDocument();
   });
 
   it("publish shows the result, and an error as an error", async () => {
@@ -200,5 +199,16 @@ describe("Quick list", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Back" }));
     expect(await within(dialog).findByRole("button", { name: /Counterspell/ })).toBeInTheDocument();
     expect(api.saveListing).not.toHaveBeenCalled();
+  });
+  it("Escape clears the search first, then closes", async () => {
+    vi.mocked(collection.getCollection).mockResolvedValue(page([row()]));
+    const dialog = await openQuickList();
+    const box = within(dialog).getByRole("searchbox", { name: "Search your collection" });
+    await userEvent.type(box, "coun");
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "List cards" })).toBeInTheDocument();
+    expect(box).toHaveValue("");
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

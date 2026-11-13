@@ -37,7 +37,16 @@ export default function QuickList() {
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <Button type="button" onClick={() => setOpen(true)}>List cards</Button>
-      <DialogContent title="List cards">
+      <DialogContent
+        title="List cards"
+        onEscapeKeyDown={(e) => {
+          // Escape first clears the search (as in the SearchBox), then closes.
+          if (picked || !search) return;
+          e.preventDefault();
+          setSearch("");
+          setQ("");
+        }}
+      >
         {open && picked && (
           <ListForm itemId={picked.id} onBack={() => setPicked(null)}
             onSaved={(message) => { setSaved(message); setPicked(null); }} />

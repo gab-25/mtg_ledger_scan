@@ -103,7 +103,7 @@ export default function SalePage() {
         ))}
         {results.length === 0 && (
           <p className="col-span-full m-0 px-5 py-10 text-center text-muted-foreground">
-            No listings yet. Open a card in your <Link to="/">collection</Link> and choose “List for sale”.
+            No listings yet. Use “List cards” to put cards from your collection on sale.
           </p>
         )}
       </section>
