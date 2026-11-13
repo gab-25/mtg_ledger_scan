@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useLocation } from "react-router-dom";
 import { fieldErrors, useAction } from "../actions";
 import {
-  changePassword, getAccount, removeToken, setToken, updateProfile, type Account, type Me,
+  changePassword, getAccount, getToken, removeToken, setToken, updateProfile, type Account, type Me,
 } from "../api/account";
 import Field, { Errors } from "../components/Field";
 import { PageHead } from "../components/Header";
@@ -227,12 +227,71 @@ function CardTraderSection({ account }: { account: Account }) {
         </form>
 
         {cardtrader.token_saved && (
-          <form method="post" className="m-0 flex flex-wrap items-center justify-between gap-4" onSubmit={confirmRemove}>
-            <span className={cn(HINT, "flex-1")}>A token is saved. It is never shown again; replace it or remove it.</span>
-            <Button type="submit" variant="danger" disabled={remove.isPending}>Remove token</Button>
-          </form>
+          <>
+            <SavedToken key={connect.submittedAt} />
+            <form method="post" className="m-0 flex flex-wrap items-center justify-between gap-4" onSubmit={confirmRemove}>
+              <span className={cn(HINT, "flex-1")}>A token is saved. Show or copy it, replace it or remove it.</span>
+              <Button type="submit" variant="danger" disabled={remove.isPending}>Remove token</Button>
+            </form>
+          </>
         )}
       </Card>
     </section>
+  );
+}
+
+/** The saved token, masked until "Show"; it is fetched only when shown or copied (a new key after a replace drops it). */
+function SavedToken() {
+  const [token, setToken] = useState<string | null>(null);
+  const [shown, setShown] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    if (token !== null) return token;
+    setError(null);
+    try {
+      const { token: value } = await getToken();
+      setToken(value);
+      return value;
+    } catch {
+      setError("The token could not be loaded.");
+      return null;
+    }
+  }
+
+  async function toggle() {
+    if (shown) return setShown(false);
+    if ((await load()) !== null) setShown(true);
+  }
+
+  async function copy() {
+    const value = await load();
+    if (value === null) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("The token could not be copied.");
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 rounded-md border border-line-2 bg-background py-1 pr-1 pl-3">
+        <span aria-label="Saved token" className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground"
+          title={shown && token ? token : undefined}>
+          {shown && token ? token : "••••••••••••••••"}
+        </span>
+        <Button type="button" size="sm" variant="ghost" className="flex-none" onClick={toggle}>
+          {shown ? "Hide" : "Show"}
+        </Button>
+        <Button type="button" size="sm" className="flex-none" onClick={copy} aria-live="polite">
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      <Errors errors={error ? [error] : undefined} />
+    </div>
   );
 }
