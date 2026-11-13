@@ -1,13 +1,13 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getCategories, searchCatalog, type CatalogFilters, type Printing } from "../api/catalog";
 import DataTable, { TableFoot, TablePanel } from "../components/DataTable";
 import { ClearLink, FilterSelect, Filters } from "../components/Filters";
 import { PageHead } from "../components/Header";
-import SearchBox from "../components/SearchBox";
-import { Button, buttonVariants } from "@/components/ui/button";
+import SearchBox, { SEARCH_DEBOUNCE_MS } from "../components/SearchBox";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -118,8 +118,14 @@ export default function CatalogPage() {
   };
   const [form, setForm] = useState(fromUrl);
   const mobile = useIsMobile();
+  /** The pending search of the set and number fields, run once typing pauses. */
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
   // Reset on navigation, keeping what is being typed (e.g. a trailing space) when it is the search just run.
-  useEffect(() => setForm((f) => ({ ...fromUrl, q: f.q.trim() === fromUrl.q ? f.q : fromUrl.q })), [params]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setForm((f) => {
+    const keep = (key: "q" | "set" | "number") => (f[key].trim() === fromUrl[key] ? f[key] : fromUrl[key]);
+    return { ...fromUrl, q: keep("q"), set: keep("set"), number: keep("number") };
+  }), [params]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!query.data) return <PageState error={query.error} />;
   const data = query.data;
@@ -127,6 +133,7 @@ export default function CatalogPage() {
   const listed = data.searched || data.results ? data : null;
 
   const go = (f: Form, options?: { replace?: boolean }) => {
+    clearTimeout(timer.current);
     const q = queryOf({ ...f, q: f.q.trim(), set: f.set.trim(), number: f.number.trim() }).toString();
     navigate(q ? `?${q}` : "?", options);
   };
@@ -137,6 +144,19 @@ export default function CatalogPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     go(form);
+  };
+  /** Set and number search as you type, like the search box: the first change is a new history entry. */
+  const typeFilter = (key: "set" | "number", value: string) => {
+    const next = { ...form, [key]: value };
+    setForm(next);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      if (value.trim() !== fromUrl[key]) go(next, { replace: fromUrl[key] !== "" });
+    }, SEARCH_DEBOUNCE_MS);
+  };
+  /** Enter searches at once (with two text fields and no submit button the form does not submit by itself). */
+  const enter = (e: KeyboardEvent) => {
+    if (e.key === "Enter") submit(e);
   };
 
   return (
@@ -153,10 +173,10 @@ export default function CatalogPage() {
             <Filters onSubmit={submit} scroll>
               <label htmlFor="f-set" className="sr-only">Set code</label>
               <Input id="f-set" name="set" value={form.set} placeholder="Set (e.g. m21)" className={PILL_INPUT}
-                size={10} onChange={(e) => setForm({ ...form, set: e.target.value })} />
+                size={10} onChange={(e) => typeFilter("set", e.target.value)} onKeyDown={enter} />
               <label htmlFor="f-number" className="sr-only">Collector number</label>
               <Input id="f-number" name="number" value={form.number} placeholder="Number" className={PILL_INPUT}
-                size={6} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+                size={6} onChange={(e) => typeFilter("number", e.target.value)} onKeyDown={enter} />
               <FilterSelect id="f-category" label="Category" placeholder="Category" allLabel="All categories"
                 value={form.category} options={(categories.data ?? []).map((c) => [String(c.id), c.name])}
                 onChange={(v) => go({ ...form, category: v ?? "" })} />
@@ -164,7 +184,6 @@ export default function CatalogPage() {
                 <Checkbox name="owned" value="1" checked={form.owned} onCheckedChange={(c) => go({ ...form, owned: c === true })} />
                 In my collection
               </label>
-              <Button type="submit" variant="pill">Apply</Button>
               {data.searched && <ClearLink to="/catalog/">Clear</ClearLink>}
             </Filters>
           </>

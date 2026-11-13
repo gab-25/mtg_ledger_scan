@@ -132,12 +132,19 @@ describe("CatalogPage", () => {
     vi.mocked(api.searchCatalog).mockResolvedValue(results());
     renderPage("/catalog/?q=ugin");
     await screen.findByRole("table");
+    expect(screen.queryByRole("button", { name: "Apply" })).not.toBeInTheDocument();
+    // Set and number search as you type, once typing pauses.
     await userEvent.type(screen.getByLabelText("Set code"), "m21");
-    await userEvent.type(screen.getByLabelText("Collector number"), "007");
-    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
+    await vi.waitFor(() => expect(lastParams()).toBe("q=ugin&set=m21"));
+    await userEvent.type(screen.getByLabelText("Collector number"), "007 ");
     await vi.waitFor(() => expect(lastParams()).toBe("q=ugin&set=m21&number=007"));
+    expect(screen.getByLabelText("Collector number")).toHaveValue("007 "); // the trailing space being typed is kept
+    // Enter searches at once.
+    await userEvent.clear(screen.getByLabelText("Set code"));
+    await userEvent.type(screen.getByLabelText("Set code"), "dmr{Enter}");
+    expect(lastParams()).toBe("q=ugin&set=dmr&number=007");
     await userEvent.click(screen.getByLabelText("In my collection"));
-    await vi.waitFor(() => expect(lastParams()).toBe("q=ugin&set=m21&number=007&owned=1"));
+    await vi.waitFor(() => expect(lastParams()).toBe("q=ugin&set=dmr&number=007&owned=1"));
   });
 
   it("clicking the In my collection pill text toggles the checkbox once", async () => {
