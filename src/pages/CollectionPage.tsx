@@ -32,7 +32,7 @@ const columns: ColumnDef<CollectionRow>[] = [
     header: "Card",
     cell: ({ row: { original: r } }) => (
       <CardPreview image={r.image_url} name={r.name}>
-        <div className="flex items-center gap-3">
+        <div className="flex w-fit items-center gap-3">
           {r.image_url && <img src={r.image_url} alt="" loading="lazy" width={36} height={50} className={THUMB} />}
           <div>
             <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>

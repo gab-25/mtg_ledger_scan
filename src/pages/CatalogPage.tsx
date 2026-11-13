@@ -49,7 +49,7 @@ const columns: ColumnDef<Printing>[] = [
     header: "Product",
     cell: ({ row: { original: p } }) => (
       <CardPreview image={p.image_url} name={p.name}>
-        <div className="flex items-center gap-3" tabIndex={p.image_url ? 0 : undefined}>
+        <div className="flex w-fit items-center gap-3" tabIndex={p.image_url ? 0 : undefined}>
           {p.image_url && (
             <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="h-[50px] w-9 rounded-[3px] object-cover" />
           )}
