@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAction } from "../actions";
 import { getChoices } from "../api/collection";
-import { getListings, matchPrices, publish, type SaleRow } from "../api/sale";
+import { getListings, publish, type SaleRow } from "../api/sale";
 import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import DataTable, { TablePanel } from "../components/DataTable";
@@ -45,10 +45,6 @@ const columns = (openHref: OpenHref): ColumnDef<SaleRow>[] => [
   { id: "language", header: "Language", accessorKey: "language", meta: { className: DIM } },
   { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: NUM } },
   { id: "price", header: "Your price", meta: { align: "right", className: NUM }, cell: ({ row: { original: r } }) => euro(r.price, 2) },
-  {
-    id: "market", header: "Market", meta: { align: "right", className: cn(NUM, DIM) },
-    cell: ({ row: { original: r } }) => (r.market_price !== null ? euro(r.market_price, 2) : "—"),
-  },
   { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge> },
   {
     id: "actions", header: () => <span className="sr-only">Actions</span>, meta: { align: "right", className: "text-right" },
@@ -88,7 +84,6 @@ export default function SalePage() {
   const status = params.get("status") ?? "";
   const query = useQuery({ queryKey: ["listings", status], queryFn: () => getListings(status) });
   const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
-  const match = useAction(() => matchPrices());
   const push = useAction(() => publish());
   const { openHref } = useDialogParam("sell");
   const mobile = useIsMobile();
@@ -104,9 +99,6 @@ export default function SalePage() {
         title="For sale"
         actions={
           <>
-            <form method="post" onSubmit={(e) => { e.preventDefault(); match.mutate(); }}>
-              <Button type="submit" disabled={match.isPending}>Match market prices</Button>
-            </form>
             <form method="post" onSubmit={(e) => { e.preventDefault(); push.mutate(); }}>
               <Button type="submit" variant="primary" disabled={!stats.to_publish || push.isPending}>
                 Publish {stats.to_publish} change{pluralize(stats.to_publish)}

@@ -76,7 +76,6 @@ function ListingForm({ detail, statuses, close }: FormProps) {
   const [fields, setFields] = useState<ListingFields>({
     quantity: String(listing.quantity),
     price: (listing.exists ? listing.price : (suggestion ?? listing.price)) ?? "",
-    market_price: listing.market_price ?? "",
     status: listing.status,
   });
   const save = useAction((data: ListingFields) => saveListing(item.id, data), { navigates: true });
@@ -105,10 +104,6 @@ function ListingForm({ detail, statuses, close }: FormProps) {
         <Field label="Price" id="sell_price" errors={errors("price")}>
           <Input type="number" name="price" id="sell_price" step="0.01" min={0} required value={fields.price}
             onChange={set("price")} />
-        </Field>
-        <Field label="Market price" id="sell_market_price" errors={errors("market_price")}>
-          <Input type="number" name="market_price" id="sell_market_price" step="0.01" value={fields.market_price}
-            onChange={set("market_price")} />
         </Field>
         <Field label="Status" id="sell_status" errors={errors("status")}>
           <ChoiceSelect name="status" id="sell_status" value={fields.status} options={statuses}
