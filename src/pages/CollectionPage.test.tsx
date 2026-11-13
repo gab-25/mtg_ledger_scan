@@ -11,7 +11,8 @@ vi.mock("../api/collection");
 export function row(over: Partial<CollectionRow> = {}): CollectionRow {
   return {
     id: 7, name: "Thoughtseize", set_code: "2XM", is_product: false, category_id: 1, category_name: "Magic Single Card",
-    foil: false, condition: "NM", condition_label: "Near Mint", language: "EN", quantity: 3, price: "12.00",
+    image_url: "https://img/thoughtseize.jpg", foil: false, condition: "NM", condition_label: "Near Mint", language: "EN",
+    quantity: 3, price: "12.00",
     badge: { label: "In collection", tone: "neutral" }, ...over,
   };
 }
@@ -55,6 +56,24 @@ describe("CollectionPage", () => {
     expect(screen.getByRole("link", { name: "Scan cards" })).toHaveAttribute("href", "/scan/");
     expect(screen.getByRole("link", { name: "Add cards" })).toHaveAttribute("href", "/catalog/");
     expect(document.title).toBe("Collection · MTG Ledger");
+  });
+
+  it("shows a thumbnail and the card enlarged on hover or focus", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row(), row({ id: 8, name: "Loose Card", image_url: "" })] }));
+    renderPage("/");
+    const [, card, loose] = within(await screen.findByRole("table")).getAllByRole("row");
+    expect(card.querySelector("img")).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    expect(loose.querySelector("img")).toBeNull();
+    within(card).getByRole("link", { name: "Thoughtseize" }).focus();
+    expect(await screen.findByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+  });
+
+  it("a card without image has no preview", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ image_url: "" })] }));
+    renderPage("/");
+    await userEvent.hover(await screen.findByRole("link", { name: "Thoughtseize" }));
+    await new Promise((r) => setTimeout(r, 400));
+    expect(screen.queryByRole("img", { name: "Thoughtseize" })).not.toBeInTheDocument();
   });
 
   it("a cold link with filters asks the server for them", async () => {
@@ -194,6 +213,15 @@ describe("CollectionPage", () => {
     expect(within(card).getByText("Foil")).toBeInTheDocument();
     expect(within(card).getByText("€12.00")).toBeInTheDocument();
     expect(within(card).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
+    expect(card.querySelector("img")).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+  });
+
+  it("on a phone a card without image keeps the placeholder", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ image_url: "" })] }));
+    renderPage("/");
+    const card = await screen.findByRole("link", { name: /Thoughtseize/ });
+    expect(card.querySelector("img")).toBeNull();
   });
 
   it("an empty collection on a phone says so", async () => {
