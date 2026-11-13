@@ -15,7 +15,7 @@ const STATUSES: [string, string][] = [["published", "Published"], ["to_publish",
 function sale(over: Partial<SaleRow> = {}): SaleRow {
   return {
     item_id: 7, name: "Counterspell", set_code: "DMR", condition: "NM", language: "EN", foil: false, quantity: 1,
-    price: "0.80", market_price: null, badge: { label: "To publish", tone: "pending" }, ...over,
+    price: "0.80", badge: { label: "To publish", tone: "pending" }, ...over,
   };
 }
 
@@ -38,14 +38,13 @@ describe("SalePage", () => {
     expect(within(stats).getByText("1")).toHaveAttribute("data-tone", "warn");
     expect(screen.getByRole("button", { name: "Publish 1 change" })).toBeEnabled();
     const table = screen.getByRole("table");
-    for (const header of ["Card", "Set", "Cond.", "Language", "Qty", "Your price", "Market", "Status", "Actions"]) {
+    for (const header of ["Card", "Set", "Cond.", "Language", "Qty", "Your price", "Status", "Actions"]) {
       expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
     }
     const [, row] = within(table).getAllByRole("row");
     expect(within(row).getByText("Counterspell")).toBeInTheDocument();
     expect(within(row).getByText("DMR")).toBeInTheDocument();
     expect(within(row).getByText("€0.80")).toBeInTheDocument();
-    expect(within(row).getByText("—")).toBeInTheDocument();
     expect(within(row).getByText("To publish")).toHaveAttribute("data-variant", "pending");
     const edit = within(row).getByRole("link", { name: "Edit Counterspell" });
     expect(edit).toHaveAttribute("href", "/sale/?sell=7");
@@ -56,7 +55,7 @@ describe("SalePage", () => {
 
   it("filters by status and shows foil and copies", async () => {
     vi.mocked(api.getListings).mockResolvedValue(
-      listings({ status: "sold", results: [sale({ foil: true, quantity: 2, market_price: "1.00" })] }),
+      listings({ status: "sold", results: [sale({ foil: true, quantity: 2 })] }),
     );
     renderPage("/sale/?status=sold");
     const row = within(await screen.findByRole("table")).getAllByRole("row")[1];
@@ -65,7 +64,6 @@ describe("SalePage", () => {
     expect(api.getListings).toHaveBeenCalledWith("sold");
     expect(screen.getByRole("link", { name: "Sold" })).toHaveAttribute("aria-current", "true");
     expect(screen.getByRole("link", { name: "Sold" })).toHaveAttribute("href", "/sale/?status=sold");
-    expect(screen.getByText("€1.00")).toBeInTheDocument();
   });
 
   it("publish is disabled with nothing to publish; plural label", async () => {
@@ -87,14 +85,6 @@ describe("SalePage", () => {
     expect(await screen.findByText("Bolt: not found")).toHaveAttribute("data-variant", "warning");
     await userEvent.click(screen.getByRole("button", { name: "Publish 1 change" }));
     expect(await screen.findByText("Publish failed: down")).toHaveAttribute("data-variant", "error");
-  });
-
-  it("match market prices", async () => {
-    vi.mocked(api.getListings).mockResolvedValue(listings());
-    vi.mocked(api.matchPrices).mockResolvedValue({ messages: [{ level: "success", text: "All prices already match the market." }] });
-    renderPage("/sale/");
-    await userEvent.click(await screen.findByRole("button", { name: "Match market prices" }));
-    expect(await screen.findByText("All prices already match the market.")).toBeInTheDocument();
   });
 
   it("on a phone the listings are a list, not a table", async () => {

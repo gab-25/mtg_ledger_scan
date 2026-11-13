@@ -15,7 +15,7 @@ const STATUSES: [string, string][] = [["published", "Published"], ["to_publish",
 function sale(over: Partial<SaleRow> = {}): SaleRow {
   return {
     item_id: 7, name: "Counterspell", set_code: "DMR", condition: "NM", language: "EN", foil: false, quantity: 2,
-    price: "3.00", market_price: "2.80", badge: { label: "Published", tone: "ok" }, ...over,
+    price: "3.00", badge: { label: "Published", tone: "ok" }, ...over,
   };
 }
 
@@ -26,13 +26,13 @@ function listings(over: Partial<Listings> = {}): Listings {
 function detail(listing: Partial<ListingDetail["listing"]> = {}, over: Partial<ListingDetail> = {}): ListingDetail {
   return {
     item: { id: 7, name: "Counterspell", set_code: "DMR", condition: "NM", language: "EN", foil: false, quantity: 2 },
-    listing: { exists: true, quantity: 2, price: "3.00", market_price: "2.80", status: "published", ...listing },
+    listing: { exists: true, quantity: 2, price: "3.00", status: "published", ...listing },
     cm_suggestion: "1.20",
     ...over,
   };
 }
 
-const NEW = { exists: false, quantity: 1, price: "0.50", market_price: null, status: "to_publish" };
+const NEW = { exists: false, quantity: 1, price: "0.50", status: "to_publish" };
 
 beforeEach(() => {
   mockMe();
@@ -59,11 +59,10 @@ describe("ListingDialog", () => {
     expect(within(dialog).getByText("DMR · NM · EN · 2 owned")).toBeInTheDocument();
     expect(await within(dialog).findByRole("spinbutton", { name: "Quantity" })).toHaveValue(2);
     expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(3);
-    expect(within(dialog).getByRole("spinbutton", { name: "Market price" })).toHaveValue(2.8);
     expect(within(dialog).getByRole("combobox", { name: "Status" })).toHaveTextContent("Published");
     expect(within(dialog).getByText(/Changes to a published listing are queued/)).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Save listing" }));
-    expect(api.saveListing).toHaveBeenCalledWith(7, { quantity: "2", price: "3.00", market_price: "2.80", status: "published" });
+    expect(api.saveListing).toHaveBeenCalledWith(7, { quantity: "2", price: "3.00", status: "published" });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByText("Listing for Counterspell saved.")).toBeInTheDocument();
   });
