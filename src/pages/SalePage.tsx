@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { META, PRICE_LABEL } from "@/lib/styles";
 import { euro, pluralize } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import QuickList from "./QuickList";
+import ListingDialog from "./ListingDialog";
+import { DIALOG_STATE, useDialogParam } from "../hooks/useDialogParam";
 
 const current = (active: boolean) => (active ? ({ "aria-current": "true" } as const) : {});
 
@@ -25,6 +26,7 @@ export default function SalePage() {
   const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
   const match = useAction(() => matchPrices());
   const push = useAction(() => publish());
+  const { openHref } = useDialogParam("sell");
   if (!query.data) return <PageState error={query.error} />;
   const { stats, results } = query.data;
   const active = query.data.status;
@@ -36,7 +38,6 @@ export default function SalePage() {
         title="For sale"
         actions={
           <>
-            <QuickList />
             <form method="post" onSubmit={(e) => { e.preventDefault(); match.mutate(); }}>
               <Button type="submit" disabled={match.isPending}>Match market prices</Button>
             </form>
@@ -94,7 +95,7 @@ export default function SalePage() {
                 </div>
               </div>
               <Button asChild size="block">
-                <Link to={`/sale/${l.item_id}/`}>
+                <Link to={openHref(l.item_id)} state={DIALOG_STATE}>
                   Edit listing<span className="sr-only"> for {l.name}</span>
                 </Link>
               </Button>
@@ -103,10 +104,11 @@ export default function SalePage() {
         ))}
         {results.length === 0 && (
           <p className="col-span-full m-0 px-5 py-10 text-center text-muted-foreground">
-            No listings yet. Use “List cards” to put cards from your collection on sale.
+            No listings yet. Press “Sell” on a card of your <Link to="/">collection</Link>.
           </p>
         )}
       </section>
+      <ListingDialog />
     </>
   );
 }

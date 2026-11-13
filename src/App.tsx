@@ -1,11 +1,10 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import Layout from "./layout/Layout";
 import ScrollToTop from "./ScrollToTop";
 import CatalogPage from "./pages/CatalogPage";
 import CollectionPage from "./pages/CollectionPage";
 import ImportPage from "./pages/ImportPage";
 import ItemFormPage from "./pages/ItemFormPage";
-import ListingFormPage from "./pages/ListingFormPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
@@ -34,7 +33,7 @@ export default function App() {
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/cards/:pk" element={<ItemFormPage />} />
           <Route path="/sale" element={<SalePage />} />
-          <Route path="/sale/:itemPk" element={<ListingFormPage />} />
+          <Route path="/sale/:pk" element={<ToDialog page="/sale/" param="sell" />} />
           <Route path="/shipments" element={<ShipmentsPage />} />
           <Route path="/shipments/:pk" element={<OrderDetailPage />} />
           <Route path="/sync" element={<SyncPage />} />
@@ -44,4 +43,11 @@ export default function App() {
       </Routes>
     </>
   );
+}
+
+/** The former item and listing pages (/cards/<pk>/, /sale/<pk>/) are dialogs over their list now. */
+function ToDialog({ page, param }: { page: string; param: string }) {
+  const { pk = "" } = useParams();
+  if (!/^\d+$/.test(pk)) return <NotFoundPage />;
+  return <Navigate replace to={`${page}?${param}=${pk}`} />;
 }
