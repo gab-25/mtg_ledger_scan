@@ -21,19 +21,28 @@ import { euro, intcomma } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useIsMobile } from "../hooks/useMediaQuery";
 import { useQueryParams } from "../hooks/useQueryParams";
+import CardPreview from "../components/CardPreview";
+
+/** The product thumbnail, the same size as in the catalog. */
+const THUMB = "h-[50px] w-9 flex-none rounded-[3px] object-cover";
 
 const columns: ColumnDef<CollectionRow>[] = [
   {
     id: "card",
     header: "Card",
     cell: ({ row: { original: r } }) => (
-      <div>
-        <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>
-          {r.name}
-        </Link>
-        {r.foil && <FoilTag />}
-        {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
-      </div>
+      <CardPreview image={r.image_url} name={r.name}>
+        <div className="flex w-fit items-center gap-3">
+          {r.image_url && <img src={r.image_url} alt="" loading="lazy" width={36} height={50} className={THUMB} />}
+          <div>
+            <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>
+              {r.name}
+            </Link>
+            {r.foil && <FoilTag />}
+            {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
+          </div>
+        </div>
+      </CardPreview>
     ),
   },
   { id: "set", header: "Set", accessorKey: "set_code", meta: { className: cn("font-mono", DIM) } },
@@ -172,7 +181,11 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
       {rows.map((r) => (
         <li key={r.id} className="border-b border-line">
           <Link className="flex min-h-16 items-center gap-3 py-2 text-foreground no-underline hover:text-foreground" to={`/cards/${r.id}/`}>
-            <span aria-hidden="true" className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2 bg-surface-2" />
+            {r.image_url ? (
+              <img src={r.image_url} alt="" loading="lazy" width={34} height={48} className="h-12 w-[34px] flex-none rounded-[3px] object-cover" />
+            ) : (
+              <span aria-hidden="true" className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2 bg-surface-2" />
+            )}
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex items-center gap-1.5">
                 <span className="truncate font-medium">{r.name}</span>
