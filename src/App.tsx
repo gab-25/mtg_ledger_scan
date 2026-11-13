@@ -4,7 +4,6 @@ import ScrollToTop from "./ScrollToTop";
 import CatalogPage from "./pages/CatalogPage";
 import CollectionPage from "./pages/CollectionPage";
 import ImportPage from "./pages/ImportPage";
-import ItemFormPage from "./pages/ItemFormPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
@@ -31,7 +30,7 @@ export default function App() {
           <Route path="/" element={<CollectionPage />} />
           <Route path="/cards/import" element={<ImportPage />} />
           <Route path="/catalog" element={<CatalogPage />} />
-          <Route path="/cards/:pk" element={<ItemFormPage />} />
+          <Route path="/cards/:pk" element={<ToDialog page="/" param="edit" />} />
           <Route path="/sale" element={<SalePage />} />
           <Route path="/sale/:pk" element={<ToDialog page="/sale/" param="sell" />} />
           <Route path="/shipments" element={<ShipmentsPage />} />

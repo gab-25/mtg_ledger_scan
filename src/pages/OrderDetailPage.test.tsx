@@ -43,7 +43,7 @@ describe("OrderDetailPage", () => {
     expect(screen.getByLabelText("Tracking code (optional)")).toHaveValue("");
     const table = screen.getByRole("table");
     expect(within(table).getByLabelText("Packed Sheoldred")).not.toBeChecked();
-    expect(within(table).getByRole("link", { name: "in Ledger" })).toHaveAttribute("href", "/cards/9/");
+    expect(within(table).getByRole("link", { name: "in Ledger" })).toHaveAttribute("href", "/?edit=9");
     expect(within(table).getAllByText("—")).toHaveLength(2);
     expect(screen.getByText("€12.34", { selector: "strong" })).toBeInTheDocument();
     expect(document.title).toBe("Order #c5 · MTG Ledger");

@@ -22,6 +22,8 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useIsMobile } from "../hooks/useMediaQuery";
 import { useQueryParams } from "../hooks/useQueryParams";
 import CardPreview from "../components/CardPreview";
+import ItemDialog from "./ItemDialog";
+import ListingDialog from "./ListingDialog";
 
 /** The product thumbnail, the same size as in the catalog. */
 const THUMB = "h-[50px] w-9 flex-none rounded-[3px] object-cover";
@@ -168,6 +170,8 @@ export default function CollectionPage() {
           <DataTable className="min-w-[880px]" framed={false} columns={columns} data={data.results} getRowId={(r) => String(r.id)} empty={empty} />
         )}
       </TablePanel>
+      <ItemDialog />
+      <ListingDialog />
     </>
   );
 }

@@ -39,7 +39,7 @@ const columns: ColumnDef<OrderItem>[] = [
           {it.item_pk !== null && (
             <>
               {" · "}
-              <Link to={`/cards/${it.item_pk}/`}>in Ledger</Link>
+              <Link to={`/?edit=${it.item_pk}`}>in Ledger</Link>
             </>
           )}
         </div>
