@@ -86,3 +86,46 @@ describe("SalePage", () => {
     expect(await screen.findByText("All prices already match the market.")).toBeInTheDocument();
   });
 });
+
+function row(over: Partial<collection.CollectionRow> = {}): collection.CollectionRow {
+  return {
+    id: 7, name: "Counterspell", set_code: "DMR", is_product: false, category_id: null, category_name: null, foil: false,
+    condition: "NM", condition_label: "Near Mint", language: "EN", quantity: 2, price: "0.50",
+    badge: { label: "In collection", tone: "neutral" }, ...over,
+  };
+}
+
+function page(rows: collection.CollectionRow[]): collection.Collection {
+  return {
+    results: rows, count: rows.length, page: 1, num_pages: 1,
+    stats: { total: 2, unique: 1, value: "1.00", for_sale: 0 }, sets: [], categories: [], filtered: true,
+  };
+}
+
+async function openQuickList() {
+  vi.mocked(api.getListings).mockResolvedValue(listings());
+  renderPage("/sale/");
+  await userEvent.click(await screen.findByRole("button", { name: "List cards" }));
+  return screen.getByRole("dialog", { name: "List cards" });
+}
+
+describe("Quick list", () => {
+  it("opens from the page head and searches the collection", async () => {
+    vi.mocked(collection.getCollection).mockResolvedValue(page([row()]));
+    const dialog = await openQuickList();
+    expect(within(dialog).getByText("Type at least 3 letters to find a card.")).toBeInTheDocument();
+    await userEvent.type(within(dialog).getByRole("searchbox", { name: "Search your collection" }), "coun");
+    const result = await within(dialog).findByRole("button", { name: /Counterspell/ });
+    const params = vi.mocked(collection.getCollection).mock.lastCall![0];
+    expect(params.get("q")).toBe("coun");
+    expect(within(result).getByText("DMR · NM · EN · ×2")).toBeInTheDocument();
+    expect(within(result).getByText("In collection")).toBeInTheDocument();
+  });
+
+  it("says when nothing matches", async () => {
+    vi.mocked(collection.getCollection).mockResolvedValue(page([]));
+    const dialog = await openQuickList();
+    await userEvent.type(within(dialog).getByRole("searchbox", { name: "Search your collection" }), "zzz{Enter}");
+    expect(await within(dialog).findByText("No cards match.")).toBeInTheDocument();
+  });
+});

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { META, PRICE_LABEL } from "@/lib/styles";
 import { euro, pluralize } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import QuickList from "./QuickList";
 
 const current = (active: boolean) => (active ? ({ "aria-current": "true" } as const) : {});
 
@@ -35,6 +36,7 @@ export default function SalePage() {
         title="For sale"
         actions={
           <>
+            <QuickList />
             <form method="post" onSubmit={(e) => { e.preventDefault(); match.mutate(); }}>
               <Button type="submit" disabled={match.isPending}>Match market prices</Button>
             </form>
