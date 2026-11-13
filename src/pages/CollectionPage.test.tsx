@@ -7,6 +7,7 @@ import { mockMe, renderPage } from "../test/renderPage";
 
 vi.mock("../api/account");
 vi.mock("../api/collection");
+vi.mock("../api/sale");
 
 export function row(over: Partial<CollectionRow> = {}): CollectionRow {
   return {
@@ -47,7 +48,10 @@ describe("CollectionPage", () => {
     expect(within(stats).getByText("1,234")).toBeInTheDocument();
     expect(within(stats).getByText("€1,235")).toHaveAttribute("data-tone", "accent");
     const table = screen.getByRole("table");
-    expect(within(table).getByRole("link", { name: "Thoughtseize" })).toHaveAttribute("href", "/cards/7/");
+    expect(within(table).queryByRole("link", { name: "Thoughtseize" })).not.toBeInTheDocument();
+    expect(within(table).getByRole("link", { name: "Edit Thoughtseize" })).toHaveAttribute("href", "/?edit=7");
+    expect(within(table).getByRole("link", { name: "Sell Thoughtseize" })).toHaveAttribute("href", "/?sell=7");
+    expect(within(table).getByRole("columnheader", { name: "Actions" })).toBeInTheDocument();
     expect(within(table).getByTitle("Near Mint")).toHaveTextContent("NM");
     expect(within(table).getByText("€12.00")).toBeInTheDocument();
     expect(within(table).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
@@ -68,14 +72,14 @@ describe("CollectionPage", () => {
     expect(await screen.findByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
     await userEvent.unhover(card.querySelector("img")!);
     await waitFor(() => expect(screen.queryByRole("img", { name: "Thoughtseize" })).not.toBeInTheDocument());
-    within(card).getByRole("link", { name: "Thoughtseize" }).focus();
+    (within(card).getByText("Thoughtseize").closest("[tabindex]") as HTMLElement).focus();
     expect(await screen.findByRole("img", { name: "Thoughtseize" })).toBeInTheDocument();
   });
 
   it("a card without image has no preview", async () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ image_url: "" })] }));
     renderPage("/");
-    await userEvent.hover(await screen.findByRole("link", { name: "Thoughtseize" }));
+    await userEvent.hover(await screen.findByText("Thoughtseize"));
     await new Promise((r) => setTimeout(r, 400));
     expect(screen.queryByRole("img", { name: "Thoughtseize" })).not.toBeInTheDocument();
   });
@@ -134,7 +138,7 @@ describe("CollectionPage", () => {
     const booster = row({ id: 9, name: "Play Booster", set_code: "BLB", is_product: true, quantity: 1 });
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [booster] }));
     renderPage("/");
-    const card = await screen.findByRole("link", { name: /Play Booster/ });
+    const card = (await screen.findByText("Play Booster")).closest("li")!;
     expect(card).toHaveTextContent("BLB · EN · ×1");
   });
 
@@ -210,9 +214,11 @@ describe("CollectionPage", () => {
     vi.stubGlobal("matchMedia", matchMedia);
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ foil: true })] }));
     renderPage("/");
-    const card = await screen.findByRole("link", { name: /Thoughtseize/ });
+    const card = (await screen.findByText("Thoughtseize")).closest("li")!;
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    expect(card).toHaveAttribute("href", "/cards/7/");
+    expect(within(card).getAllByRole("link").map((l) => l.getAttribute("href"))).toEqual(["/?edit=7", "/?sell=7"]);
+    expect(within(card).getByRole("link", { name: "Edit Thoughtseize" })).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Sell Thoughtseize" })).toBeInTheDocument();
     expect(card).toHaveTextContent("2XM · NM · EN · ×3");
     expect(within(card).getByText("Foil")).toBeInTheDocument();
     expect(within(card).getByText("€12.00")).toBeInTheDocument();
@@ -224,7 +230,7 @@ describe("CollectionPage", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ image_url: "" })] }));
     renderPage("/");
-    const card = await screen.findByRole("link", { name: /Thoughtseize/ });
+    const card = (await screen.findByText("Thoughtseize")).closest("li")!;
     expect(card.querySelector("img")).toBeNull();
   });
 
@@ -233,5 +239,29 @@ describe("CollectionPage", () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [], count: 0, filtered: true }));
     renderPage("/?q=zzz");
     expect(await screen.findByText("No cards match these filters.")).toBeInTheDocument();
+  });
+  it("the row buttons keep the search, filters and page", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ page: 2, num_pages: 3 }));
+    renderPage("/?q=thought&set=2XM&page=2");
+    expect(await screen.findByRole("link", { name: "Edit Thoughtseize" })).toHaveAttribute("href", "/?q=thought&set=2XM&page=2&edit=7");
+    expect(screen.getByRole("link", { name: "Sell Thoughtseize" })).toHaveAttribute("href", "/?q=thought&set=2XM&page=2&sell=7");
+  });
+
+  it("opening a dialog doesn't reload the list, and Back closes it", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection());
+    vi.mocked(api.getItem).mockResolvedValue({
+      id: 7, name: "Thoughtseize", set_code: "2XM", collector_number: "107", is_product: false, category_id: 1,
+      category_name: "Magic Single Card", condition: "NM", language: "EN", foil: false, quantity: 3, price: "12.00",
+      has_listing: false,
+    });
+    renderPage("/?q=thought");
+    await userEvent.click(await screen.findByRole("link", { name: "Edit Thoughtseize" }));
+    expect(await screen.findByRole("dialog", { name: "Thoughtseize" })).toBeInTheDocument();
+    expect(api.getCollection).toHaveBeenCalledTimes(1);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("searchbox", { name: "Search cards" })).toHaveValue("thought");
+    expect(screen.getByRole("link", { name: "Edit Thoughtseize" })).toHaveAttribute("href", "/?q=thought&edit=7");
+    expect(api.getCollection).toHaveBeenCalledTimes(1);
   });
 });

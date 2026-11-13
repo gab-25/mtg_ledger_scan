@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import DataTable, { TableFoot, TablePanel } from "../components/DataTable";
 import { ClearLink, FilterSelect, Filters } from "../components/Filters";
 import FoilTag from "../components/FoilTag";
-import { DownloadIcon, PlusIcon, UploadIcon } from "../components/icons";
+import { DownloadIcon, PencilIcon, PlusIcon, TagIcon, UploadIcon } from "../components/icons";
 import { PageHead } from "../components/Header";
 import SearchBox from "../components/SearchBox";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { euro, intcomma } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useIsMobile } from "../hooks/useMediaQuery";
 import { useQueryParams } from "../hooks/useQueryParams";
+import { DIALOG_STATE, useDialogParam } from "../hooks/useDialogParam";
 import CardPreview from "../components/CardPreview";
 import ItemDialog from "./ItemDialog";
 import ListingDialog from "./ListingDialog";
@@ -37,9 +38,8 @@ const columns: ColumnDef<CollectionRow>[] = [
         <div className="flex w-fit items-center gap-3">
           {r.image_url && <img src={r.image_url} alt="" loading="lazy" width={36} height={50} className={THUMB} />}
           <div>
-            <Link className="font-medium text-foreground no-underline hover:text-gold-hi hover:underline" to={`/cards/${r.id}/`}>
-              {r.name}
-            </Link>
+            {/* Focusable when it has a preview, so the keyboard can show it too. */}
+            <span className="font-medium" tabIndex={r.image_url ? 0 : undefined}>{r.name}</span>
             {r.foil && <FoilTag />}
             {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
           </div>
@@ -66,7 +66,35 @@ const columns: ColumnDef<CollectionRow>[] = [
     cell: ({ row: { original: r } }) => euro(r.price, 2),
   },
   { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge> },
+  {
+    id: "actions", header: () => <span className="sr-only">Actions</span>, meta: { align: "right", className: "text-right" },
+    cell: ({ row: { original: r } }) => <RowActions row={r} />,
+  },
 ];
+
+/** The Edit (pencil) and Sell (tag) buttons of a row: they open the dialogs over the list, keeping its query. */
+function RowActions({ row }: { row: CollectionRow }) {
+  const edit = useDialogParam("edit");
+  const sell = useDialogParam("sell");
+  return (
+    <span className="inline-flex flex-none gap-1">
+      <Button asChild variant="ghost" size="icon">
+        <Link to={edit.openHref(row.id)} state={DIALOG_STATE} aria-label={`Edit ${row.name}`} title="Edit"><PencilIcon /></Link>
+      </Button>
+      <Button asChild variant="ghost" size="icon">
+        <Link to={sell.openHref(row.id)} state={DIALOG_STATE} aria-label={`Sell ${row.name}`} title="Sell"><TagIcon /></Link>
+      </Button>
+    </span>
+  );
+}
+
+/** The list's query: the dialogs' params don't change what the server is asked. */
+function listParams(params: URLSearchParams) {
+  const list = new URLSearchParams(params);
+  list.delete("edit");
+  list.delete("sell");
+  return list;
+}
 
 /** ledger/collection.html */
 export default function CollectionPage() {
@@ -74,8 +102,9 @@ export default function CollectionPage() {
   const { params, hrefWith, pageHref } = useQueryParams();
   const navigate = useNavigate();
   // The previous page stays on screen while the next loads, so the search box keeps focus while typing.
+  const list = listParams(params);
   const query = useQuery({
-    queryKey: ["collection", params.toString()], queryFn: () => getCollection(params), placeholderData: keepPreviousData,
+    queryKey: ["collection", list.toString()], queryFn: () => getCollection(list), placeholderData: keepPreviousData,
   });
   const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
   const q = params.get("q") ?? "";
@@ -184,7 +213,7 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
     <ul className="m-0 flex list-none flex-col p-0">
       {rows.map((r) => (
         <li key={r.id} className="border-b border-line">
-          <Link className="flex min-h-16 items-center gap-3 py-2 text-foreground no-underline hover:text-foreground" to={`/cards/${r.id}/`}>
+          <div className="flex min-h-16 items-center gap-3 py-2">
             {r.image_url ? (
               <img src={r.image_url} alt="" loading="lazy" width={34} height={48} className="h-12 w-[34px] flex-none rounded-[3px] object-cover" />
             ) : (
@@ -205,7 +234,8 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
               <span className="font-mono">{euro(r.price, 2)}</span>
               <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge>
             </span>
-          </Link>
+            <RowActions row={r} />
+          </div>
         </li>
       ))}
     </ul>
