@@ -37,18 +37,18 @@ export const pluralize = (n: number, singular = "", plural = "s") => (n === 1 ? 
 
 export const capfirst = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
-type Parts = { year: number; month: number; day: number; hour: number; minute: number };
+type Parts = { year: number; month: number; day: number; hour: number; minute: number; second: number };
 
 const partsFormat = new Intl.DateTimeFormat("en-GB", {
   timeZone: TIME_ZONE, year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit",
-  hourCycle: "h23",
+  second: "2-digit", hourCycle: "h23",
 });
 
 /** Calendar fields of a moment in Europe/Rome. */
 function local(date: Date): Parts {
   const p: Record<string, number> = {};
   for (const { type, value } of partsFormat.formatToParts(date)) p[type] = Number(value);
-  return { year: p.year, month: p.month, day: p.day, hour: p.hour, minute: p.minute };
+  return { year: p.year, month: p.month, day: p.day, hour: p.hour, minute: p.minute, second: p.second };
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -61,11 +61,11 @@ export function dateLong(iso: string | null | undefined): string {
   return `${p.day} ${MONTHS[p.month - 1]} ${p.year}`;
 }
 
-/** time:"H:i" → "18:05" */
-export function time(iso: string | null | undefined): string {
+/** time:"H:i" → "18:05"; with seconds, time:"H:i:s" → "18:05:09" */
+export function time(iso: string | null | undefined, seconds = false): string {
   if (!iso) return "";
   const p = local(parse(iso));
-  return `${pad(p.hour)}:${pad(p.minute)}`;
+  return `${pad(p.hour)}:${pad(p.minute)}${seconds ? `:${pad(p.second)}` : ""}`;
 }
 
 /** date:"j M Y H:i" → "9 Nov 2026 18:05" */

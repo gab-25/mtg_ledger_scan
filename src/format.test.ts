@@ -36,6 +36,7 @@ describe("dates in Europe/Rome", () => {
     expect(dateLong(lateUtc)).toBe("10 Nov 2026");
     expect(dateTime(lateUtc)).toBe("10 Nov 2026 00:30");
     expect(time(lateUtc)).toBe("00:30");
+    expect(time("2026-11-09T23:30:07Z", true)).toBe("00:30:07");
     expect(dateLong(null)).toBe("");
   });
 
