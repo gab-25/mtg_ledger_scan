@@ -13,7 +13,6 @@ function Probe() {
       <Link to="/?q=b">next list</Link>
       <Link to={edit.openHref(7)} state={DIALOG_STATE}>open</Link>
       <button onClick={edit.close}>close</button>
-      <button onClick={() => edit.switchTo("sell")}>switch</button>
       <button onClick={() => navigate(-1)}>back</button>
     </>
   );
@@ -33,16 +32,6 @@ describe("useDialogParam", () => {
     expect(search()).toBe("?q=b");
     await click("back");
     expect(search()).toBe("?q=a");
-  });
-
-  it("switching dialogs replaces the entry, so closing still lands on the list", async () => {
-    renderAt("/?q=a");
-    await click("next list");
-    await click("open");
-    await click("switch");
-    expect(search()).toBe("?q=b&sell=7");
-    await click("back");
-    expect(search()).toBe("?q=b");
   });
 
   it("closing a dialog loaded directly replaces its URL", async () => {

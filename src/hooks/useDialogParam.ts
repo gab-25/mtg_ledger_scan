@@ -34,11 +34,5 @@ export function useDialogParam(name: DialogParam) {
       if ((location.state as { dialog?: boolean } | null)?.dialog) navigate(-1);
       else navigate(href(without()), { replace: true });
     },
-    /** Replaces this dialog with the other one for the same pk. */
-    switchTo(other: DialogParam) {
-      const next = without();
-      if (pk !== null) next.set(other, String(pk));
-      navigate(href(next), { replace: true, state: location.state });
-    },
   };
 }

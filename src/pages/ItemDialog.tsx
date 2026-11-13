@@ -24,17 +24,17 @@ export function itemContext(item: Item) {
 
 /** `?edit=<pk>`: the copies of a collection item, edited in a dialog (was /cards/<pk>/). */
 export default function ItemDialog() {
-  const { pk, close, switchTo } = useDialogParam("edit");
+  const { pk, close } = useDialogParam("edit");
   return (
     <Dialog open={pk !== null} onOpenChange={(open) => !open && close()}>
-      {pk !== null && <ItemContent key={pk} pk={pk} close={close} toListing={() => switchTo("sell")} />}
+      {pk !== null && <ItemContent key={pk} pk={pk} close={close} />}
     </Dialog>
   );
 }
 
-type ContentProps = { pk: number; close: () => void; toListing: () => void };
+type ContentProps = { pk: number; close: () => void };
 
-function ItemContent({ pk, close, toListing }: ContentProps) {
+function ItemContent({ pk, close }: ContentProps) {
   const item = useQuery({ queryKey: ["item", pk], queryFn: () => getItem(pk) });
   const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
   const error = item.error ?? choices.error;
@@ -46,16 +46,16 @@ function ItemContent({ pk, close, toListing }: ContentProps) {
         // A cached copy may predate a save: the form starts from this visit's fetch only.
         <p className={cn(EMPTY, "py-6")}>Loading…</p>
       ) : (
-        <ItemForm item={item.data} choices={choices.data} close={close} toListing={toListing} />
+        <ItemForm item={item.data} choices={choices.data} close={close} />
       )}
     </DialogContent>
   );
 }
 
-type FormProps = { item: Item; choices: Choices; close: () => void; toListing: () => void };
+type FormProps = { item: Item; choices: Choices; close: () => void };
 
 /** ledger/item_form.html, copies only: condition and foil for cards, language, quantity, price. */
-function ItemForm({ item, choices, close, toListing }: FormProps) {
+function ItemForm({ item, choices, close }: FormProps) {
   const [fields, setFields] = useState<ItemFields>(fieldsOf(item));
   // A product's condition and foil are hidden but still sent: the server's form needs them and keeps NM/non-foil.
   const save = useAction((data: ItemFields) => updateItem(item.id, data), { navigates: true });
@@ -102,7 +102,6 @@ function ItemForm({ item, choices, close, toListing }: FormProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className={BUTTON_GROUP}>
           <Button type="submit" variant="primary" disabled={save.isPending}>Save</Button>
-          <Button type="button" onClick={toListing}>{item.has_listing ? "Edit listing" : "List for sale"}</Button>
           <Button type="button" variant="ghost" onClick={close}>Cancel</Button>
         </div>
         <Button type="button" variant="danger" disabled={remove.isPending} onClick={confirmRemove}>Remove from collection</Button>
