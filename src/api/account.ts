@@ -41,5 +41,7 @@ export const updateProfile = (data: { first_name: string; last_name: string; ema
   request<Done>("PUT", "account/profile/", data);
 export const changePassword = (data: { old_password: string; new_password1: string; new_password2: string }) =>
   request<Done>("POST", "account/password/", data);
+/** The user's own saved token (404 when none is saved). */
+export const getToken = () => request<{ token: string }>("GET", "account/cardtrader-token/");
 export const setToken = (token: string) => request<Done>("PUT", "account/cardtrader-token/", { token });
 export const removeToken = () => request<Done>("DELETE", "account/cardtrader-token/");

@@ -110,6 +110,36 @@ describe("ProfilePage", () => {
     expect(await screen.findByText("CardTrader token removed.")).toBeInTheDocument();
   });
 
+  it("the saved token is hidden until shown, and can be copied", async () => {
+    vi.mocked(api.getAccount).mockResolvedValue(account({ cardtrader: { name: "CardTrader", last_sync: null, token_saved: true } }));
+    vi.mocked(api.getToken).mockResolvedValue({ token: "ct-secret-jwt" });
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    renderPage("/account/");
+    const saved = await screen.findByLabelText("Saved token");
+    expect(saved).not.toHaveTextContent("ct-secret-jwt");
+    expect(api.getToken).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Show" }));
+    expect(await screen.findByText("ct-secret-jwt")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hide" }));
+    expect(saved).not.toHaveTextContent("ct-secret-jwt");
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(writeText).toHaveBeenCalledWith("ct-secret-jwt");
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument();
+    expect(api.getToken).toHaveBeenCalledTimes(1);
+  });
+
+  it("copying fetches the token when it was not shown", async () => {
+    vi.mocked(api.getAccount).mockResolvedValue(account({ cardtrader: { name: "CardTrader", last_sync: null, token_saved: true } }));
+    vi.mocked(api.getToken).mockResolvedValue({ token: "ct-secret-jwt" });
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    renderPage("/account/");
+    await user.click(await screen.findByRole("button", { name: "Copy" }));
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith("ct-secret-jwt"));
+    expect(screen.queryByText("ct-secret-jwt")).not.toBeInTheDocument();
+  });
+
   it("a friend's question when removing", async () => {
     vi.mocked(api.getAccount).mockResolvedValue(account({ cardtrader: { name: "CardTrader", last_sync: null, token_saved: true } }));
     const confirm = vi.fn().mockReturnValue(false);
