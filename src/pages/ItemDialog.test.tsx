@@ -119,13 +119,27 @@ describe("ItemDialog", () => {
       listing: { exists: false, quantity: 1, price: "12.00", market_price: null, status: "to_publish" },
       cm_suggestion: "11.50",
     });
-    const dialog = await dialogAt("/?edit=7");
-    await userEvent.click(within(dialog).getByRole("button", { name: "List for sale" }));
+    vi.mocked(api.getCollection).mockResolvedValue({
+      results: [{
+        id: 7, name: "Thoughtseize", set_code: "2XM", is_product: false, category_id: 1, category_name: null, image_url: "",
+        foil: false, condition: "NM", condition_label: "Near Mint", language: "EN", quantity: 3, price: "12.00",
+        badge: { label: "In collection", tone: "neutral" },
+      }],
+      count: 1, page: 1, num_pages: 1, stats: { total: 3, unique: 1, value: null, for_sale: 0 }, sets: [], categories: [],
+      filtered: false,
+    });
+    renderPage("/?q=thought");
+    await userEvent.click(await screen.findByRole("link", { name: "Edit Thoughtseize" }));
+    const dialog = await screen.findByRole("dialog", { name: "Thoughtseize" });
+    await userEvent.click(await within(dialog).findByRole("button", { name: "List for sale" }));
     const sell = await screen.findByRole("dialog", { name: "Thoughtseize" });
     expect(await within(sell).findByRole("button", { name: "Create listing" })).toBeInTheDocument();
     expect(sale.getListing).toHaveBeenCalledWith(7);
+    expect(screen.getByRole("link", { name: "Sell Thoughtseize", hidden: true })).toHaveAttribute("href", "/?q=thought&sell=7");
+    // The edit dialog was replaced, not stacked: Cancel goes back to the list itself.
     await userEvent.click(within(sell).getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("link", { name: "Edit Thoughtseize" })).toHaveAttribute("href", "/?q=thought&edit=7");
   });
 
   it("a card with a listing offers to edit it", async () => {

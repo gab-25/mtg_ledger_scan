@@ -26,13 +26,14 @@ export function useAction<A = void, R = unknown>(fn: (args: A) => Promise<R>, op
       const messages = (result as { messages?: Msg[] } | undefined)?.messages ?? [];
       notify(messages, { afterNavigation: Boolean(to) || Boolean(options?.navigates) });
       if (to) navigate(to);
-      else window.scrollTo(0, 0); // like the redirect to the same page: the messages are at the top
+      // Like the redirect to the same page: the messages are at the top. A dialog keeps the list behind it in place.
+      else if (!options?.navigates) window.scrollTo(0, 0);
       await queryClient.invalidateQueries();
     },
     onError: (err) => {
       if (!(err instanceof ApiError && err.fields)) {
         notify([{ level: "error", text: err.message }]);
-        window.scrollTo(0, 0);
+        if (!options?.navigates) window.scrollTo(0, 0); // a dialog repeats its errors inside
       }
     },
   });
