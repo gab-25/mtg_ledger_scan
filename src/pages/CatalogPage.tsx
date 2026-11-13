@@ -1,13 +1,13 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getCategories, searchCatalog, type CatalogFilters, type Printing } from "../api/catalog";
 import DataTable, { TableFoot, TablePanel } from "../components/DataTable";
 import { ClearLink, FilterSelect, Filters } from "../components/Filters";
 import { PageHead } from "../components/Header";
-import SearchBox from "../components/SearchBox";
-import { Button, buttonVariants } from "@/components/ui/button";
+import SearchBox, { SEARCH_DEBOUNCE_MS } from "../components/SearchBox";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { dateLong, euro, intcomma } from "../format";
 import AddFromCatalog from "./AddFromCatalog";
 import CardPreview from "../components/CardPreview";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
 import { useIsMobile } from "../hooks/useMediaQuery";
 
 /** A text field shaped as a filter pill. */
@@ -118,18 +119,27 @@ export default function CatalogPage() {
   };
   const [form, setForm] = useState(fromUrl);
   const mobile = useIsMobile();
+  /** Set and number search as you type, like the search box: the first change is a new history entry. */
+  const searchFilter = useDebouncedCallback((key: "set" | "number", f: Form) => {
+    if (f[key].trim() !== fromUrl[key]) go(f, { replace: fromUrl[key] !== "" });
+  }, SEARCH_DEBOUNCE_MS);
+  /** Any search drops a pending one of the set and number fields, so it cannot undo it. */
+  const go = (f: Form, options?: { replace?: boolean }) => {
+    searchFilter.cancel();
+    const q = queryOf({ ...f, q: f.q.trim(), set: f.set.trim(), number: f.number.trim() }).toString();
+    navigate(q ? `?${q}` : "?", options);
+  };
   // Reset on navigation, keeping what is being typed (e.g. a trailing space) when it is the search just run.
-  useEffect(() => setForm((f) => ({ ...fromUrl, q: f.q.trim() === fromUrl.q ? f.q : fromUrl.q })), [params]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setForm((f) => {
+    const keep = (key: "q" | "set" | "number") => (f[key].trim() === fromUrl[key] ? f[key] : fromUrl[key]);
+    return { ...fromUrl, q: keep("q"), set: keep("set"), number: keep("number") };
+  }), [params]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!query.data) return <PageState error={query.error} />;
   const data = query.data;
   /** The rows shown: the search results, or before searching the latest releases (if the backend sends them). */
   const listed = data.searched || data.results ? data : null;
 
-  const go = (f: Form, options?: { replace?: boolean }) => {
-    const q = queryOf({ ...f, q: f.q.trim(), set: f.set.trim(), number: f.number.trim() }).toString();
-    navigate(q ? `?${q}` : "?", options);
-  };
   /** Search as you type: the first search is a new history entry, refinements replace it. */
   const autoSearch = (q: string) => {
     if (q !== fromUrl.q) go({ ...form, q }, { replace: fromUrl.q !== "" });
@@ -137,6 +147,15 @@ export default function CatalogPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     go(form);
+  };
+  const typeFilter = (key: "set" | "number", value: string) => {
+    const next = { ...form, [key]: value };
+    setForm(next);
+    searchFilter(key, next);
+  };
+  /** Enter searches at once (with two text fields and no submit button the form does not submit by itself). */
+  const enter = (e: KeyboardEvent) => {
+    if (e.key === "Enter") submit(e);
   };
 
   return (
@@ -153,10 +172,10 @@ export default function CatalogPage() {
             <Filters onSubmit={submit} scroll>
               <label htmlFor="f-set" className="sr-only">Set code</label>
               <Input id="f-set" name="set" value={form.set} placeholder="Set (e.g. m21)" className={PILL_INPUT}
-                size={10} onChange={(e) => setForm({ ...form, set: e.target.value })} />
+                size={10} onChange={(e) => typeFilter("set", e.target.value)} onKeyDown={enter} />
               <label htmlFor="f-number" className="sr-only">Collector number</label>
               <Input id="f-number" name="number" value={form.number} placeholder="Number" className={PILL_INPUT}
-                size={6} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+                size={6} onChange={(e) => typeFilter("number", e.target.value)} onKeyDown={enter} />
               <FilterSelect id="f-category" label="Category" placeholder="Category" allLabel="All categories"
                 value={form.category} options={(categories.data ?? []).map((c) => [String(c.id), c.name])}
                 onChange={(v) => go({ ...form, category: v ?? "" })} />
@@ -164,7 +183,6 @@ export default function CatalogPage() {
                 <Checkbox name="owned" value="1" checked={form.owned} onCheckedChange={(c) => go({ ...form, owned: c === true })} />
                 In my collection
               </label>
-              <Button type="submit" variant="pill">Apply</Button>
               {data.searched && <ClearLink to="/catalog/">Clear</ClearLink>}
             </Filters>
           </>
