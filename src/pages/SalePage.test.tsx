@@ -88,7 +88,7 @@ describe("SalePage", () => {
 
 function row(over: Partial<collection.CollectionRow> = {}): collection.CollectionRow {
   return {
-    id: 7, name: "Counterspell", set_code: "DMR", is_product: false, category_id: null, category_name: null, foil: false,
+    id: 7, name: "Counterspell", set_code: "DMR", is_product: false, category_id: null, category_name: null, image_url: "", foil: false,
     condition: "NM", condition_label: "Near Mint", language: "EN", quantity: 2, price: "0.50",
     badge: { label: "In collection", tone: "neutral" }, ...over,
   };
