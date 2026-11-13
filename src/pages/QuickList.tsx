@@ -1,21 +1,28 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { getCollection, type CollectionRow } from "../api/collection";
+import { useState, type FormEvent } from "react";
+import { fieldErrors, useAction } from "../actions";
+import { ApiError } from "../api/client";
+import { getChoices, getCollection, type CollectionRow } from "../api/collection";
+import { getListing, saveListing, type ListingDetail, type ListingFields } from "../api/sale";
 import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import Field, { ChoiceSelect, Errors } from "../components/Field";
 import FoilTag from "../components/FoilTag";
 import SearchBox from "../components/SearchBox";
-import { EMPTY, META } from "@/lib/styles";
+import { BUTTON_GROUP, EMPTY, FORM_GRID, HINT, META, PRICE_LABEL } from "@/lib/styles";
 import { cn } from "@/lib/utils";
+import { euro } from "../format";
 
 /** The "List cards" button of the For sale page and its dialog: find a card of the collection, then list it. */
 export default function QuickList() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
-  const [, setPicked] = useState<CollectionRow | null>(null);
+  const [picked, setPicked] = useState<CollectionRow | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
 
   function changeOpen(next: boolean) {
     setOpen(next);
@@ -23,6 +30,7 @@ export default function QuickList() {
       setSearch("");
       setQ("");
       setPicked(null);
+      setSaved(null);
     }
   }
 
@@ -30,8 +38,13 @@ export default function QuickList() {
     <Dialog open={open} onOpenChange={changeOpen}>
       <Button type="button" onClick={() => setOpen(true)}>List cards</Button>
       <DialogContent title="List cards">
-        {open && (
+        {open && picked && (
+          <ListForm itemId={picked.id} onBack={() => setPicked(null)}
+            onSaved={(message) => { setSaved(message); setPicked(null); }} />
+        )}
+        {open && !picked && (
           <>
+            {saved && <p role="status" className="m-0 text-sm text-ok">{saved}</p>}
             <SearchBox id="quick_q" label="Search your collection" value={search} placeholder="Search by name or set…"
               autoFocus onChange={setSearch} onSearch={setQ}
               onSubmit={(e) => { e.preventDefault(); setQ(search.trim()); }} />
@@ -72,5 +85,83 @@ function Results({ q, onPick }: { q: string; onPick: (row: CollectionRow) => voi
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The listing of one collection item: create it or change it, then back to the search. */
+function ListForm({ itemId, onSaved, onBack }: { itemId: number; onSaved: (message: string) => void; onBack: () => void }) {
+  const detail = useQuery({ queryKey: ["listing", itemId], queryFn: () => getListing(itemId) });
+  const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
+  if (!detail.data || !choices.data) return null;
+  return <ListFields detail={detail.data} statuses={choices.data.listing_statuses} onSaved={onSaved} onBack={onBack} />;
+}
+
+type FieldsProps = {
+  detail: ListingDetail;
+  statuses: [string, string][];
+  onSaved: (message: string) => void;
+  onBack: () => void;
+};
+
+function ListFields({ detail, statuses, onSaved, onBack }: FieldsProps) {
+  const { item, listing, cm_suggestion: suggestion } = detail;
+  const [fields, setFields] = useState<ListingFields>({
+    quantity: String(listing.quantity),
+    price: (listing.exists ? listing.price : (suggestion ?? listing.price)) ?? "",
+    market_price: listing.market_price ?? "",
+    status: listing.status,
+  });
+  const save = useAction((data: ListingFields) => saveListing(item.id, data));
+  const errors = (name: string) => fieldErrors(save.error, name);
+  // Any other failure also goes to the page banner, hidden behind the dialog: repeat it here.
+  const failure = save.error && !(save.error instanceof ApiError && save.error.fields) ? [save.error.message] : undefined;
+  const set = (name: keyof ListingFields) => (e: { target: { value: string } }) =>
+    setFields((f) => ({ ...f, [name]: e.target.value }));
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    save.mutate(fields, { onSuccess: () => onSaved(`${listing.exists ? "Saved" : "Listed"} ${item.name}.`) });
+  }
+
+  return (
+    <form method="post" className="flex flex-col gap-5" onSubmit={submit}>
+      <div>
+        <div className="text-[15px] font-semibold">{item.name}</div>
+        <div className={META}>
+          {item.set_code} · {item.condition} · {item.language}
+          {item.foil && " · FOIL"} · {item.quantity} owned
+        </div>
+      </div>
+      <Errors errors={failure ?? errors("non_field_errors")} />
+      <div className={FORM_GRID}>
+        <Field label="Quantity" id="quick_quantity" errors={errors("quantity")}>
+          <Input type="number" name="quantity" id="quick_quantity" min={1} required value={fields.quantity}
+            onChange={set("quantity")} />
+        </Field>
+        <Field label="Price" id="quick_price" errors={errors("price")}>
+          <Input type="number" name="price" id="quick_price" step="0.01" min={0} required autoFocus value={fields.price}
+            onChange={set("price")} />
+        </Field>
+        <Field label="Status" id="quick_status" errors={errors("status")}>
+          <ChoiceSelect name="status" id="quick_status" value={fields.status} options={statuses}
+            onChange={(status) => setFields((f) => ({ ...f, status }))} />
+        </Field>
+      </div>
+      <p className={cn(HINT, "m-0 flex flex-wrap items-center gap-2.5")}>
+        <span>
+          <span className={PRICE_LABEL}>Cardmarket trend{item.foil && " (foil)"}</span>{" "}
+          <span>{suggestion !== null ? euro(suggestion, 2) : "—"}</span>
+        </span>
+        {suggestion !== null && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setFields((f) => ({ ...f, price: suggestion }))}>
+            Use
+          </Button>
+        )}
+      </p>
+      <div className={BUTTON_GROUP}>
+        <Button type="submit" variant="primary" disabled={save.isPending}>{listing.exists ? "Save listing" : "List"}</Button>
+        <Button type="button" variant="ghost" onClick={onBack}>Back</Button>
+      </div>
+    </form>
   );
 }

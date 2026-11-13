@@ -128,4 +128,77 @@ describe("Quick list", () => {
     await userEvent.type(within(dialog).getByRole("searchbox", { name: "Search your collection" }), "zzz{Enter}");
     expect(await within(dialog).findByText("No cards match.")).toBeInTheDocument();
   });
+  function detail(over: Partial<api.ListingDetail["listing"]> = {}, cm: string | null = "1.20"): api.ListingDetail {
+    return {
+      item: { id: 7, name: "Counterspell", set_code: "DMR", condition: "NM", language: "EN", foil: false, quantity: 2 },
+      listing: { exists: false, quantity: 1, price: "0.50", market_price: null, status: "to_publish", ...over },
+      cm_suggestion: cm,
+    };
+  }
+
+  async function pick(listing: api.ListingDetail) {
+    vi.mocked(collection.getCollection).mockResolvedValue(page([row()]));
+    vi.mocked(api.getListing).mockResolvedValue(listing);
+    const dialog = await openQuickList();
+    await userEvent.type(within(dialog).getByRole("searchbox", { name: "Search your collection" }), "coun");
+    await userEvent.click(await within(dialog).findByRole("button", { name: /Counterspell/ }));
+    await within(dialog).findByRole("spinbutton", { name: "Price" });
+    return dialog;
+  }
+
+  it("lists a new card at the Cardmarket trend and goes back to the search", async () => {
+    vi.mocked(api.saveListing).mockResolvedValue({ messages: [{ level: "success", text: "Listing for Counterspell saved." }] });
+    const dialog = await pick(detail());
+    expect(api.getListing).toHaveBeenCalledWith(7);
+    expect(within(dialog).getByRole("spinbutton", { name: "Quantity" })).toHaveValue(1);
+    expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(1.2);
+    expect(within(dialog).getByRole("combobox", { name: "Status" })).toHaveTextContent("To publish");
+    expect(within(dialog).getByText("€1.20")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "List" })).toBeInTheDocument();
+    const calls = vi.mocked(collection.getCollection).mock.calls.length;
+    await userEvent.type(within(dialog).getByRole("spinbutton", { name: "Price" }), "{Enter}");
+    expect(api.saveListing).toHaveBeenCalledWith(7, { quantity: "1", price: "1.20", market_price: "", status: "to_publish" });
+    expect(await within(dialog).findByRole("status")).toHaveTextContent("Listed Counterspell.");
+    const box = within(dialog).getByRole("searchbox", { name: "Search your collection" });
+    expect(box).toHaveValue("coun");
+    expect(box).toHaveFocus();
+    await within(dialog).findByRole("button", { name: /Counterspell/ });
+    expect(vi.mocked(collection.getCollection).mock.calls.length).toBeGreaterThan(calls);
+  });
+
+  it("edits an existing listing", async () => {
+    vi.mocked(api.saveListing).mockResolvedValue({ messages: [] });
+    const dialog = await pick(detail({ exists: true, quantity: 2, price: "3.00", market_price: "2.80", status: "published" }));
+    expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(3);
+    expect(within(dialog).getByRole("spinbutton", { name: "Quantity" })).toHaveValue(2);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save listing" }));
+    expect(api.saveListing).toHaveBeenCalledWith(7, { quantity: "2", price: "3.00", market_price: "2.80", status: "published" });
+    expect(await within(dialog).findByRole("status")).toHaveTextContent("Saved Counterspell.");
+  });
+
+  it("without a trend the price is the listing default and there is no Use", async () => {
+    const dialog = await pick(detail({}, null));
+    expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(0.5);
+    expect(within(dialog).getByText("—")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Use" })).not.toBeInTheDocument();
+  });
+
+  it("shows field errors and other failures inside the dialog", async () => {
+    vi.mocked(api.saveListing)
+      .mockRejectedValueOnce(new ApiError("Invalid", 400, "invalid", undefined, { quantity: ["You only own 2 copies."] }))
+      .mockRejectedValueOnce(new ApiError("Listing not saved: down", 502, "service_error"));
+    const dialog = await pick(detail());
+    await userEvent.click(within(dialog).getByRole("button", { name: "List" }));
+    expect(await within(dialog).findByText("You only own 2 copies.")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "List" }));
+    expect(await within(dialog).findByText("Listing not saved: down")).toBeInTheDocument();
+    expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toBeInTheDocument();
+  });
+
+  it("Back returns to the results without saving", async () => {
+    const dialog = await pick(detail());
+    await userEvent.click(within(dialog).getByRole("button", { name: "Back" }));
+    expect(await within(dialog).findByRole("button", { name: /Counterspell/ })).toBeInTheDocument();
+    expect(api.saveListing).not.toHaveBeenCalled();
+  });
 });
