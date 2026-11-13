@@ -211,4 +211,30 @@ describe("Quick list", () => {
     await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+  it("a card picked again starts from the server's current listing, not the cached one", async () => {
+    const dialog = await pick(detail());
+    await userEvent.click(within(dialog).getByRole("button", { name: "Back" }));
+    vi.mocked(api.getListing).mockResolvedValue(detail({ exists: true, price: "9.99", status: "published" }));
+    await userEvent.click(await within(dialog).findByRole("button", { name: /Counterspell/ }));
+    expect(await within(dialog).findByRole("button", { name: "Save listing" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(9.99);
+  });
+
+  it("a listing that fails to load says so and can go back", async () => {
+    vi.mocked(collection.getCollection).mockResolvedValue(page([row()]));
+    vi.mocked(api.getListing).mockRejectedValue(new ApiError("Not found.", 404, "not_found"));
+    const dialog = await openQuickList();
+    await userEvent.type(within(dialog).getByRole("searchbox", { name: "Search your collection" }), "coun");
+    await userEvent.click(await within(dialog).findByRole("button", { name: /Counterspell/ }));
+    expect(await within(dialog).findByText("Not found.")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Back" }));
+    expect(await within(dialog).findByRole("button", { name: /Counterspell/ })).toBeInTheDocument();
+  });
+
+  it("a search that fails says so", async () => {
+    vi.mocked(collection.getCollection).mockRejectedValue(new ApiError("Server error.", 500, "error"));
+    const dialog = await openQuickList();
+    await userEvent.type(within(dialog).getByRole("searchbox", { name: "Search your collection" }), "coun{Enter}");
+    expect(await within(dialog).findByText("Server error.")).toBeInTheDocument();
+  });
 });

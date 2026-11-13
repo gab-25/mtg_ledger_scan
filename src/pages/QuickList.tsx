@@ -71,7 +71,8 @@ function Results({ q, onPick }: { q: string; onPick: (row: CollectionRow) => voi
     enabled: q !== "", placeholderData: keepPreviousData,
   });
   if (!q) return <p className={cn(EMPTY, "py-6")}>Type at least 3 letters to find a card.</p>;
-  if (!query.data) return null;
+  if (query.error) return <Errors errors={[query.error.message]} />;
+  if (!query.data) return <p className={cn(EMPTY, "py-6")}>Loading…</p>;
   const rows = query.data.results;
   if (rows.length === 0) return <p className={cn(EMPTY, "py-6")}>No cards match.</p>;
   return (
@@ -101,7 +102,17 @@ function Results({ q, onPick }: { q: string; onPick: (row: CollectionRow) => voi
 function ListForm({ itemId, onSaved, onBack }: { itemId: number; onSaved: (message: string) => void; onBack: () => void }) {
   const detail = useQuery({ queryKey: ["listing", itemId], queryFn: () => getListing(itemId) });
   const choices = useQuery({ queryKey: ["choices"], queryFn: getChoices });
-  if (!detail.data || !choices.data) return null;
+  const error = detail.error ?? choices.error;
+  if (error) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Errors errors={[error.message]} />
+        <div className={BUTTON_GROUP}><Button type="button" variant="ghost" onClick={onBack}>Back</Button></div>
+      </div>
+    );
+  }
+  // The form copies the listing once: wait for this visit's fetch, a cached copy may predate a save or a price match.
+  if (!detail.isFetchedAfterMount || !detail.data || !choices.data) return <p className={cn(EMPTY, "py-6")}>Loading…</p>;
   return <ListFields detail={detail.data} statuses={choices.data.listing_statuses} onSaved={onSaved} onBack={onBack} />;
 }
 
