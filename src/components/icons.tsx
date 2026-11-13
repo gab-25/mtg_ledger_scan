@@ -103,3 +103,16 @@ export const TrashIcon = () => (
     <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
   </Icon>
 );
+
+export const PencilIcon = () => (
+  <Icon size={16}>
+    <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4zM13.5 6.5l4 4" />
+  </Icon>
+);
+
+export const TagIcon = () => (
+  <Icon size={16}>
+    <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z" />
+    <circle cx="7.5" cy="7.5" r="1.5" />
+  </Icon>
+);

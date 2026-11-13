@@ -4,7 +4,11 @@ import { ApiError } from "./api/client";
 import type { Msg } from "./api/types";
 import { useNotify } from "./notifications";
 
-type Options<R> = { navigateTo?: string | ((result: R) => string | null) };
+type Options<R> = {
+  navigateTo?: string | ((result: R) => string | null);
+  /** The caller navigates itself on success (e.g. a dialog in the URL closing): the messages outlive it. */
+  navigates?: boolean;
+};
 
 /**
  * A POST/PUT/DELETE of a page, like a Django form post: its messages are shown (on the next page when it
@@ -20,15 +24,16 @@ export function useAction<A = void, R = unknown>(fn: (args: A) => Promise<R>, op
     onSuccess: async (result) => {
       const to = typeof options?.navigateTo === "function" ? options.navigateTo(result) : options?.navigateTo;
       const messages = (result as { messages?: Msg[] } | undefined)?.messages ?? [];
-      notify(messages, { afterNavigation: Boolean(to) });
+      notify(messages, { afterNavigation: Boolean(to) || Boolean(options?.navigates) });
       if (to) navigate(to);
-      else window.scrollTo(0, 0); // like the redirect to the same page: the messages are at the top
+      // Like the redirect to the same page: the messages are at the top. A dialog keeps the list behind it in place.
+      else if (!options?.navigates) window.scrollTo(0, 0);
       await queryClient.invalidateQueries();
     },
     onError: (err) => {
       if (!(err instanceof ApiError && err.fields)) {
         notify([{ level: "error", text: err.message }]);
-        window.scrollTo(0, 0);
+        if (!options?.navigates) window.scrollTo(0, 0); // a dialog repeats its errors inside
       }
     },
   });

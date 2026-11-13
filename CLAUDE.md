@@ -37,8 +37,12 @@ includes this repo as a git submodule and builds the UI itself.
   `src/notifications.tsx` (Django-messages semantics: on this page, or on the next one after a navigating action),
   invalidates every query (so sidebar counters refresh), and exposes field errors via `fieldErrors(error, name)`.
 - **Catalog** (`/catalog/`, `/api/catalog/`): every CardTrader product (cards, sealed, accessories). It is the only
-  way to add by hand: a row's "Add" opens `AddFromCatalog` (price prefilled with the Cardmarket trend). `/cards/<pk>/`
-  edits only the copies (condition, language, foil, quantity, price); products have no condition or foil.
+  way to add by hand: a row's "Add" opens `AddFromCatalog` (price prefilled with the Cardmarket trend).
+- **Dialogs in the URL** (`hooks/useDialogParam.ts`): a collection row's pencil opens `ItemDialog` (`?edit=<pk>`:
+  only the copies — condition, language, foil, quantity, price; products have no condition or foil), its tag opens
+  `ListingDialog` (`?sell=<pk>`, also from For sale's "Edit listing"). Back closes them; the old pages
+  `/cards/<pk>/` and `/sale/<pk>/` redirect to them. Their actions use `useAction(…, { navigates: true })` so the
+  messages survive the dialog closing.
 - `src/format.ts` reproduces Django's humanize/floatformat output (en-us, Europe/Rome) — use it for numbers/dates.
 - **Scan** (`src/screens/`, `src/autoscan/`, `src/camera/`, `/scan/…`): Start (a modal from "Scan cards", `ScanStartDialog`; `/scan/` still works as a page) → Camera (desktop gets a QR hand-off,
   `PhoneOnly`) → Review, all without reloads. `autoscan/machine.ts` decides when to shoot from metrics computed in
