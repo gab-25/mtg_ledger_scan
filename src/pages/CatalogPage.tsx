@@ -17,6 +17,7 @@ import PageState from "../components/PageState";
 import Pager from "../components/Pager";
 import { dateLong, euro, intcomma } from "../format";
 import AddFromCatalog from "./AddFromCatalog";
+import CardPreview from "../components/CardPreview";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useIsMobile } from "../hooks/useMediaQuery";
 
@@ -47,15 +48,17 @@ const columns: ColumnDef<Printing>[] = [
     id: "product",
     header: "Product",
     cell: ({ row: { original: p } }) => (
-      <div className="flex items-center gap-3">
-        {p.image_url && (
-          <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="h-[50px] w-9 rounded-[3px] object-cover" />
-        )}
-        <div>
-          {p.name}
-          {p.version && <div className={SUB}>{p.version}</div>}
+      <CardPreview image={p.image_url} name={p.name}>
+        <div className="flex items-center gap-3" tabIndex={p.image_url ? 0 : undefined}>
+          {p.image_url && (
+            <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="h-[50px] w-9 rounded-[3px] object-cover" />
+          )}
+          <div>
+            {p.name}
+            {p.version && <div className={SUB}>{p.version}</div>}
+          </div>
         </div>
-      </div>
+      </CardPreview>
     ),
   },
   {
