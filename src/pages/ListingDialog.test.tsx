@@ -74,7 +74,7 @@ describe("ListingDialog", () => {
     expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(1.2);
     expect(within(dialog).getByText("Cardmarket trend")).toBeInTheDocument();
     expect(within(dialog).getByText("€1.20")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Use" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Use" })).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Add to sale" })).toBeInTheDocument();
     expect(within(dialog).getByText(
       "The listing is queued as “To publish”: it goes to CardTrader when you press “Publish” on the For sale page.",
@@ -157,5 +157,18 @@ describe("ListingDialog", () => {
     vi.mocked(api.getListing).mockResolvedValue(detail());
     await dialogAt("/sale/7/");
     expect(screen.getByRole("heading", { name: "For sale", hidden: true })).toBeInTheDocument(); // behind the dialog
+  });
+  it("an existing listing not yet published says it isn't on CardTrader", async () => {
+    vi.mocked(api.getListing).mockResolvedValue(detail({ status: "to_publish" }));
+    const dialog = await dialogAt("/sale/?sell=7");
+    expect(within(dialog).getByText("Not on CardTrader yet: it goes there when you press “Publish” on the For sale page."))
+      .toBeInTheDocument();
+    expect(within(dialog).queryByText(/Changes to a published listing/)).not.toBeInTheDocument();
+  });
+
+  it("a sold listing has no note", async () => {
+    vi.mocked(api.getListing).mockResolvedValue(detail({ status: "sold" }));
+    const dialog = await dialogAt("/sale/?sell=7");
+    expect(within(dialog).queryByText(/CardTrader/)).not.toBeInTheDocument();
   });
 });

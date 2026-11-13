@@ -60,6 +60,14 @@ export function failureOf(error: Error | null) {
   return error && !(error instanceof ApiError && error.fields) ? [error.message] : undefined;
 }
 
+/** When the listing reaches CardTrader, by its saved state (not the status being chosen). */
+function note(listing: ListingDetail["listing"]) {
+  if (!listing.exists) return "The listing is queued as “To publish”: it goes to CardTrader when you press “Publish” on the For sale page.";
+  if (listing.status === "to_publish") return "Not on CardTrader yet: it goes there when you press “Publish” on the For sale page.";
+  if (listing.status === "published") return "Changes to a published listing are queued as “To publish” until you publish them to CardTrader.";
+  return null;
+}
+
 type FormProps = { detail: ListingDetail; statuses: [string, string][]; close: () => void };
 
 /** ledger/listing_form.html */
@@ -107,22 +115,11 @@ function ListingForm({ detail, statuses, close }: FormProps) {
             onChange={(status) => setFields((f) => ({ ...f, status }))} />
         </Field>
       </div>
-      <p className={cn(HINT, "m-0 flex flex-wrap items-center gap-2.5")}>
-        <span>
-          <span className={PRICE_LABEL}>Cardmarket trend{item.foil && " (foil)"}</span>{" "}
-          <span>{suggestion !== null ? euro(suggestion, 2) : "—"}</span>
-        </span>
-        {suggestion !== null && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setFields((f) => ({ ...f, price: suggestion }))}>
-            Use
-          </Button>
-        )}
-      </p>
       <p className={cn(HINT, "m-0")}>
-        {listing.exists
-          ? "Changes to a published listing are queued as “To publish” until you publish them to CardTrader."
-          : "The listing is queued as “To publish”: it goes to CardTrader when you press “Publish” on the For sale page."}
+        <span className={PRICE_LABEL}>Cardmarket trend{item.foil && " (foil)"}</span>{" "}
+        <span>{suggestion !== null ? euro(suggestion, 2) : "—"}</span>
       </p>
+      {note(listing) && <p className={cn(HINT, "m-0")}>{note(listing)}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className={BUTTON_GROUP}>
           <Button type="submit" variant="primary" disabled={save.isPending}>
