@@ -1,6 +1,7 @@
-import { useEffect, useRef, type FormEvent } from "react";
+import { useRef, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
 import { ClearIcon, SearchIcon } from "./icons";
 
 /** Search as you type: from this many characters (trimmed)… */
@@ -29,30 +30,27 @@ type Props = {
  * with Enter. No browser autocomplete: its history dropdown would cover the results being searched.
  */
 export default function SearchBox({ id, label, value, placeholder, autoFocus, className, onChange, onSubmit, onSearch }: Props) {
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const input = useRef<HTMLInputElement>(null);
-  const search = useRef(onSearch);
-  search.current = onSearch;
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const search = useDebouncedCallback((text: string) => onSearch?.(text), SEARCH_DEBOUNCE_MS);
 
   function change(next: string) {
     onChange(next);
-    clearTimeout(timer.current);
+    search.cancel();
     const text = next.trim();
     if (!onSearch || (text.length > 0 && text.length < SEARCH_MIN_CHARS)) return;
-    timer.current = setTimeout(() => search.current?.(text), SEARCH_DEBOUNCE_MS);
+    search(text);
   }
 
   /** The clear button: empties the box and, when searching as you type, drops the search at once. */
   function clear() {
-    clearTimeout(timer.current);
+    search.cancel();
     onChange("");
     onSearch?.("");
     input.current?.focus();
   }
 
   function submit(e: FormEvent) {
-    clearTimeout(timer.current);
+    search.cancel();
     onSubmit(e);
   }
 

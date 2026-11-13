@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getCategories, searchCatalog, type CatalogFilters, type Printing } from "../api/catalog";
 import DataTable, { TableFoot, TablePanel } from "../components/DataTable";
@@ -19,6 +19,7 @@ import { dateLong, euro, intcomma } from "../format";
 import AddFromCatalog from "./AddFromCatalog";
 import CardPreview from "../components/CardPreview";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
 import { useIsMobile } from "../hooks/useMediaQuery";
 
 /** A text field shaped as a filter pill. */
@@ -118,9 +119,16 @@ export default function CatalogPage() {
   };
   const [form, setForm] = useState(fromUrl);
   const mobile = useIsMobile();
-  /** The pending search of the set and number fields, run once typing pauses. */
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  /** Set and number search as you type, like the search box: the first change is a new history entry. */
+  const searchFilter = useDebouncedCallback((key: "set" | "number", f: Form) => {
+    if (f[key].trim() !== fromUrl[key]) go(f, { replace: fromUrl[key] !== "" });
+  }, SEARCH_DEBOUNCE_MS);
+  /** Any search drops a pending one of the set and number fields, so it cannot undo it. */
+  const go = (f: Form, options?: { replace?: boolean }) => {
+    searchFilter.cancel();
+    const q = queryOf({ ...f, q: f.q.trim(), set: f.set.trim(), number: f.number.trim() }).toString();
+    navigate(q ? `?${q}` : "?", options);
+  };
   // Reset on navigation, keeping what is being typed (e.g. a trailing space) when it is the search just run.
   useEffect(() => setForm((f) => {
     const keep = (key: "q" | "set" | "number") => (f[key].trim() === fromUrl[key] ? f[key] : fromUrl[key]);
@@ -132,11 +140,6 @@ export default function CatalogPage() {
   /** The rows shown: the search results, or before searching the latest releases (if the backend sends them). */
   const listed = data.searched || data.results ? data : null;
 
-  const go = (f: Form, options?: { replace?: boolean }) => {
-    clearTimeout(timer.current);
-    const q = queryOf({ ...f, q: f.q.trim(), set: f.set.trim(), number: f.number.trim() }).toString();
-    navigate(q ? `?${q}` : "?", options);
-  };
   /** Search as you type: the first search is a new history entry, refinements replace it. */
   const autoSearch = (q: string) => {
     if (q !== fromUrl.q) go({ ...form, q }, { replace: fromUrl.q !== "" });
@@ -145,14 +148,10 @@ export default function CatalogPage() {
     e.preventDefault();
     go(form);
   };
-  /** Set and number search as you type, like the search box: the first change is a new history entry. */
   const typeFilter = (key: "set" | "number", value: string) => {
     const next = { ...form, [key]: value };
     setForm(next);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      if (value.trim() !== fromUrl[key]) go(next, { replace: fromUrl[key] !== "" });
-    }, SEARCH_DEBOUNCE_MS);
+    searchFilter(key, next);
   };
   /** Enter searches at once (with two text fields and no submit button the form does not submit by itself). */
   const enter = (e: KeyboardEvent) => {
