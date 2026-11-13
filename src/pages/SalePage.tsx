@@ -1,21 +1,85 @@
 import { useQuery } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAction } from "../actions";
 import { getChoices } from "../api/collection";
-import { getListings, matchPrices, publish } from "../api/sale";
+import { getListings, matchPrices, publish, type SaleRow } from "../api/sale";
 import { badgeVariant } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
+import DataTable, { TablePanel } from "../components/DataTable";
+import FoilTag from "../components/FoilTag";
+import { PencilIcon } from "../components/icons";
 import PageState from "../components/PageState";
 import StatTile, { StatTiles } from "../components/StatTile";
 import { PageHead } from "../components/Header";
 import { Button } from "@/components/ui/button";
-import { META, PRICE_LABEL } from "@/lib/styles";
+import { DIM, EMPTY, META, NUM } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import { euro, pluralize } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useIsMobile } from "../hooks/useMediaQuery";
 import ListingDialog from "./ListingDialog";
 import { DIALOG_STATE, useDialogParam } from "../hooks/useDialogParam";
 
 const current = (active: boolean) => (active ? ({ "aria-current": "true" } as const) : {});
+
+type OpenHref = (pk: number) => string;
+
+/** The "Edit" button of a listing: its dialog over the list. */
+function EditButton({ row, openHref }: { row: SaleRow; openHref: OpenHref }) {
+  return (
+    <Button asChild size="sm">
+      <Link to={openHref(row.item_id)} state={DIALOG_STATE} aria-label={`Edit ${row.name}`}><PencilIcon />Edit</Link>
+    </Button>
+  );
+}
+
+const columns = (openHref: OpenHref): ColumnDef<SaleRow>[] => [
+  {
+    id: "card", header: "Card",
+    cell: ({ row: { original: r } }) => <><span className="font-medium">{r.name}</span>{r.foil && <FoilTag />}</>,
+  },
+  { id: "set", header: "Set", accessorKey: "set_code", meta: { className: cn("font-mono", DIM) } },
+  { id: "cond", header: "Cond.", accessorKey: "condition", meta: { className: DIM } },
+  { id: "language", header: "Language", accessorKey: "language", meta: { className: DIM } },
+  { id: "qty", header: "Qty", accessorKey: "quantity", meta: { align: "right", className: NUM } },
+  { id: "price", header: "Your price", meta: { align: "right", className: NUM }, cell: ({ row: { original: r } }) => euro(r.price, 2) },
+  {
+    id: "market", header: "Market", meta: { align: "right", className: cn(NUM, DIM) },
+    cell: ({ row: { original: r } }) => (r.market_price !== null ? euro(r.market_price, 2) : "—"),
+  },
+  { id: "status", header: "Status", cell: ({ row: { original: r } }) => <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge> },
+  {
+    id: "actions", header: () => <span className="sr-only">Actions</span>, meta: { align: "right", className: "text-right" },
+    cell: ({ row: { original: r } }) => <EditButton row={r} openHref={openHref} />,
+  },
+];
+
+/** The listings as a list on a phone, in place of the table (like the collection's). */
+function SaleList({ rows, empty, openHref }: { rows: SaleRow[]; empty: ReactNode; openHref: OpenHref }) {
+  if (rows.length === 0) return <p className={EMPTY}>{empty}</p>;
+  return (
+    <ul className="m-0 flex list-none flex-col p-0">
+      {rows.map((r) => (
+        <li key={r.item_id} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="flex items-center gap-1.5">
+              <span className="truncate font-medium">{r.name}</span>
+              {r.foil && <FoilTag />}
+            </span>
+            <span className={META}>{r.set_code} · {r.condition} · {r.language} · ×{r.quantity}</span>
+          </span>
+          <span className="flex flex-none flex-col items-end gap-1">
+            <span className="font-mono">{euro(r.price, 2)}</span>
+            <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge>
+          </span>
+          <EditButton row={r} openHref={openHref} />
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /** ledger/sale.html */
 export default function SalePage() {
@@ -27,8 +91,10 @@ export default function SalePage() {
   const match = useAction(() => matchPrices());
   const push = useAction(() => publish());
   const { openHref } = useDialogParam("sell");
+  const mobile = useIsMobile();
   if (!query.data) return <PageState error={query.error} />;
   const { stats, results } = query.data;
+  const empty = <>No listings yet. Press “Sell” on a card of your <Link to="/">collection</Link>.</>;
   const active = query.data.status;
 
   return (
@@ -66,48 +132,14 @@ export default function SalePage() {
         ))}
       </nav>
 
-      <section className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-5" aria-label="Cards for sale">
-        {results.map((l) => (
-          <article key={l.item_id} className="flex flex-col overflow-hidden rounded-xl border border-line bg-card">
-            <div className="relative flex aspect-[5/3] items-center justify-center border-b border-line bg-surface-2 px-4 text-center">
-              <span className="font-serif text-xl font-semibold text-[#6C6960]" aria-hidden="true">{l.name}</span>
-              <Badge variant={badgeVariant(l.badge.tone)} className="absolute top-2 right-2 min-h-6 px-[9px] text-[11px]">
-                {l.badge.label}
-              </Badge>
-            </div>
-            <div className="flex flex-1 flex-col gap-3 p-4">
-              <div>
-                <div className="text-[15px] font-semibold">{l.name}</div>
-                <div className={META}>
-                  {l.set_code} · {l.condition} · {l.language}
-                  {l.foil && " · FOIL"}
-                  {l.quantity > 1 && ` · ×${l.quantity}`}
-                </div>
-              </div>
-              <div className="mt-auto flex items-end justify-between gap-2">
-                <div>
-                  <div className={PRICE_LABEL}>Your price</div>
-                  <div className="font-mono text-xl">{euro(l.price, 2)}</div>
-                </div>
-                <div className="text-right">
-                  <div className={PRICE_LABEL}>Market</div>
-                  <div className="font-mono text-sm text-text-2">{l.market_price !== null ? euro(l.market_price, 2) : "—"}</div>
-                </div>
-              </div>
-              <Button asChild size="block">
-                <Link to={openHref(l.item_id)} state={DIALOG_STATE}>
-                  Edit listing<span className="sr-only"> for {l.name}</span>
-                </Link>
-              </Button>
-            </div>
-          </article>
-        ))}
-        {results.length === 0 && (
-          <p className="col-span-full m-0 px-5 py-10 text-center text-muted-foreground">
-            No listings yet. Press “Sell” on a card of your <Link to="/">collection</Link>.
-          </p>
+      <TablePanel label="Cards for sale">
+        {mobile ? (
+          <SaleList rows={results} empty={empty} openHref={openHref} />
+        ) : (
+          <DataTable className="min-w-[880px]" framed={false} columns={columns(openHref)} data={results}
+            getRowId={(r) => String(r.item_id)} empty={empty} />
         )}
-      </section>
+      </TablePanel>
       <ListingDialog />
     </>
   );

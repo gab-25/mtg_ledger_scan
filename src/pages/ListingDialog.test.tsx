@@ -48,11 +48,11 @@ async function dialogAt(path: string) {
 }
 
 describe("ListingDialog", () => {
-  it("opens from Edit listing and saves an existing listing", async () => {
+  it("opens from Edit and saves an existing listing", async () => {
     vi.mocked(api.getListing).mockResolvedValue(detail());
     vi.mocked(api.saveListing).mockResolvedValue({ messages: [{ level: "success", text: "Listing for Counterspell saved." }] });
     renderPage("/sale/");
-    const link = await screen.findByRole("link", { name: /^Edit listing\s*for Counterspell$/ });
+    const link = await screen.findByRole("link", { name: "Edit Counterspell" });
     expect(link).toHaveAttribute("href", "/sale/?sell=7");
     await userEvent.click(link);
     const dialog = await screen.findByRole("dialog", { name: "Counterspell" });

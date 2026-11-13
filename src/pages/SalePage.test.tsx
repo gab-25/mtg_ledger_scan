@@ -37,11 +37,19 @@ describe("SalePage", () => {
     expect(within(stats).getByText("€123")).toHaveAttribute("data-tone", "accent");
     expect(within(stats).getByText("1")).toHaveAttribute("data-tone", "warn");
     expect(screen.getByRole("button", { name: "Publish 1 change" })).toBeEnabled();
-    const card = screen.getByRole("article");
-    expect(within(card).getByText("DMR · NM · EN")).toBeInTheDocument();
-    expect(within(card).getByText("—")).toBeInTheDocument();
-    expect(within(card).getByText("€0.80")).toBeInTheDocument();
-    expect(within(card).getByRole("link", { name: /^Edit listing\s*for Counterspell$/ })).toHaveAttribute("href", "/sale/?sell=7");
+    const table = screen.getByRole("table");
+    for (const header of ["Card", "Set", "Cond.", "Language", "Qty", "Your price", "Market", "Status", "Actions"]) {
+      expect(within(table).getByRole("columnheader", { name: header })).toBeInTheDocument();
+    }
+    const [, row] = within(table).getAllByRole("row");
+    expect(within(row).getByText("Counterspell")).toBeInTheDocument();
+    expect(within(row).getByText("DMR")).toBeInTheDocument();
+    expect(within(row).getByText("€0.80")).toBeInTheDocument();
+    expect(within(row).getByText("—")).toBeInTheDocument();
+    expect(within(row).getByText("To publish")).toHaveAttribute("data-variant", "pending");
+    const edit = within(row).getByRole("link", { name: "Edit Counterspell" });
+    expect(edit).toHaveAttribute("href", "/sale/?sell=7");
+    expect(edit).toHaveTextContent("Edit");
     expect(screen.getByRole("link", { name: "All" })).toHaveAttribute("aria-current", "true");
     expect(document.title).toBe("For sale · MTG Ledger");
   });
@@ -51,7 +59,9 @@ describe("SalePage", () => {
       listings({ status: "sold", results: [sale({ foil: true, quantity: 2, market_price: "1.00" })] }),
     );
     renderPage("/sale/?status=sold");
-    expect(await screen.findByText("DMR · NM · EN · FOIL · ×2")).toBeInTheDocument();
+    const row = within(await screen.findByRole("table")).getAllByRole("row")[1];
+    expect(within(row).getByText("Foil")).toBeInTheDocument();
+    expect(within(row).getByText("2")).toBeInTheDocument();
     expect(api.getListings).toHaveBeenCalledWith("sold");
     expect(screen.getByRole("link", { name: "Sold" })).toHaveAttribute("aria-current", "true");
     expect(screen.getByRole("link", { name: "Sold" })).toHaveAttribute("href", "/sale/?status=sold");
@@ -86,5 +96,17 @@ describe("SalePage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Match market prices" }));
     expect(await screen.findByText("All prices already match the market.")).toBeInTheDocument();
   });
-});
 
+  it("on a phone the listings are a list, not a table", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getListings).mockResolvedValue(listings({ results: [sale({ foil: true, quantity: 2 })] }));
+    renderPage("/sale/");
+    const item = (await screen.findByText("Counterspell")).closest("li")!;
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(item).toHaveTextContent("DMR · NM · EN · ×2");
+    expect(within(item).getByText("Foil")).toBeInTheDocument();
+    expect(within(item).getByText("€0.80")).toBeInTheDocument();
+    expect(within(item).getByText("To publish")).toBeInTheDocument();
+    expect(within(item).getByRole("link", { name: "Edit Counterspell" })).toHaveAttribute("href", "/sale/?sell=7");
+  });
+});
