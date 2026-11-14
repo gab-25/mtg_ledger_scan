@@ -54,7 +54,7 @@ function ItemContent({ pk, close }: ContentProps) {
 
 type FormProps = { item: Item; choices: Choices; close: () => void };
 
-/** ledger/item_form.html, copies only: condition and foil for cards, language, quantity (the price is the trend). */
+/** ledger/item_form.html, copies only: condition and foil for cards, language, quantity (the price is the CardTrader market price). */
 function ItemForm({ item, choices, close }: FormProps) {
   const [fields, setFields] = useState<ItemFields>(fieldsOf(item));
   // A product's condition and foil are hidden but still sent: the server's form needs them and keeps NM/non-foil.

@@ -21,9 +21,6 @@ export type Line = {
   foil: boolean;
   condition: string;
   quantity: number;
-  price: string | null;
-  for_sale: boolean | null;
-  listed: boolean;
   needs_confirmation: boolean;
   frame_url: string | null;
   /** The card name the model read ("" if it read none). */
@@ -35,7 +32,6 @@ export type Session = {
   status: "open" | "saved";
   expansion: Expansion | null;
   default_condition: string;
-  sale_threshold: string | null;
   count: number;
   last_line: Line | null;
   is_phone: boolean;
@@ -67,16 +63,14 @@ export type Review = {
   pending: Line[];
   copies: number;
   unique: number;
-  listed: number;
 };
 export type Msg = { level: "success" | "warning" | "error"; text: string };
-export type SaveResult = { saved: number; listed: number; redirect: string; messages: Msg[] };
+export type SaveResult = { saved: number; redirect: string; messages: Msg[] };
 export type LineChanges = Partial<{
   foil: boolean;
   condition: string;
   language: string;
   quantity: number;
-  for_sale: boolean | null;
 }>;
 
 /** A status badge from the API: the tone is one of the Badge variants (neutral, gold, pending, live…). */

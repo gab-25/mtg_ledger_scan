@@ -72,7 +72,7 @@ type FormProps = { detail: ListingDetail; statuses: [string, string][]; close: (
 
 /** ledger/listing_form.html */
 function ListingForm({ detail, statuses, close }: FormProps) {
-  const { item, listing, cm_suggestion: suggestion } = detail;
+  const { item, listing, suggested_price: suggestion } = detail;
   const [fields, setFields] = useState<ListingFields>({
     quantity: String(listing.quantity),
     price: (listing.exists ? listing.price : (suggestion ?? listing.price)) ?? "",
@@ -111,7 +111,7 @@ function ListingForm({ detail, statuses, close }: FormProps) {
         </Field>
       </div>
       <p className={cn(HINT, "m-0")}>
-        <span className={PRICE_LABEL}>Cardmarket trend{item.foil && " (foil)"}</span>{" "}
+        <span className={PRICE_LABEL}>CardTrader market price</span>{" "}
         <span>{suggestion !== null ? euro(suggestion, 2) : "—"}</span>
       </p>
       {note(listing) && <p className={cn(HINT, "m-0")}>{note(listing)}</p>}

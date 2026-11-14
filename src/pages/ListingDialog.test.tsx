@@ -27,7 +27,7 @@ function detail(listing: Partial<ListingDetail["listing"]> = {}, over: Partial<L
   return {
     item: { id: 7, name: "Counterspell", set_code: "DMR", condition: "NM", language: "EN", foil: false, quantity: 2 },
     listing: { exists: true, quantity: 2, price: "3.00", status: "published", ...listing },
-    cm_suggestion: "1.20",
+    suggested_price: "1.20",
     ...over,
   };
 }
@@ -67,11 +67,11 @@ describe("ListingDialog", () => {
     expect(screen.getByText("Listing for Counterspell saved.")).toBeInTheDocument();
   });
 
-  it("a new listing starts at the Cardmarket trend", async () => {
+  it("a new listing starts at the CardTrader market price", async () => {
     vi.mocked(api.getListing).mockResolvedValue(detail(NEW));
     const dialog = await dialogAt("/sale/?sell=7");
     expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(1.2);
-    expect(within(dialog).getByText("Cardmarket trend")).toBeInTheDocument();
+    expect(within(dialog).getByText("CardTrader market price")).toBeInTheDocument();
     expect(within(dialog).getByText("€1.20")).toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: "Use" })).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Add to sale" })).toBeInTheDocument();
@@ -82,19 +82,20 @@ describe("ListingDialog", () => {
     expect(within(dialog).queryByRole("button", { name: "Remove listing" })).not.toBeInTheDocument();
   });
 
-  it("without a trend the price is the listing default and there is no Use", async () => {
-    vi.mocked(api.getListing).mockResolvedValue(detail(NEW, { cm_suggestion: null }));
+  it("without a market price the price is the listing default and there is no Use", async () => {
+    vi.mocked(api.getListing).mockResolvedValue(detail(NEW, { suggested_price: null }));
     const dialog = await dialogAt("/sale/?sell=7");
     expect(within(dialog).getByRole("spinbutton", { name: "Price" })).toHaveValue(0.5);
     expect(within(dialog).queryByRole("button", { name: "Use" })).not.toBeInTheDocument();
   });
 
-  it("a foil shows the foil trend", async () => {
+  it("a foil shows the market price of its own combination", async () => {
     vi.mocked(api.getListing).mockResolvedValue(
       detail({}, { item: { id: 7, name: "Counterspell", set_code: "DMR", condition: "NM", language: "EN", foil: true, quantity: 2 } }),
     );
     const dialog = await dialogAt("/sale/?sell=7");
-    expect(within(dialog).getByText("Cardmarket trend (foil)")).toBeInTheDocument();
+    expect(within(dialog).getByText("CardTrader market price")).toBeInTheDocument();
+    expect(within(dialog).getByText("€1.20")).toBeInTheDocument();
     expect(within(dialog).getByText("DMR · NM · EN · FOIL · 2 owned")).toBeInTheDocument();
   });
 
@@ -168,6 +169,6 @@ describe("ListingDialog", () => {
   it("a sold listing has no note", async () => {
     vi.mocked(api.getListing).mockResolvedValue(detail({ status: "sold" }));
     const dialog = await dialogAt("/sale/?sell=7");
-    expect(within(dialog).queryByText(/CardTrader/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByText(/to CardTrader/)).not.toBeInTheDocument();
   });
 });

@@ -26,7 +26,8 @@ export type ListingFields = { quantity: string; price: string; status: string };
 export type ListingDetail = {
   item: { id: number; name: string; set_code: string; condition: string; language: string; foil: boolean; quantity: number };
   listing: { exists: boolean; quantity: number; price: string | null; status: string };
-  cm_suggestion: string | null;
+  /** Cheapest CardTrader offer for the copy's printing, language, foil and condition; null when there is none. */
+  suggested_price: string | null;
 };
 
 export const getListings = (status: string) =>

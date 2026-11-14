@@ -25,7 +25,7 @@ export type CollectionRow = {
   condition_label: string;
   language: string;
   quantity: number;
-  /** Cardmarket trend of the printing (foil trend for foil copies), null when unknown. */
+  /** Cheapest CardTrader offer for the copy's printing, language, foil and condition, null when there is none. */
   price: string | null;
   badge: BadgeData;
 };
@@ -65,7 +65,7 @@ export type Item = Omit<ItemFields, "quantity"> & {
   category_id: number | null;
   category_name: string | null;
   quantity: number;
-  /** Cardmarket trend, as on the collection rows. */
+  /** CardTrader market price, as on the collection rows. */
   price: string | null;
   has_listing: boolean;
 };

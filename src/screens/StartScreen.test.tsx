@@ -40,7 +40,7 @@ describe("StartScreen", () => {
 
   it("shows missing-service warnings with links", async () => {
     vi.mocked(api.getSetup).mockResolvedValue(
-      setup({ missing: [{ message: "CardTrader is not connected: the card catalog and prices need its API token.", url: "/account/#cardtrader" }] }),
+      setup({ missing: [{ message: "CardTrader is not connected: the card catalog needs its API token.", url: "/account/#cardtrader" }] }),
     );
     renderStart();
     expect(await screen.findByText(/CardTrader is not connected/)).toBeInTheDocument();

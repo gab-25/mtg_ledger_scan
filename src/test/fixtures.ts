@@ -16,15 +16,15 @@ export function candidate(over: Partial<Candidate> = {}): Candidate {
 
 export function line(over: Partial<Line> = {}): Line {
   return {
-    uuid: "l1", blueprint: blueprint(), language: "IT", foil: false, condition: "NM", quantity: 1, price: "5.00",
-    for_sale: null, listed: false, needs_confirmation: false, frame_url: null, read_name: "", candidates: [],
+    uuid: "l1", blueprint: blueprint(), language: "IT", foil: false, condition: "NM", quantity: 1,
+    needs_confirmation: false, frame_url: null, read_name: "", candidates: [],
     ...over,
   };
 }
 
 export function session(over: Partial<Session> = {}): Session {
   return {
-    uuid: "s1", status: "open", expansion: DMR, default_condition: "NM", sale_threshold: null, count: 0,
+    uuid: "s1", status: "open", expansion: DMR, default_condition: "NM", count: 0,
     last_line: null, is_phone: true, phone_url: "https://pc.ts.net/scan/s1/",
     phone_secure: true, ...over,
   };
