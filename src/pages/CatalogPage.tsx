@@ -11,11 +11,11 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { DIM, EMPTY, HINT, META, NUM, PRICE_LABEL, SUB } from "@/lib/styles";
+import { DIM, EMPTY, HINT, META, NUM, SUB } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import Pager from "../components/Pager";
-import { dateLong, euro, intcomma } from "../format";
+import { intcomma } from "../format";
 import AddFromCatalog from "./AddFromCatalog";
 import CardPreview from "../components/CardPreview";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -24,18 +24,6 @@ import { useIsMobile } from "../hooks/useMediaQuery";
 
 /** A text field shaped as a filter pill. */
 const PILL_INPUT = "min-h-9 w-auto rounded-full bg-transparent px-3 text-[13px] text-text-2";
-
-type PriceKey = keyof NonNullable<Printing["prices"]>;
-
-const price = (key: PriceKey, header: string): ColumnDef<Printing> => ({
-  id: key,
-  header,
-  meta: { align: "right", className: NUM },
-  cell: ({ row: { original: p } }) => {
-    const value = p.prices?.[key];
-    return value !== null && value !== undefined ? euro(value, 2) : "—";
-  },
-});
 
 /** After an add the next search starts at once: focus on the search box, its text selected. */
 function focusSearch() {
@@ -73,12 +61,6 @@ const columns: ColumnDef<Printing>[] = [
     id: "owned", header: "Owned", meta: { align: "right", className: NUM },
     cell: ({ row: { original: p } }) => p.owned_qty ?? "—",
   },
-  price("trend", "Trend"),
-  price("low", "Low"),
-  price("avg", "Avg"),
-  price("trend_foil", "Foil trend"),
-  price("low_foil", "Foil low"),
-  price("avg_foil", "Foil avg"),
   {
     id: "add", header: "", meta: { align: "right" },
     cell: ({ row: { original: p } }) => <AddFromCatalog printing={p} onAdded={focusSearch} />,
@@ -189,7 +171,6 @@ export default function CatalogPage() {
             <TableFoot>
               <span>
                 Showing {listed.results.length} of {intcomma(listed.count)} products
-                {listed.prices_date && ` · Cardmarket price guide of ${dateLong(listed.prices_date)}`}
               </span>
               <Pager page={listed.page} numPages={listed.num_pages}
                 href={(page) => {
@@ -204,8 +185,8 @@ export default function CatalogPage() {
         {!data.searched && (
           <p className={cn("m-0 min-[840px]:px-5", listed ? "min-[840px]:border-b min-[840px]:border-line min-[840px]:py-3" : "min-[840px]:py-6", HINT)}>
             {listed && <><strong className="font-medium text-foreground">Latest releases</strong>, newest sets first. </>}
-            Search the catalog — every Magic product on CardTrader, cards, sealed products and accessories, with its
-            Cardmarket prices (updated nightly) — by name, set code or collector number, or list what you own.
+            Search the catalog — every Magic product on CardTrader, cards, sealed products and accessories — by name,
+            set code or collector number, or list what you own.
           </p>
         )}
         {listed && (mobile ? (
@@ -219,10 +200,9 @@ export default function CatalogPage() {
   );
 }
 
-/** The products as a list on a phone, in place of the table: image, name, set and number, owned copies, trend prices. */
+/** The products as a list on a phone, in place of the table: image, name, set and number, owned copies. */
 function PrintingList({ rows }: { rows: Printing[] }) {
   if (rows.length === 0) return <p className={EMPTY}>Nothing matches these criteria.</p>;
-  const trend = (value: string | null | undefined) => (value !== null && value !== undefined ? euro(value, 2) : "—");
   return (
     <ul className="m-0 flex list-none flex-col p-0">
       {rows.map((p) => (
@@ -242,11 +222,6 @@ function PrintingList({ rows }: { rows: Printing[] }) {
             {!!p.owned_qty && (
               <Badge variant="gold" className="mt-0.5 min-h-5 px-2 text-[11px]">×{p.owned_qty} owned</Badge>
             )}
-          </div>
-          <div className="flex flex-none flex-col items-end gap-0.5">
-            <span className={PRICE_LABEL}>Trend</span>
-            <span className="font-mono text-[15px]">{trend(p.prices?.trend)}</span>
-            <span className="font-mono text-xs text-muted-foreground">Foil {trend(p.prices?.trend_foil)}</span>
           </div>
           <div className="flex-none">
             <AddFromCatalog printing={p} onAdded={focusSearch} compact />

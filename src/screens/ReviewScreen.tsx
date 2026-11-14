@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getReview, getSetup, saveSession, setThreshold, undoLine, updateLine } from "../api/scan";
+import { getReview, getSetup, saveSession, undoLine, updateLine } from "../api/scan";
 import type { Line, LineChanges, Review, Setup } from "../api/types";
 import CardPicker from "../components/CardPicker";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { APP_MAIN, EMPTY, SCAN_LINE, SCAN_LINE_TEXT, SCAN_WARN, SUB, THUMB } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import Header from "../components/Header";
@@ -20,7 +19,6 @@ export default function ReviewScreen() {
   const notify = useNotify();
   const [review, setReview] = useState<Review | null>(null);
   const [setup, setSetup] = useState<Setup | null>(null);
-  const [threshold, setThresholdText] = useState("");
   const [confirming, setConfirming] = useState<Line | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,7 +30,6 @@ export default function ReviewScreen() {
       .then(([r, s]) => {
         setReview(r);
         setSetup(s);
-        setThresholdText(r.session.sale_threshold ?? "");
       })
       .catch((e: Error) => setError(e.message));
   }, [uuid]);
@@ -43,16 +40,6 @@ export default function ReviewScreen() {
     try {
       await fn();
       await reload();
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  }
-
-  async function applyThreshold(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    try {
-      setReview(await setThreshold(uuid, threshold));
     } catch (err) {
       setError((err as Error).message);
     }
@@ -79,7 +66,7 @@ export default function ReviewScreen() {
     );
   }
 
-  const { session, lines, pending, copies, unique, listed } = review;
+  const { session, lines, pending, copies, unique } = review;
   const camera = `/scan/${uuid}`;
   return (
     <main className={APP_MAIN}>
@@ -97,19 +84,6 @@ export default function ReviewScreen() {
           {plural(pending.length, "card")} to confirm — saving is blocked until they are resolved or removed
         </button>
       )}
-
-      <form className="m-0 flex flex-wrap items-center gap-2.5 rounded-lg border border-line bg-card px-3.5 py-2.5 text-sm text-text-2" onSubmit={applyThreshold}>
-        <label htmlFor="threshold">List for sale cards worth more than €</label>
-        <Input
-          id="threshold"
-          inputMode="decimal"
-          className="w-[90px] font-mono"
-          placeholder="—"
-          value={threshold}
-          onChange={(e) => setThresholdText(e.target.value)}
-        />
-        <Button type="submit" size="sm">Apply</Button>
-      </form>
 
       <div className="flex flex-col">
         {lines.map((l) => (
@@ -140,7 +114,7 @@ export default function ReviewScreen() {
       <div className="sticky bottom-0 flex gap-2 border-t border-line bg-background py-3">
         <Button asChild><Link to={camera}>Continue</Link></Button>
         <Button type="button" variant="primary" className="min-h-[52px] flex-1" disabled={busy || pending.length > 0 || lines.length === 0} onClick={save}>
-          {`Save ${copies}${listed ? ` · list ${listed}` : ""}`}
+          {`Save ${copies}`}
         </Button>
       </div>
 

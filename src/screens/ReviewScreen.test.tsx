@@ -14,7 +14,7 @@ vi.mock("../api/scan");
 const pendingLine = line({ uuid: "p1", blueprint: null, needs_confirmation: true, frame_url: "/f.jpg", candidates: [candidate()] });
 
 function review(over: Partial<Review> = {}): Review {
-  return { session: session(), lines: [line({ quantity: 2 })], pending: [], copies: 2, unique: 1, listed: 0, ...over };
+  return { session: session(), lines: [line({ quantity: 2 })], pending: [], copies: 2, unique: 1, ...over };
 }
 
 function renderReview() {
@@ -42,7 +42,9 @@ describe("ReviewScreen", () => {
     expect(await screen.findByRole("heading", { name: "2 cards to save" })).toBeInTheDocument();
     expect(screen.getByText("1 unique · duplicates already merged")).toBeInTheDocument();
     expect(screen.getByText("Counterspell")).toBeInTheDocument();
-    expect(screen.getByText("€ 5.00")).toBeInTheDocument();
+    expect(screen.queryByText(/€/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/List for sale/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /For sale|Collection only/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save 2" })).toBeEnabled();
     expect(screen.getByRole("link", { name: "Continue scanning" })).toHaveAttribute("href", "/scan/s1");
   });
@@ -59,38 +61,6 @@ describe("ReviewScreen", () => {
     renderReview();
     expect(await screen.findByText("No cards scanned yet.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save 0" })).toBeDisabled();
-  });
-
-  it("threshold accepts comma and shows server error", async () => {
-    vi.mocked(api.setThreshold)
-      .mockResolvedValueOnce(review({ session: session({ sale_threshold: "2.50" }), listed: 2, lines: [line({ quantity: 2, listed: true })] }))
-      .mockRejectedValueOnce(new ApiError("Enter the threshold as a price, e.g. 2.50.", 400, "invalid"));
-    renderReview();
-    const input = await screen.findByLabelText(/List for sale cards worth more than €/);
-    await userEvent.type(input, "2,50");
-    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
-    expect(api.setThreshold).toHaveBeenCalledWith("s1", "2,50");
-    expect(await screen.findByRole("button", { name: "Save 2 · list 2" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "For sale" })).toHaveAttribute("aria-pressed", "true");
-    await userEvent.clear(input);
-    await userEvent.type(input, "abc");
-    await userEvent.click(screen.getByRole("button", { name: "Apply" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Enter the threshold as a price");
-  });
-
-  it("for sale toggle sends the opposite", async () => {
-    vi.mocked(api.updateLine).mockResolvedValue({ line: line({ listed: true, for_sale: true }), count: 2 });
-    renderReview();
-    await userEvent.click(await screen.findByRole("button", { name: "Collection only" }));
-    expect(api.updateLine).toHaveBeenCalledWith("l1", { for_sale: true });
-    expect(api.getReview).toHaveBeenCalledTimes(2);
-  });
-
-  it("for sale toggle disabled without price", async () => {
-    vi.mocked(api.getReview).mockResolvedValue(review({ lines: [line({ price: null })] }));
-    renderReview();
-    expect(await screen.findByRole("button", { name: "Collection only" })).toBeDisabled();
-    expect(screen.getByText("no price")).toBeInTheDocument();
   });
 
   it("stepper plus and minus", async () => {
@@ -136,13 +106,13 @@ describe("ReviewScreen", () => {
 
   it("save goes to the collection and shows the message there", async () => {
     vi.mocked(api.saveSession).mockResolvedValue({
-      saved: 2, listed: 0, redirect: "/", messages: [{ level: "success", text: "Saved 2 cards, 0 queued for sale." }],
+      saved: 2, redirect: "/", messages: [{ level: "success", text: "Saved 2 cards." }],
     });
     renderReview();
     await userEvent.click(await screen.findByRole("button", { name: "Save 2" }));
     expect(api.saveSession).toHaveBeenCalledWith("s1");
     expect(await screen.findByText("collection page")).toBeInTheDocument();
-    expect(screen.getByText("Saved 2 cards, 0 queued for sale.")).toHaveAttribute("data-variant", "success");
+    expect(screen.getByText("Saved 2 cards.")).toHaveAttribute("data-variant", "success");
   });
 
   it("save error is shown", async () => {

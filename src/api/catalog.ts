@@ -1,8 +1,6 @@
-// /api/catalog/: every CardTrader product (cards, sealed products, accessories) with Cardmarket prices.
+// /api/catalog/: every CardTrader product (cards, sealed products, accessories).
 import type { Page } from "./collection";
 import { request } from "./client";
-
-type Price = string | null;
 
 export type Printing = {
   ct_id: number;
@@ -19,13 +17,12 @@ export type Printing = {
   is_product: boolean;
   accepts_language: boolean;
   owned_qty: number | null;
-  prices: { trend: Price; low: Price; avg: Price; trend_foil: Price; low_foil: Price; avg_foil: Price } | null;
 };
 
 export type CatalogFilters = { q: string; set: string; number: string; category: number | null; owned: boolean };
 
-/** A page of products, with the date of the Cardmarket price guide. */
-export type CatalogPage = Page<Printing> & { prices_date: string | null };
+/** A page of products. */
+export type CatalogPage = Page<Printing>;
 
 /**
  * A search (`searched: true`), or, with no filters, the latest releases: products of the newest sets first

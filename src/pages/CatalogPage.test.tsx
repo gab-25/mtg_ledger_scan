@@ -16,7 +16,6 @@ function printing(over: Partial<Printing> = {}): Printing {
     ct_id: 9001, name: "Ugin, the Spirit Dragon", version: "", image_url: "https://img/ugin.jpg", image_large_url: "", expansion_code: "m21",
     expansion_name: "Core Set 2021", collector_number: "1", owned_qty: null, category_id: 1, category_name: "Magic Single Card", is_product: false,
     accepts_language: true,
-    prices: { trend: "12.75", low: "10.00", avg: "12.50", trend_foil: "14.34", low_foil: null, avg_foil: null },
     ...over,
   };
 }
@@ -24,8 +23,8 @@ function printing(over: Partial<Printing> = {}): Printing {
 function results(over: Partial<CatalogSearch> = {}): CatalogSearch {
   return {
     searched: true, filters: { q: "ugin", set: "", number: "", category: null, owned: false },
-    results: [printing(), printing({ ct_id: 9045, name: "Counterspell", image_url: "", expansion_code: "dmr", expansion_name: "Dominaria Remastered", collector_number: "45", owned_qty: 2, prices: null, version: "Showcase" })],
-    count: 2, page: 1, num_pages: 1, prices_date: "2026-11-09T05:00:00Z", ...over,
+    results: [printing(), printing({ ct_id: 9045, name: "Counterspell", image_url: "", expansion_code: "dmr", expansion_name: "Dominaria Remastered", collector_number: "45", owned_qty: 2, version: "Showcase" })],
+    count: 2, page: 1, num_pages: 1, ...over,
   };
 }
 
@@ -46,7 +45,6 @@ beforeEach(() => {
 const BOOSTER = printing({
   ct_id: 7001, name: "Bloomburrow Play Booster", image_url: "", expansion_code: "blb", expansion_name: "Bloomburrow",
   collector_number: "", category_id: 5, category_name: "Sealed Product", is_product: true, accepts_language: true,
-  prices: { trend: "4.20", low: null, avg: null, trend_foil: null, low_foil: null, avg_foil: null },
 });
 
 /** Opens the Add dialog of the table row showing `name`. */
@@ -82,24 +80,24 @@ describe("CatalogPage", () => {
     expect(screen.queryByRole("link", { name: "Clear" })).not.toBeInTheDocument();
   });
 
-  it("shows the printings with prices", async () => {
+  it("shows the printings without prices", async () => {
     vi.mocked(api.searchCatalog).mockResolvedValue(results());
     renderPage("/catalog/?q=ugin");
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(
-      ["Product", "Set", "Owned", "Trend", "Low", "Avg", "Foil trend", "Foil low", "Foil avg", ""],
+      ["Product", "Set", "Owned", ""],
     );
     const [, ugin, counter] = within(table).getAllByRole("row");
     expect(within(ugin).getByTitle("Core Set 2021")).toHaveTextContent("M21 #1");
-    expect(within(ugin).getByText("€12.75")).toBeInTheDocument();
-    expect(within(ugin).getAllByText("—")).toHaveLength(3); // owned, foil low, foil avg
+    expect(within(ugin).queryByText(/€/)).not.toBeInTheDocument();
+    expect(within(ugin).getAllByText("—")).toHaveLength(1); // owned
     expect(ugin.querySelector("img")).toHaveAttribute("src", "https://img/ugin.jpg");
     expect(ugin.querySelector("img")).toHaveClass("h-[50px]", "w-9", "object-cover"); // fixed thumbnail size
     expect(within(counter).getByText("2")).toBeInTheDocument();
     expect(within(counter).getByText("Showcase")).toBeInTheDocument();
-    expect(within(counter).getAllByText("—")).toHaveLength(6);
+    expect(within(counter).queryByText("—")).not.toBeInTheDocument();
     expect(counter.querySelector("img")).toBeNull();
-    expect(screen.getByText("Showing 2 of 2 products · Cardmarket price guide of 9 Nov 2026")).toBeInTheDocument();
+    expect(screen.getByText("Showing 2 of 2 products")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Clear" })).toHaveAttribute("href", "/catalog/");
   });
 
@@ -201,12 +199,10 @@ describe("CatalogPage", () => {
     const [ugin, counterspell] = within(list).getAllByRole("listitem");
     expect(ugin).toHaveTextContent("Ugin, the Spirit Dragon");
     expect(within(ugin).getByText("M21 #1")).toHaveAttribute("title", "Core Set 2021");
-    expect(within(ugin).getByText("€12.75")).toBeInTheDocument();
-    expect(within(ugin).getByText("Foil €14.34")).toBeInTheDocument();
+    expect(within(ugin).queryByText(/€/)).not.toBeInTheDocument();
     expect(within(ugin).queryByText(/owned/)).not.toBeInTheDocument();
     expect(within(counterspell).getByText("DMR #45 · Showcase")).toBeInTheDocument();
     expect(within(counterspell).getByText("×2 owned")).toHaveAttribute("data-variant", "gold");
-    expect(within(counterspell).getByText("Foil —")).toBeInTheDocument();
     expect(screen.getByText(/Showing 2 of 2 products/)).toBeInTheDocument();
   });
 

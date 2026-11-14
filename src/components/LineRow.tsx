@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SCAN_LINE, SCAN_LINE_TEXT, SUB, THUMB } from "@/lib/styles";
 import { cn } from "@/lib/utils";
@@ -15,7 +14,7 @@ type Props = {
   onUndo: () => void;
 };
 
-/** One confirmed card of the review: price, sale toggle, edit and quantity stepper. */
+/** One confirmed card of the review: edit and quantity stepper. */
 export default function LineRow({ line, conditions, languages, onChange, onUndo }: Props) {
   const name = line.blueprint?.name ?? "";
   const [condition, setCondition] = useState(line.condition);
@@ -37,21 +36,6 @@ export default function LineRow({ line, conditions, languages, onChange, onUndo 
       <div className={SCAN_LINE_TEXT}>
         <span className="text-[15px] font-semibold">{name}</span>
         <span className={cn(SUB, "font-mono")}>{lineMeta(line)}</span>
-        <span className="flex items-center gap-2 text-[13px]">
-          <span className="font-mono">{line.price !== null ? `€ ${line.price}` : "no price"}</span>
-          <Badge asChild variant={line.listed ? "gold" : "neutral"}>
-          <button
-            type="button"
-            className="cursor-pointer border-0 font-sans disabled:cursor-not-allowed disabled:opacity-60"
-            aria-pressed={line.listed}
-            disabled={line.price === null}
-            title={line.price === null ? "No market price: cannot be listed" : undefined}
-            onClick={() => onChange({ for_sale: !line.listed })}
-          >
-            {line.listed ? "For sale" : "Collection only"}
-          </button>
-          </Badge>
-        </span>
         <details>
           <summary className="flex min-h-7 cursor-pointer items-center text-xs text-muted-foreground">Edit</summary>
           <form className="m-0" onSubmit={submit}>

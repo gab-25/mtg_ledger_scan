@@ -83,9 +83,6 @@ export const addManual = (uuid: string, blueprintId: number, language: string, f
 
 export const getReview = (uuid: string) => request<Review>("GET", `sessions/${uuid}/review/`);
 
-export const setThreshold = (uuid: string, threshold: string) =>
-  request<Review>("PUT", `sessions/${uuid}/threshold/`, { threshold });
-
 export const saveSession = (uuid: string) => request<SaveResult>("POST", `sessions/${uuid}/save/`);
 
 export const updateLine = (uuid: string, changes: LineChanges) => request<LineResult>("PATCH", `lines/${uuid}/`, changes);
