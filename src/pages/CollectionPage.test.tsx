@@ -147,6 +147,17 @@ describe("CollectionPage", () => {
     expect(card).toHaveTextContent("BLB · EN · ×1");
   });
 
+  it("on a phone each row has its price, status and buttons", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getCollection).mockResolvedValue(collection());
+    renderPage("/");
+    const card = (await screen.findByText("Thoughtseize")).closest("li")!;
+    expect(within(card).getByText("€12.00")).toBeInTheDocument();
+    expect(within(card).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
+    expect(within(card).getByRole("link", { name: "Edit Thoughtseize" })).toHaveAttribute("href", "/?edit=7");
+    expect(within(card).getByRole("link", { name: "Sell Thoughtseize" })).toHaveAttribute("href", "/?sell=7");
+  });
+
   it("search and selects reload with the filters", async () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection());
     renderPage("/?foil=1");

@@ -9,12 +9,13 @@ import DataTable from "../components/DataTable";
 import { PageHead } from "../components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { DIM, FACTS, H2, HINT, SECTION, SECTION_HEAD, SUB } from "@/lib/styles";
+import { DIM, EMPTY, FACTS, H2, HINT, SECTION, SECTION_HEAD, SUB } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import { SyncIcon } from "../components/icons";
 import PageState from "../components/PageState";
 import { capfirst, naturalday, time } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useIsMobile } from "../hooks/useMediaQuery";
 
 /** "Today, 18:05" like `{{ d|naturalday|capfirst }}, {{ d|time:"H:i" }}`, or "Never". */
 const when = (iso: string | null) => (iso ? `${capfirst(naturalday(iso))}, ${time(iso)}` : "Never");
@@ -26,8 +27,21 @@ export default function SyncPage() {
   const syncAll = useAction(() => runSync());
   const pushChanges = useAction(() => publish());
   const resolve = useAction(({ id, keep }: { id: number; keep: "ledger" | "remote" }) => resolveConflict(id, keep));
+  const mobile = useIsMobile();
   if (!query.data) return <PageState error={query.error} />;
   const { pending_changes: pending, connections, conflicts, log } = query.data;
+
+  const NO_CONFLICTS = "No conflicts — Ledger and connected services agree.";
+
+  /** "Keep Ledger" and "Keep remote": which side wins. */
+  const choose = (d: Conflict) => (
+    <>
+      <Button type="button" variant="raised" size="sm" disabled={resolve.isPending}
+        onClick={() => resolve.mutate({ id: d.id, keep: "ledger" })}>Keep Ledger</Button>
+      <Button type="button" variant="ghost" size="sm" disabled={resolve.isPending}
+        onClick={() => resolve.mutate({ id: d.id, keep: "remote" })}>Keep remote</Button>
+    </>
+  );
 
   const columns: ColumnDef<Conflict>[] = [
     {
@@ -48,12 +62,7 @@ export default function SyncPage() {
       header: "Action",
       meta: { align: "right" },
       cell: ({ row: { original: d } }) => (
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="raised" size="sm" disabled={resolve.isPending}
-            onClick={() => resolve.mutate({ id: d.id, keep: "ledger" })}>Keep Ledger</Button>
-          <Button type="button" variant="ghost" size="sm" disabled={resolve.isPending}
-            onClick={() => resolve.mutate({ id: d.id, keep: "remote" })}>Keep remote</Button>
-        </div>
+        <div className="flex justify-end gap-2">{choose(d)}</div>
       ),
     },
   ];
@@ -118,8 +127,34 @@ export default function SyncPage() {
           <h2 id="diff-title" className={H2}>Conflicts to resolve</h2>
           <span className={HINT}>Choose which source wins for each card</span>
         </div>
-        <DataTable className="min-w-[820px]" columns={columns} data={conflicts} getRowId={(d) => String(d.id)}
-          empty="No conflicts — Ledger and connected services agree." />
+        {mobile ? (
+          // On a phone, a list in place of the table: card and service, the two values side by side, the choice.
+          conflicts.length ? (
+            <ul className="m-0 flex list-none flex-col border-t border-line p-0">
+              {conflicts.map((d) => (
+                <li key={d.id} className="flex flex-col gap-2.5 border-b border-line py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium">{d.name}</div>
+                      <div className={SUB}>{d.set_code} · {d.condition} · {d.language}</div>
+                    </div>
+                    <span className={cn(DIM, "flex-none text-[13px]")}>{d.service}</span>
+                  </div>
+                  <dl className={FACTS}>
+                    <div><dt>In Ledger</dt><dd className="font-mono">{d.local_value}</dd></div>
+                    <div><dt>On service</dt><dd className="font-mono text-warn">{d.remote_value}</dd></div>
+                  </dl>
+                  <div className="flex gap-2">{choose(d)}</div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={EMPTY}>{NO_CONFLICTS}</p>
+          )
+        ) : (
+          <DataTable className="min-w-[820px]" columns={columns} data={conflicts} getRowId={(d) => String(d.id)}
+            empty={NO_CONFLICTS} />
+        )}
       </section>
 
       <section className={SECTION} aria-labelledby="log-title">

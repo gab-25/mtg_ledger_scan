@@ -14,11 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { DETAIL_GRID, DIM, FACTS, H2, HINT, NOTE, NUM, SECTION, SECTION_HEAD, SUB } from "@/lib/styles";
+import { DETAIL_GRID, DIM, EMPTY, FACTS, H2, HINT, META, NOTE, NUM, SECTION, SECTION_HEAD, SUB } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import { dateTime, euro, pluralize } from "../format";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useIsMobile } from "../hooks/useMediaQuery";
 
 const columns: ColumnDef<OrderItem>[] = [
   {
@@ -36,12 +37,7 @@ const columns: ColumnDef<OrderItem>[] = [
         {it.foil && <FoilTag />}
         <div className={SUB}>
           {it.expansion}
-          {it.item_pk !== null && (
-            <>
-              {" · "}
-              <Link to={`/?edit=${it.item_pk}`}>in Ledger</Link>
-            </>
-          )}
+          <InLedger item={it} />
         </div>
       </>
     ),
@@ -54,6 +50,45 @@ const columns: ColumnDef<OrderItem>[] = [
     cell: ({ row: { original: it } }) => (it.price !== null ? euro(it.price, 2) : ""),
   },
 ];
+
+/** "in Ledger": the item of the collection the line was sold from, when it is still there. */
+function InLedger({ item }: { item: OrderItem }) {
+  return item.item_pk !== null ? <>{" · "}<Link to={`/?edit=${item.item_pk}`}>in Ledger</Link></> : null;
+}
+
+/** The packing list on a phone, in place of the table: tick box; name, expansion, condition · language; quantity and
+ * price. */
+function PackingList({ items }: { items: OrderItem[] }) {
+  if (items.length === 0) return <p className={EMPTY}>No items on this order.</p>;
+  return (
+    <ul className="m-0 flex list-none flex-col border-t border-line p-0">
+      {items.map((it) => (
+        <li key={it.id} className="flex items-center gap-3 border-b border-line py-2.5">
+          <Checkbox id={`pack-${it.id}`} aria-label={`Packed ${it.name}`} className="flex-none" />
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span>
+              <label htmlFor={`pack-${it.id}`} className="cursor-pointer font-medium">{it.name}</label>
+              {it.foil && <FoilTag />}
+            </span>
+            {(it.expansion || it.item_pk !== null) && (
+              <span className={SUB}>
+                {it.expansion}
+                <InLedger item={it} />
+              </span>
+            )}
+            {(it.condition || it.language) && (
+              <span className={cn(META, "mt-0")}>{[it.condition, it.language].filter(Boolean).join(" · ")}</span>
+            )}
+          </span>
+          <span className="flex flex-none flex-col items-end gap-0.5 font-mono">
+            <span>×{it.quantity}</span>
+            {it.price !== null && <span className="text-text-2">{euro(it.price, 2)}</span>}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /** /shipments/<pk>/ */
 export default function OrderDetailPage() {
@@ -71,6 +106,7 @@ function Order({ order }: { order: OrderDetail }) {
     navigateTo: (r) => (r.shipped ? "/shipments/" : null),
   });
   const required = order.via_cardtrader_zero || order.tracked;
+  const mobile = useIsMobile();
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -189,8 +225,12 @@ function Order({ order }: { order: OrderDetail }) {
           <h2 id="items-title" className={H2}>Packing list</h2>
           <span className={cn(HINT, "print:hidden")}>Tick each card as you pack it</span>
         </div>
-        <DataTable className="min-w-[640px]" columns={columns} data={order.items}
-          getRowId={(it) => String(it.id)} empty="No items on this order." />
+        {mobile ? (
+          <PackingList items={order.items} />
+        ) : (
+          <DataTable className="min-w-[640px]" columns={columns} data={order.items}
+            getRowId={(it) => String(it.id)} empty="No items on this order." />
+        )}
         {order.total !== null && (
           <TableFoot>
             <span />

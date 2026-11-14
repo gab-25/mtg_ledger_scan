@@ -12,7 +12,8 @@ import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { BUTTON_GROUP, FORM_GRID } from "@/lib/styles";
 
-type Props = { printing: Printing; onAdded: () => void };
+/** `compact` (the phone list): the button shows only its icon, the word left to screen readers. */
+type Props = { printing: Printing; onAdded: () => void; compact?: boolean };
 
 /** Where a product comes from, as the catalog shows it: "M21 #1 · Showcase". */
 export function printingLabel(p: Printing) {
@@ -22,13 +23,14 @@ export function printingLabel(p: Printing) {
 }
 
 /** The "Add" button of a catalog row and its dialog, which adds copies of the product to the collection. */
-export default function AddFromCatalog({ printing, onAdded }: Props) {
+export default function AddFromCatalog({ printing, onAdded, compact }: Props) {
   const [open, setOpen] = useState(false);
   const added = useRef(false); // closed by a successful add: focus goes to the search, not back to the button
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" size="sm" onClick={() => { added.current = false; setOpen(true); }}>
-        <PlusIcon />Add
+      <Button type="button" size="sm" className={compact ? "size-9 px-0" : undefined}
+        onClick={() => { added.current = false; setOpen(true); }}>
+        <PlusIcon /><span className={compact ? "sr-only" : undefined}>Add</span>
       </Button>
       <DialogContent
         title={printing.name}

@@ -175,7 +175,8 @@ export default function CatalogPage() {
               <FilterSelect id="f-category" label="Category" placeholder="Category" allLabel="All categories"
                 value={form.category} options={(categories.data ?? []).map((c) => [String(c.id), c.name])}
                 onChange={(v) => go({ ...form, category: v ?? "" })} />
-              <label className={buttonVariants({ variant: "pill" })} {...(form.owned ? { "aria-current": "true" } : {})}>
+              {/* relative: Radix's hidden input is positioned absolutely, it must not widen the page on a phone. */}
+              <label className={cn(buttonVariants({ variant: "pill" }), "relative")} {...(form.owned ? { "aria-current": "true" } : {})}>
                 <Checkbox name="owned" value="1" checked={form.owned} onCheckedChange={(c) => go({ ...form, owned: c === true })} />
                 In my collection
               </label>
@@ -248,7 +249,7 @@ function PrintingList({ rows }: { rows: Printing[] }) {
             <span className="font-mono text-xs text-muted-foreground">Foil {trend(p.prices?.trend_foil)}</span>
           </div>
           <div className="flex-none">
-            <AddFromCatalog printing={p} onAdded={focusSearch} />
+            <AddFromCatalog printing={p} onAdded={focusSearch} compact />
           </div>
         </li>
       ))}

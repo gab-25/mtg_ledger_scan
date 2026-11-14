@@ -69,17 +69,20 @@ const columns: ColumnDef<CollectionRow>[] = [
   },
 ];
 
-/** The "Edit" (pencil) and "Sell" (tag) buttons of a row: they open the dialogs over the list, keeping its query. */
-function RowActions({ row }: { row: CollectionRow }) {
+/** The "Edit" (pencil) and "Sell" (tag) buttons of a row: they open the dialogs over the list, keeping its query.
+ * `compact` (the phone list): icons only, the words left to screen readers. */
+function RowActions({ row, compact }: { row: CollectionRow; compact?: boolean }) {
   const edit = useDialogParam("edit");
   const sell = useDialogParam("sell");
+  const square = compact ? "size-9 px-0" : undefined;
+  const word = compact ? "sr-only" : undefined;
   return (
     <span className="inline-flex flex-none gap-1">
-      <Button asChild size="sm">
-        <Link to={edit.openHref(row.id)} state={DIALOG_STATE} aria-label={`Edit ${row.name}`}><PencilIcon />Edit</Link>
+      <Button asChild size="sm" className={square}>
+        <Link to={edit.openHref(row.id)} state={DIALOG_STATE} aria-label={`Edit ${row.name}`}><PencilIcon /><span className={word}>Edit</span></Link>
       </Button>
-      <Button asChild size="sm">
-        <Link to={sell.openHref(row.id)} state={DIALOG_STATE} aria-label={`Sell ${row.name}`}><TagIcon />Sell</Link>
+      <Button asChild size="sm" className={square}>
+        <Link to={sell.openHref(row.id)} state={DIALOG_STATE} aria-label={`Sell ${row.name}`}><TagIcon /><span className={word}>Sell</span></Link>
       </Button>
     </span>
   );
@@ -202,37 +205,35 @@ export default function CollectionPage() {
   );
 }
 
-/** The cards as a list on a phone, in place of the table: thumb, name, set · condition · language · quantity, price, status
- * (products have no condition). */
+/** The cards as a list on a phone, in place of the table: thumb; name, set · condition · language · quantity and
+ * status; price above the icon buttons (products have no condition). */
 function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) {
   if (rows.length === 0) return <p className={EMPTY}>{empty}</p>;
   return (
     <ul className="m-0 flex list-none flex-col p-0">
       {rows.map((r) => (
-        <li key={r.id} className="border-b border-line">
-          <div className="flex min-h-16 items-center gap-3 py-2">
-            {r.image_url ? (
-              <CardPreview image={r.image_url} large={r.image_large_url} name={r.name} className="h-12 w-[34px]" />
-            ) : (
-              <span aria-hidden="true" className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2 bg-surface-2" />
-            )}
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="flex items-center gap-1.5">
-                <span className="truncate font-medium">{r.name}</span>
-                {r.foil && <FoilTag />}
-              </span>
-              <span className={META}>
-                {r.set_code} ·{" "}
-                {!r.is_product && <><abbr title={r.condition_label} className="no-underline">{r.condition}</abbr> · </>}
-                {r.language} · ×{r.quantity}
-              </span>
+        <li key={r.id} className="flex items-center gap-3 border-b border-line py-2.5">
+          {r.image_url ? (
+            <CardPreview image={r.image_url} large={r.image_large_url} name={r.name} />
+          ) : (
+            <span aria-hidden="true" className="h-[50px] w-9 flex-none rounded-[3px] border border-line-2 bg-surface-2" />
+          )}
+          <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+            <span className="flex max-w-full items-center gap-1.5">
+              <span className="truncate font-medium">{r.name}</span>
+              {r.foil && <FoilTag />}
             </span>
-            <span className="flex flex-none flex-col items-end gap-1">
-              <span className="font-mono">{trend(r.price)}</span>
-              <Badge variant={badgeVariant(r.badge.tone)}>{r.badge.label}</Badge>
+            <span className={cn(META, "mt-0")}>
+              {r.set_code} ·{" "}
+              {!r.is_product && <><abbr title={r.condition_label} className="no-underline">{r.condition}</abbr> · </>}
+              {r.language} · ×{r.quantity}
             </span>
-            <RowActions row={r} />
-          </div>
+            <Badge variant={badgeVariant(r.badge.tone)} className="mt-1">{r.badge.label}</Badge>
+          </span>
+          <span className="flex flex-none flex-col items-end gap-1.5">
+            <span className="font-mono">{trend(r.price)}</span>
+            <RowActions row={r} compact />
+          </span>
         </li>
       ))}
     </ul>
