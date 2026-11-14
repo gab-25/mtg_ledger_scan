@@ -212,6 +212,16 @@ describe("CatalogPage", () => {
     expect(screen.getByText(/Showing 2 of 2 products/)).toBeInTheDocument();
   });
 
+  it("on a phone a tap on the image shows the product enlarged", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    await userEvent.click(await screen.findByRole("button", { name: "Show Ugin, the Spirit Dragon" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ugin, the Spirit Dragon" });
+    expect(within(dialog).getByRole("img", { name: "Ugin, the Spirit Dragon" })).toHaveAttribute("src", "https://img/ugin.jpg");
+    expect(screen.queryByRole("button", { name: "Show Counterspell" })).not.toBeInTheDocument();
+  });
+
   it("on a phone each product has an Add button", async () => {
     vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
     vi.mocked(api.searchCatalog).mockResolvedValue(results());

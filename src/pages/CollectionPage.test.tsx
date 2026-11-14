@@ -230,12 +230,36 @@ describe("CollectionPage", () => {
     expect(card.querySelector("img")).toHaveAttribute("src", "https://img/thoughtseize.jpg");
   });
 
+  it("on a phone a tap on the thumbnail shows the card enlarged", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row()] }));
+    renderPage("/");
+    await userEvent.click(await screen.findByRole("button", { name: "Show Thoughtseize" }));
+    const dialog = await screen.findByRole("dialog", { name: "Thoughtseize" });
+    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("on a touch screen a tap on a table row's card shows it enlarged", async () => {
+    const matchMedia = (query: string) =>
+      ({ matches: query === "(hover: none)", addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
+    vi.stubGlobal("matchMedia", matchMedia);
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row()] }));
+    renderPage("/");
+    const [, card] = within(await screen.findByRole("table")).getAllByRole("row");
+    await userEvent.click(within(card).getByText("Thoughtseize"));
+    const dialog = await screen.findByRole("dialog", { name: "Thoughtseize" });
+    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toBeInTheDocument();
+  });
+
   it("on a phone a card without image keeps the placeholder", async () => {
     vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ image_url: "" })] }));
     renderPage("/");
     const card = (await screen.findByText("Thoughtseize")).closest("li")!;
     expect(card.querySelector("img")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show Thoughtseize" })).not.toBeInTheDocument();
   });
 
   it("shows a dash without a trend", async () => {

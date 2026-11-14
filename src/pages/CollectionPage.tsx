@@ -12,7 +12,7 @@ import { DownloadIcon, PencilIcon, PlusIcon, TagIcon, UploadIcon } from "../comp
 import { PageHead } from "../components/Header";
 import SearchBox from "../components/SearchBox";
 import { Button } from "@/components/ui/button";
-import { DIM, EMPTY, META, NUM, SUB } from "@/lib/styles";
+import { DIM, EMPTY, META, NUM, SUB, THUMB_BUTTON } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import PageState from "../components/PageState";
 import Pager from "../components/Pager";
@@ -218,7 +218,11 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
         <li key={r.id} className="border-b border-line">
           <div className="flex min-h-16 items-center gap-3 py-2">
             {r.image_url ? (
-              <img src={r.image_url} alt="" loading="lazy" width={34} height={48} className="h-12 w-[34px] flex-none rounded-[3px] object-cover" />
+              <CardPreview image={r.image_url} name={r.name}>
+                <button type="button" aria-label={`Show ${r.name}`} className={THUMB_BUTTON}>
+                  <img src={r.image_url} alt="" loading="lazy" width={34} height={48} className="h-12 w-[34px] rounded-[3px] object-cover" />
+                </button>
+              </CardPreview>
             ) : (
               <span aria-hidden="true" className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2 bg-surface-2" />
             )}

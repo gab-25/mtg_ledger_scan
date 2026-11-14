@@ -52,3 +52,6 @@ export const SCAN_LINE = "flex items-center gap-3 border-b border-line py-2.5";
 export const SCAN_LINE_TEXT = "flex min-w-0 flex-1 flex-col gap-[3px]";
 /** "Nothing here" text: centered, grey, padded. */
 export const EMPTY = "m-0 px-5 py-10 text-center text-muted-foreground";
+/** A thumbnail in a phone list that opens the card enlarged (CardPreview): a bare button with a focus ring. */
+export const THUMB_BUTTON =
+  "flex-none cursor-zoom-in rounded-[3px] border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
