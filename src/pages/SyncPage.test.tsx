@@ -82,4 +82,25 @@ describe("SyncPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Publish changes" }));
     expect(await screen.findByText("Published 2 listings to CardTrader.")).toBeInTheDocument();
   });
+
+  it("on a phone the conflicts are a list", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getSync).mockResolvedValue(data());
+    vi.mocked(api.resolveConflict).mockResolvedValue({ messages: [] });
+    renderPage("/sync/");
+    const conflict = (await screen.findByText("Counterspell")).closest("li")!;
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(conflict).toHaveTextContent("DMR · NM · EN");
+    expect(within(conflict).getByText("In Ledger").nextElementSibling).toHaveTextContent("€0.80");
+    expect(within(conflict).getByText("On service").nextElementSibling).toHaveTextContent("€0.70");
+    await userEvent.click(within(conflict).getByRole("button", { name: "Keep remote" }));
+    expect(api.resolveConflict).toHaveBeenCalledWith(4, "remote");
+  });
+
+  it("on a phone, no conflicts", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getSync).mockResolvedValue(data({ conflicts: [] }));
+    renderPage("/sync/");
+    expect(await screen.findByText("No conflicts — Ledger and connected services agree.")).toBeInTheDocument();
+  });
 });

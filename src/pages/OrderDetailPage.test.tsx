@@ -108,4 +108,21 @@ describe("OrderDetailPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Print packing slip" }));
     expect(print).toHaveBeenCalled();
   });
+
+  it("on a phone the packing list is a list, with the same checkboxes", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.getOrder).mockResolvedValue(detail());
+    renderPage("/shipments/5/");
+    const box = await screen.findByRole("checkbox", { name: "Packed Sheoldred" });
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    const line = box.closest("li")!;
+    expect(line).toHaveTextContent("Dominaria United · in Ledger");
+    expect(line).toHaveTextContent("NM · EN");
+    expect(line).toHaveTextContent("×1€12.34");
+    expect(within(line).getByRole("link", { name: "in Ledger" })).toHaveAttribute("href", "/?edit=9");
+    await userEvent.click(within(line).getByText("Sheoldred"));
+    expect(box).toHaveAttribute("aria-checked", "true");
+    const unknown = screen.getByRole("checkbox", { name: "Packed Unknown" }).closest("li")!;
+    expect(unknown).toHaveTextContent(/^Unknown×1$/);
+  });
 });
