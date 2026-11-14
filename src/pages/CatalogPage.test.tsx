@@ -103,15 +103,13 @@ describe("CatalogPage", () => {
     expect(screen.getByRole("link", { name: "Clear" })).toHaveAttribute("href", "/catalog/");
   });
 
-  it("hovering a product shows its image enlarged", async () => {
+  it("clicking a product's image shows it enlarged", async () => {
     vi.mocked(api.searchCatalog).mockResolvedValue(results());
     renderPage("/catalog/?q=ugin");
-    await userEvent.hover(await screen.findByText("Ugin, the Spirit Dragon"));
-    expect(await screen.findByRole("img", { name: "Ugin, the Spirit Dragon" })).toHaveAttribute("src", "https://img/ugin.jpg");
-    await userEvent.unhover(screen.getByText("Ugin, the Spirit Dragon"));
-    await userEvent.hover(screen.getByText("Counterspell"));
-    await new Promise((r) => setTimeout(r, 400));
-    expect(screen.queryByRole("img", { name: "Counterspell" })).not.toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: "Show Ugin, the Spirit Dragon" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ugin, the Spirit Dragon" });
+    expect(within(dialog).getByRole("img", { name: "Ugin, the Spirit Dragon" })).toHaveAttribute("src", "https://img/ugin.jpg");
+    expect(screen.queryByRole("button", { name: "Show Counterspell" })).not.toBeInTheDocument();
   });
 
   it("searches as you type from the third character, keeping the box focused", async () => {

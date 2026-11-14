@@ -65,26 +65,18 @@ describe("CollectionPage", () => {
     expect(document.title).toBe("Collection · MTG Ledger");
   });
 
-  it("shows a thumbnail and the card enlarged on hover or focus", async () => {
+  it("shows a thumbnail that opens the card enlarged", async () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row(), row({ id: 8, name: "Loose Card", image_url: "" })] }));
     renderPage("/");
     const [, card, loose] = within(await screen.findByRole("table")).getAllByRole("row");
     expect(card.querySelector("img")).toHaveAttribute("src", "https://img/thoughtseize.jpg");
     expect(loose.querySelector("img")).toBeNull();
-    await userEvent.hover(card.querySelector("img")!);
-    expect(await screen.findByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
-    await userEvent.unhover(card.querySelector("img")!);
-    await waitFor(() => expect(screen.queryByRole("img", { name: "Thoughtseize" })).not.toBeInTheDocument());
-    (within(card).getByText("Thoughtseize").closest("[tabindex]") as HTMLElement).focus();
-    expect(await screen.findByRole("img", { name: "Thoughtseize" })).toBeInTheDocument();
-  });
-
-  it("a card without image has no preview", async () => {
-    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row({ image_url: "" })] }));
-    renderPage("/");
-    await userEvent.hover(await screen.findByText("Thoughtseize"));
-    await new Promise((r) => setTimeout(r, 400));
-    expect(screen.queryByRole("img", { name: "Thoughtseize" })).not.toBeInTheDocument();
+    expect(within(loose).queryByRole("button", { name: "Show Loose Card" })).not.toBeInTheDocument();
+    await userEvent.click(within(card).getByRole("button", { name: "Show Thoughtseize" }));
+    const dialog = await screen.findByRole("dialog", { name: "Thoughtseize" });
+    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("a cold link with filters asks the server for them", async () => {
@@ -239,18 +231,6 @@ describe("CollectionPage", () => {
     expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
     await userEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-  });
-
-  it("on a touch screen a tap on a table row's card shows it enlarged", async () => {
-    const matchMedia = (query: string) =>
-      ({ matches: query === "(hover: none)", addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
-    vi.stubGlobal("matchMedia", matchMedia);
-    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row()] }));
-    renderPage("/");
-    const [, card] = within(await screen.findByRole("table")).getAllByRole("row");
-    await userEvent.click(within(card).getByText("Thoughtseize"));
-    const dialog = await screen.findByRole("dialog", { name: "Thoughtseize" });
-    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toBeInTheDocument();
   });
 
   it("on a phone a card without image keeps the placeholder", async () => {
