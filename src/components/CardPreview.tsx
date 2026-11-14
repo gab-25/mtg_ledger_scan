@@ -15,7 +15,14 @@ export default function CardPreview({ image, name, className = "h-[50px] w-9" }:
         <img src={image} alt="" loading="lazy" className={cn("block rounded-[3px] object-cover", className)} />
       </DialogTrigger>
       <DialogContent title={name} className="min-[840px]:w-auto">
-        <img src={image} alt={name} width={350} height={489} className="mx-auto block h-auto w-full max-w-[350px] rounded-[14px]" />
+        {/* As large as fits: 460px wide at most, shorter on a low screen (a card is 63×88). */}
+        <img
+          src={image}
+          alt={name}
+          width={460}
+          height={642}
+          className="mx-auto block h-auto w-[min(460px,calc((92dvh-150px)*63/88))] max-w-full rounded-[18px]"
+        />
       </DialogContent>
     </Dialog>
   );
