@@ -13,7 +13,7 @@ vi.mock("../api/collection");
 
 function printing(over: Partial<Printing> = {}): Printing {
   return {
-    ct_id: 9001, name: "Ugin, the Spirit Dragon", version: "", image_url: "https://img/ugin.jpg", expansion_code: "m21",
+    ct_id: 9001, name: "Ugin, the Spirit Dragon", version: "", image_url: "https://img/ugin.jpg", image_large_url: "", expansion_code: "m21",
     expansion_name: "Core Set 2021", collector_number: "1", owned_qty: null, category_id: 1, category_name: "Magic Single Card", is_product: false,
     accepts_language: true,
     prices: { trend: "12.75", low: "10.00", avg: "12.50", trend_foil: "14.34", low_foil: null, avg_foil: null },
@@ -103,15 +103,13 @@ describe("CatalogPage", () => {
     expect(screen.getByRole("link", { name: "Clear" })).toHaveAttribute("href", "/catalog/");
   });
 
-  it("hovering a product shows its image enlarged", async () => {
+  it("clicking a product's image shows it enlarged", async () => {
     vi.mocked(api.searchCatalog).mockResolvedValue(results());
     renderPage("/catalog/?q=ugin");
-    await userEvent.hover(await screen.findByText("Ugin, the Spirit Dragon"));
-    expect(await screen.findByRole("img", { name: "Ugin, the Spirit Dragon" })).toHaveAttribute("src", "https://img/ugin.jpg");
-    await userEvent.unhover(screen.getByText("Ugin, the Spirit Dragon"));
-    await userEvent.hover(screen.getByText("Counterspell"));
-    await new Promise((r) => setTimeout(r, 400));
-    expect(screen.queryByRole("img", { name: "Counterspell" })).not.toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: "Show Ugin, the Spirit Dragon" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ugin, the Spirit Dragon" });
+    expect(within(dialog).getByRole("img", { name: "Ugin, the Spirit Dragon" })).toHaveAttribute("src", "https://img/ugin.jpg");
+    expect(screen.queryByRole("button", { name: "Show Counterspell" })).not.toBeInTheDocument();
   });
 
   it("searches as you type from the third character, keeping the box focused", async () => {
@@ -210,6 +208,16 @@ describe("CatalogPage", () => {
     expect(within(counterspell).getByText("×2 owned")).toHaveAttribute("data-variant", "gold");
     expect(within(counterspell).getByText("Foil —")).toBeInTheDocument();
     expect(screen.getByText(/Showing 2 of 2 products/)).toBeInTheDocument();
+  });
+
+  it("on a phone a tap on the image shows the product enlarged", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    vi.mocked(api.searchCatalog).mockResolvedValue(results());
+    renderPage("/catalog/?q=ugin");
+    await userEvent.click(await screen.findByRole("button", { name: "Show Ugin, the Spirit Dragon" }));
+    const dialog = await screen.findByRole("dialog", { name: "Ugin, the Spirit Dragon" });
+    expect(within(dialog).getByRole("img", { name: "Ugin, the Spirit Dragon" })).toHaveAttribute("src", "https://img/ugin.jpg");
+    expect(screen.queryByRole("button", { name: "Show Counterspell" })).not.toBeInTheDocument();
   });
 
   it("on a phone each product has an Add button", async () => {

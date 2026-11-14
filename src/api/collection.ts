@@ -17,8 +17,9 @@ export type CollectionRow = {
   is_product: boolean;
   category_id: number | null;
   category_name: string | null;
-  /** The catalog image ("" when the card has no CardTrader blueprint). */
+  /** The catalog image ("" when the card has no CardTrader blueprint), thumbnail and large version (see Printing). */
   image_url: string;
+  image_large_url: string;
   foil: boolean;
   condition: string;
   condition_label: string;

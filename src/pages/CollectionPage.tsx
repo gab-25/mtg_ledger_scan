@@ -29,25 +29,19 @@ import ListingDialog from "./ListingDialog";
 /** The Cardmarket trend of a row, or a dash when the printing has none. */
 const trend = (price: string | null) => (price === null ? "—" : euro(price, 2));
 
-/** The product thumbnail, the same size as in the catalog. */
-const THUMB = "h-[50px] w-9 flex-none rounded-[3px] object-cover";
-
 const columns: ColumnDef<CollectionRow>[] = [
   {
     id: "card",
     header: "Card",
     cell: ({ row: { original: r } }) => (
-      <CardPreview image={r.image_url} name={r.name}>
-        <div className="flex w-fit items-center gap-3">
-          {r.image_url && <img src={r.image_url} alt="" loading="lazy" width={36} height={50} className={THUMB} />}
-          <div>
-            {/* Focusable when it has a preview, so the keyboard can show it too. */}
-            <span className="font-medium" tabIndex={r.image_url ? 0 : undefined}>{r.name}</span>
-            {r.foil && <FoilTag />}
-            {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
-          </div>
+      <div className="flex w-fit items-center gap-3">
+        {r.image_url && <CardPreview image={r.image_url} large={r.image_large_url} name={r.name} />}
+        <div>
+          <span className="font-medium">{r.name}</span>
+          {r.foil && <FoilTag />}
+          {r.is_product && r.category_name && <div className={SUB}>{r.category_name}</div>}
         </div>
-      </CardPreview>
+      </div>
     ),
   },
   { id: "set", header: "Set", accessorKey: "set_code", meta: { className: cn("font-mono", DIM) } },
@@ -218,7 +212,7 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
         <li key={r.id} className="border-b border-line">
           <div className="flex min-h-16 items-center gap-3 py-2">
             {r.image_url ? (
-              <img src={r.image_url} alt="" loading="lazy" width={34} height={48} className="h-12 w-[34px] flex-none rounded-[3px] object-cover" />
+              <CardPreview image={r.image_url} large={r.image_large_url} name={r.name} className="h-12 w-[34px]" />
             ) : (
               <span aria-hidden="true" className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2 bg-surface-2" />
             )}

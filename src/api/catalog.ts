@@ -8,7 +8,9 @@ export type Printing = {
   ct_id: number;
   name: string;
   version: string;
+  /** CardTrader's thumbnail (180×251); `image_large_url` is the 488×680 one ("" until the catalog sync stores it). */
   image_url: string;
+  image_large_url: string;
   expansion_code: string;
   expansion_name: string;
   collector_number: string;

@@ -49,17 +49,13 @@ const columns: ColumnDef<Printing>[] = [
     id: "product",
     header: "Product",
     cell: ({ row: { original: p } }) => (
-      <CardPreview image={p.image_url} name={p.name}>
-        <div className="flex w-fit items-center gap-3" tabIndex={p.image_url ? 0 : undefined}>
-          {p.image_url && (
-            <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="h-[50px] w-9 rounded-[3px] object-cover" />
-          )}
-          <div>
-            {p.name}
-            {p.version && <div className={SUB}>{p.version}</div>}
-          </div>
+      <div className="flex w-fit items-center gap-3">
+        {p.image_url && <CardPreview image={p.image_url} large={p.image_large_url} name={p.name} />}
+        <div>
+          {p.name}
+          {p.version && <div className={SUB}>{p.version}</div>}
         </div>
-      </CardPreview>
+      </div>
     ),
   },
   {
@@ -231,7 +227,7 @@ function PrintingList({ rows }: { rows: Printing[] }) {
       {rows.map((p) => (
         <li key={p.ct_id} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
           {p.image_url ? (
-            <img src={p.image_url} alt="" loading="lazy" width={36} height={50} className="h-[50px] w-9 flex-none rounded-[3px] object-cover" />
+            <CardPreview image={p.image_url} large={p.image_large_url} name={p.name} />
           ) : (
             <span aria-hidden="true" className="h-[50px] w-9 flex-none rounded-[3px] border border-line-2 bg-surface-2" />
           )}
