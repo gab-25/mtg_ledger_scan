@@ -35,7 +35,7 @@ const columns: ColumnDef<CollectionRow>[] = [
     header: "Card",
     cell: ({ row: { original: r } }) => (
       <div className="flex w-fit items-center gap-3">
-        {r.image_url && <CardPreview image={r.image_url} name={r.name} />}
+        {r.image_url && <CardPreview image={r.image_url} large={r.image_large_url} name={r.name} />}
         <div>
           <span className="font-medium">{r.name}</span>
           {r.foil && <FoilTag />}
@@ -212,7 +212,7 @@ function CardList({ rows, empty }: { rows: CollectionRow[]; empty: ReactNode }) 
         <li key={r.id} className="border-b border-line">
           <div className="flex min-h-16 items-center gap-3 py-2">
             {r.image_url ? (
-              <CardPreview image={r.image_url} name={r.name} className="h-12 w-[34px]" />
+              <CardPreview image={r.image_url} large={r.image_large_url} name={r.name} className="h-12 w-[34px]" />
             ) : (
               <span aria-hidden="true" className="h-12 w-[34px] flex-none rounded-[3px] border border-line-2 bg-surface-2" />
             )}

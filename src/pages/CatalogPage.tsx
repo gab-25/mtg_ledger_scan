@@ -50,7 +50,7 @@ const columns: ColumnDef<Printing>[] = [
     header: "Product",
     cell: ({ row: { original: p } }) => (
       <div className="flex w-fit items-center gap-3">
-        {p.image_url && <CardPreview image={p.image_url} name={p.name} />}
+        {p.image_url && <CardPreview image={p.image_url} large={p.image_large_url} name={p.name} />}
         <div>
           {p.name}
           {p.version && <div className={SUB}>{p.version}</div>}
@@ -227,7 +227,7 @@ function PrintingList({ rows }: { rows: Printing[] }) {
       {rows.map((p) => (
         <li key={p.ct_id} className="flex min-h-16 items-center gap-3 border-b border-line py-2">
           {p.image_url ? (
-            <CardPreview image={p.image_url} name={p.name} />
+            <CardPreview image={p.image_url} large={p.image_large_url} name={p.name} />
           ) : (
             <span aria-hidden="true" className="h-[50px] w-9 flex-none rounded-[3px] border border-line-2 bg-surface-2" />
           )}

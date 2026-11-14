@@ -12,7 +12,8 @@ vi.mock("../api/sale");
 export function row(over: Partial<CollectionRow> = {}): CollectionRow {
   return {
     id: 7, name: "Thoughtseize", set_code: "2XM", is_product: false, category_id: 1, category_name: "Magic Single Card",
-    image_url: "https://img/preview_thoughtseize.jpg", foil: false, condition: "NM", condition_label: "Near Mint", language: "EN",
+    image_url: "https://img/preview_thoughtseize.jpg", image_large_url: "https://img/show_thoughtseize.jpg",
+    foil: false, condition: "NM", condition_label: "Near Mint", language: "EN",
     quantity: 3, price: "12.00",
     badge: { label: "In collection", tone: "neutral" }, ...over,
   };

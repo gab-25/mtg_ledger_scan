@@ -13,7 +13,7 @@ vi.mock("../api/collection");
 
 function printing(over: Partial<Printing> = {}): Printing {
   return {
-    ct_id: 9001, name: "Ugin, the Spirit Dragon", version: "", image_url: "https://img/ugin.jpg", expansion_code: "m21",
+    ct_id: 9001, name: "Ugin, the Spirit Dragon", version: "", image_url: "https://img/ugin.jpg", image_large_url: "", expansion_code: "m21",
     expansion_name: "Core Set 2021", collector_number: "1", owned_qty: null, category_id: 1, category_name: "Magic Single Card", is_product: false,
     accepts_language: true,
     prices: { trend: "12.75", low: "10.00", avg: "12.50", trend_foil: "14.34", low_foil: null, avg_foil: null },
