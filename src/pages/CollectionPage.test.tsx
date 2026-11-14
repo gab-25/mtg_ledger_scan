@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { chooseOption } from "@/test/select";
 import * as api from "../api/collection";
@@ -12,7 +12,7 @@ vi.mock("../api/sale");
 export function row(over: Partial<CollectionRow> = {}): CollectionRow {
   return {
     id: 7, name: "Thoughtseize", set_code: "2XM", is_product: false, category_id: 1, category_name: "Magic Single Card",
-    image_url: "https://img/thoughtseize.jpg", foil: false, condition: "NM", condition_label: "Near Mint", language: "EN",
+    image_url: "https://img/preview_thoughtseize.jpg", foil: false, condition: "NM", condition_label: "Near Mint", language: "EN",
     quantity: 3, price: "12.00",
     badge: { label: "In collection", tone: "neutral" }, ...over,
   };
@@ -69,14 +69,23 @@ describe("CollectionPage", () => {
     vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row(), row({ id: 8, name: "Loose Card", image_url: "" })] }));
     renderPage("/");
     const [, card, loose] = within(await screen.findByRole("table")).getAllByRole("row");
-    expect(card.querySelector("img")).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    expect(card.querySelector("img")).toHaveAttribute("src", "https://img/preview_thoughtseize.jpg");
     expect(loose.querySelector("img")).toBeNull();
     expect(within(loose).queryByRole("button", { name: "Show Loose Card" })).not.toBeInTheDocument();
     await userEvent.click(within(card).getByRole("button", { name: "Show Thoughtseize" }));
     const dialog = await screen.findByRole("dialog", { name: "Thoughtseize" });
-    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/show_thoughtseize.jpg");
     await userEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("the enlarged card falls back to the thumbnail when the large image is missing", async () => {
+    vi.mocked(api.getCollection).mockResolvedValue(collection({ results: [row()] }));
+    renderPage("/");
+    await userEvent.click(await screen.findByRole("button", { name: "Show Thoughtseize" }));
+    const large = within(await screen.findByRole("dialog", { name: "Thoughtseize" })).getByRole("img", { name: "Thoughtseize" });
+    fireEvent.error(large);
+    expect(large).toHaveAttribute("src", "https://img/preview_thoughtseize.jpg");
   });
 
   it("a cold link with filters asks the server for them", async () => {
@@ -219,7 +228,7 @@ describe("CollectionPage", () => {
     expect(within(card).getByText("Foil")).toBeInTheDocument();
     expect(within(card).getByText("€12.00")).toBeInTheDocument();
     expect(within(card).getByText("In collection")).toHaveAttribute("data-variant", "neutral");
-    expect(card.querySelector("img")).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    expect(card.querySelector("img")).toHaveAttribute("src", "https://img/preview_thoughtseize.jpg");
   });
 
   it("on a phone a tap on the thumbnail shows the card enlarged", async () => {
@@ -228,7 +237,7 @@ describe("CollectionPage", () => {
     renderPage("/");
     await userEvent.click(await screen.findByRole("button", { name: "Show Thoughtseize" }));
     const dialog = await screen.findByRole("dialog", { name: "Thoughtseize" });
-    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/thoughtseize.jpg");
+    expect(within(dialog).getByRole("img", { name: "Thoughtseize" })).toHaveAttribute("src", "https://img/show_thoughtseize.jpg");
     await userEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
